@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "source": "https://namu.wiki/w/메이플스토리/보스 몬스터/보스 티어 (2026-09-14 조회)",
+    "notes": [
+      "등급 = 색(금>은>동>납) + 별 개수. rank 는 전체 32단계를 1(납★)~32(금★★★★★★★★★) 정수로 펼친 값. 클수록 어려움.",
+      "보스명·난이도는 스케줄러 API 표기 (블러디퀸, 시즌 보스 메이린 등).",
+      "시즌 보스 카이, 이지 발록은 현재 API boss_contents 에 없음 — 참고용."
+    ]
+  },
+  "tiers": {
+    "금": {
+      "9": ["카링 extreme", "유피테르 hard"],
+      "8": ["최초의 대적자 extreme"],
+      "7": ["감시자 칼로스 extreme", "발드릭스 hard"],
+      "6": ["카링 hard", "찬란한 흉성 hard", "벨로나 hard", "림보 hard"],
+      "5": ["선택받은 세렌 extreme", "최초의 대적자 hard", "발드릭스 normal", "유피테르 normal"],
+      "4": ["검은 마법사 extreme", "감시자 칼로스 chaos", "벨로나 normal", "림보 normal"],
+      "3": ["카링 normal"],
+      "2": ["스우 extreme", "찬란한 흉성 normal"],
+      "1": ["카링 easy", "감시자 칼로스 normal", "최초의 대적자 normal", "벨로나 easy", "시즌 보스 메이린 hard"]
+    },
+    "은": {
+      "9": ["선택받은 세렌 hard"],
+      "8": ["감시자 칼로스 easy", "최초의 대적자 easy", "시즌 보스 카이 hard"],
+      "7": ["검은 마법사 hard"],
+      "6": ["진 힐라 hard", "선택받은 세렌 normal"],
+      "5": ["더스크 chaos", "듄켈 hard"],
+      "4": ["가디언 엔젤 슬라임 chaos", "진 힐라 normal"],
+      "3": ["루시드 hard", "윌 hard"],
+      "2": ["데미안 hard", "스우 hard"],
+      "1": ["더스크 normal", "듄켈 normal"]
+    },
+    "동": {
+      "7": ["루시드 normal", "윌 normal"],
+      "6": ["루시드 easy", "윌 easy", "가디언 엔젤 슬라임 normal"],
+      "5": ["파풀라투스 chaos", "스우 normal", "데미안 normal"],
+      "4": ["벨룸 chaos", "매그너스 hard"],
+      "3": ["피에르 chaos", "반반 chaos", "블러디퀸 chaos"],
+      "2": ["자쿰 chaos"],
+      "1": ["힐라 hard", "핑크빈 chaos", "시그너스 normal"]
+    },
+    "납": {
+      "7": ["반 레온 hard", "아카이럼 normal", "매그너스 normal", "파풀라투스 normal"],
+      "6": ["카웅 normal", "혼테일 chaos", "핑크빈 normal", "반 레온 normal"],
+      "5": ["혼테일 normal", "반 레온 easy", "아카이럼 easy"],
+      "4": ["피에르 normal", "반반 normal", "블러디퀸 normal", "벨룸 normal"],
+      "3": ["힐라 normal", "혼테일 easy"],
+      "2": ["자쿰 normal", "파풀라투스 easy", "매그너스 easy"],
+      "1": ["자쿰 easy"]
+    }
+  },
+  "rank_base": { "금": 23, "은": 14, "동": 7, "납": 0 }
+}

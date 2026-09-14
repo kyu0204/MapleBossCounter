@@ -1,0 +1,98 @@
+{
+  "_설명": [
+    "plan init 으로 생성. 인게임 스케줄러 등록 보스가 bosses 에 들어감. 값 = 파티 인원 (실수령 = 가격 ÷ 인원).",
+    "bosses 는 { \"보스 난이도\": 인원 } 맵. 보스 추가/삭제/인원 변경은 이 맵만 고치면 됨.",
+    "auto: true 면 bosses 외 남는 슬롯을 자동 채움. ceiling: 상한 보스 수동 지정. skip: 제외. _note 는 안내용(무시됨).",
+    "다시 생성: node maple-proto.js plan init   (기존 party/skip/auto/ceiling 은 이어받음)"
+  ],
+  "default_party": 1,
+  "characters": {
+    "알전임": {
+      "party": 1,
+      "_note": "등록 14개 > 한도 12개. 상위 12개만 넣음",
+      "bosses": {
+        "찬란한 흉성 normal": 2,
+        "최초의 대적자 normal": 1,
+        "감시자 칼로스 normal": 1,
+        "스우 extreme": 2,
+        "벨로나 easy": 1,
+        "카링 easy": 1,
+        "선택받은 세렌 hard": 1,
+        "진 힐라 hard": 1,
+        "듄켈 hard": 1,
+        "윌 hard": 1,
+        "가디언 엔젤 슬라임 chaos": 1,
+        "더스크 chaos": 1,
+        "루시드 hard": 1
+      },
+      "auto": false
+    },
+    "다이아태훈": {
+      "party": 1,
+      "_note": "등록 14개 > 한도 12개. 상위 12개만 넣음",
+      "bosses": {
+        "찬란한 흉성 normal": 3,
+        "벨로나 easy": 1,
+        "카링 easy": 1,
+        "선택받은 세렌 hard": 1,
+        "최초의 대적자 normal": 2,
+        "감시자 칼로스 normal": 1,
+        "진 힐라 hard": 1,
+        "윌 hard": 1,
+        "가디언 엔젤 슬라임 chaos": 1,
+        "더스크 chaos": 1,
+        "루시드 hard": 1,
+        "스우 hard": 1
+      },
+      "auto": true
+    },
+    "호감토끼": {
+      "bosses": {
+        "감시자 칼로스 easy": 2,
+        "선택받은 세렌 normal": 1,
+        "진 힐라 hard": 1,
+        "듄켈 hard": 1,
+        "윌 hard": 1,
+        "가디언 엔젤 슬라임 chaos": 1,
+        "더스크 chaos": 1,
+        "루시드 hard": 1,
+        "스우 hard": 1,
+        "데미안 hard": 1
+      },
+      "auto": true
+    },
+    "알전아님": {
+      "bosses": {
+        "최초의 대적자 easy": 3,
+        "감시자 칼로스 easy": 3,
+        "선택받은 세렌 normal": 1,
+        "진 힐라 hard": 1,
+        "듄켈 hard": 1,
+        "윌 hard": 1,
+        "가디언 엔젤 슬라임 chaos": 1,
+        "더스크 chaos": 1,
+        "루시드 hard": 1,
+        "스우 hard": 1,
+        "데미안 hard": 1,
+        "파풀라투스 chaos": 1
+      },
+      "auto": false
+    },
+    "공군은21개월": {
+      "skip": true
+    },
+    "김지홍석규": {
+      "ceiling": "듄켈 hard"
+    },
+    "봉풀르르": {
+      "party": 2,
+      "ceiling": "진 힐라 hard"
+    },
+    "개화난주폭도": {
+      "ceiling": "듄켈 hard"
+    },
+    "윤비공부해": {
+      "ceiling": "루시드 hard"
+    }
+  }
+}

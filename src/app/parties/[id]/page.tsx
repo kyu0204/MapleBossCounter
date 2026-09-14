@@ -1,0 +1,55 @@
+import { notFound } from "next/navigation";
+import { requireUserId } from "@/auth";
+import { getParty } from "@/lib/db/queries/parties";
+import { listOwnedCharacters } from "@/services/characterSync";
+import { kstDateStr } from "@/lib/maple/kst";
+import { PartyForm } from "@/components/party/PartyForm";
+import { PartyCard } from "@/components/party/PartyCard";
+import { deleteParty } from "@/actions/parties";
+import type { Difficulty } from "@/lib/maple/bossKey";
+
+export default async function PartyPage({ params }: PageProps<"/parties/[id]">) {
+  const userId = await requireUserId();
+  const { id } = await params;
+  const party = getParty(Number(id), userId);
+  if (!party) notFound();
+  const mine = listOwnedCharacters(userId).map((c) => c.name);
+
+  return (
+    <div className="max-w-2xl space-y-4">
+      <h1 className="text-xl font-bold">
+        {party.boss} {party.difficulty} · {party.size}인격
+      </h1>
+      <PartyCard party={party} />
+      {party.isOwner ? (
+        <>
+          <PartyForm
+            myCharacters={mine}
+            today={kstDateStr()}
+            initial={{
+              id: party.id,
+              name: party.name ?? "",
+              boss: party.boss,
+              difficulty: party.difficulty as Difficulty,
+              world: party.world ?? "",
+              scheduleNote: party.scheduleNote ?? "",
+              memo: party.memo ?? "",
+              members: party.members.map((m) => m.nickname),
+              leader: party.members.find((m) => m.isLeader)?.nickname ?? "",
+            }}
+          />
+          <form
+            action={async () => {
+              "use server";
+              await deleteParty(party.id);
+            }}
+          >
+            <button className="btn-ghost text-red-600">파티 삭제</button>
+          </form>
+        </>
+      ) : (
+        <div className="text-sm text-zinc-500">다른 유저가 만든 파티입니다. 내 캐릭터가 구성원으로 포함되어 있어 표시됩니다.</div>
+      )}
+    </div>
+  );
+}

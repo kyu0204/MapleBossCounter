@@ -1,0 +1,90 @@
+# 메이플 파티 보드
+
+메이플스토리(KMS) 주간 보스 결정 플래너 + 고정 파티 관리 + 파티 모집 게시판. Next.js 16 · Tailwind · SQLite(Drizzle) · Auth.js(Discord).
+
+## 로컬 실행
+
+```bash
+npm install
+cp .env.example .env.local   # 값 채우기 (아래 참고)
+npm run dev                  # http://localhost:3000
+```
+
+`.env.local` 필수 값
+
+| 키 | 설명 |
+|---|---|
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` | Discord Developer Portal → Applications → OAuth2. Redirect URL `http://localhost:3000/api/auth/callback/discord` |
+| `NEXON_SERVER_API_KEY` | openapi.nexon.com 에서 발급한 키. 유저 키가 없을 때 공개 조회(`/lookup`, 닉네임 확인)에 사용 |
+| `NEXON_KEY_ENC_SECRET` | `openssl rand -base64 32`. 유저가 등록한 넥슨 키를 AES-256-GCM 으로 암호화 |
+| `AUTH_DEV_LOGIN` | `1` 이면 Discord 없이 `/api/auth/callback/dev` 로 로컬 로그인 가능 (production 무시) |
+
+DB 는 첫 실행 시 `data/app.db` 에 자동 생성·마이그레이션됩니다.
+
+## 스크립트
+
+```bash
+npm test                 # vitest (가격/티어/전투력/플래너/리미터 회귀)
+npm run typecheck
+npm run lint
+npm run db:generate      # 스키마 변경 후 마이그레이션 SQL 생성 (drizzle/)
+npm run job -- <name>    # 잡 수동 실행: weekly_snapshot_realtime | weekly_snapshot_backfill | daily_snapshot | weekly_power_refresh | cache_sweep
+npx tsx scripts/seed-dev.ts tester 270   # dev 유저에 서버 키 등록 + 캐릭터/스냅샷/예시 파티 시드
+npx tsx scripts/smoke.ts 알전임          # 별도 DB(data/smoke.db) 로 파이프라인 검증
+```
+
+## 페이지
+
+| 경로 | 공개 | 내용 |
+|---|---|---|
+| `/bosses/tiers` `/bosses/crystals` | ○ | 티어표, 결정 가격표·인원 계산기 |
+| `/lookup?name=` | ○ | 닉네임으로 전투력 조회 (서버 키, IP 분당 20회, 캐릭터당 10분 쿨다운) |
+| `/board` `/board/[id]` | ○ | 파티 모집 게시판. 글쓰기·지원은 로그인 |
+| `/board/new` `/board/mine` `/board/[id]/edit` | 로그인 | 모집글 작성·수정, 내 글·지원 현황 |
+| `/me` `/me/characters/[ocid]` | 로그인 | 캐릭터 대시보드, 보스 클리어·수익, 전투력 이력 |
+| `/parties` | 로그인 | 고정 파티 CRUD. 인원수가 플래너 실수령에 반영 |
+| `/planner` | 로그인 | 주간 결정 배분 플래너 |
+| `/settings/nexon-key` | 로그인 | 넥슨 API 키 등록 |
+
+모집 흐름: 고정 파티 연결 → 모집글 → 지원자가 본인 캐릭터 선택(작성자에게 대표 전투력·이번 주 해당 보스 클리어 여부 노출) → 수락 시 `party_members` 자동 추가, 모집 인원 충족 시 자동 마감.
+
+## 구조
+
+- `src/lib/maple/` — 순수 로직 (가격표·티어·전투력 대표값·스케줄러 파싱·배분 알고리즘). I/O 없음, 클라이언트에서도 실행.
+- `src/lib/nexon/` — 넥슨 Open API 클라이언트 (크레덴셜별 큐 5건/초, SQLite 캐시, 에러 매핑).
+- `src/lib/limiter.ts` — 프로세스 메모리 슬라이딩 윈도우 리미터 (IP/유저). pm2 fork 1인스턴스 전제.
+- `src/lib/db/queries/` — 파티·게시판 조회. `src/actions/` — Server Actions (인증·소유권·zod 검증).
+- `src/services/` — DB + API 조합 (캐릭터 동기화/갱신/조회, 스냅샷, 파티 연결, 플래너 입력, 공개 조회).
+- `src/jobs/` — node-cron 잡. `CRON_ENABLED=1` 일 때 `instrumentation.ts` 에서 시작.
+- `src/data/` — `boss_crystal_prices.json`(패치별 가격), `boss_tiers.json`(나무위키 티어).
+- `deploy/` — EC2 셋업·배포·nginx·DB 백업 스크립트. `ecosystem.config.js` — pm2.
+
+## 운영 (EC2 Ubuntu)
+
+최초 1회 (root):
+
+```bash
+git clone <repo> ~/maple-board && cd ~/maple-board
+sudo bash deploy/setup-ec2.sh <domain>       # Node 20, build-essential, pm2, nginx, certbot, 백업 크론
+cp .env.example .env.local && vi .env.local  # AUTH_URL=https://<domain>, AUTH_TRUST_HOST=1 필수
+sudo certbot --nginx -d <domain>
+```
+
+배포/업데이트 (앱 유저):
+
+```bash
+bash deploy/deploy.sh          # git pull → DB 백업 → npm ci → typecheck/test/build → pm2 reload → /api/health 확인
+pm2 logs maple-board
+```
+
+운영 메모
+
+- **pm2 fork 1인스턴스 고정** (`ecosystem.config.js`). node-cron 잡·메모리 리미터·SQLite 단일 writer 전제. `CRON_ENABLED=1`, `TZ=Asia/Seoul` 는 여기서 지정.
+- **nginx**: `deploy/nginx.conf`. `/api/jobs/` 는 `allow 127.0.0.1; deny all;`. 앱도 production 에서 `X-Real-IP` 가 루프백이 아니면 403 (`JOBS_LOOPBACK_ONLY=0` 으로 해제). `/lookup` 은 nginx `limit_req` 30r/m 추가.
+- **잡 수동 실행**: 서버에서 `npm run job -- weekly_snapshot_backfill` 또는 `curl -X POST -H "Authorization: Bearer $JOBS_SECRET" http://127.0.0.1/api/jobs/cache_sweep`.
+- **DB 백업**: `deploy/backup-db.sh` (sqlite3 `.backup` + integrity_check + gzip, 14일 보관). 크론 04:30 KST. 복구는 `pm2 stop maple-board` 후 `gunzip -c backups/app-<stamp>.db.gz > data/app.db`.
+- **헬스체크**: `GET /api/health` → `{ ok, cron, lastJobs }`.
+- **넥슨 서비스 키**: 공개 전 발급 필요 (dev 키 5건/초·1,000건/일). `NEXON_SERVER_API_KEY` 교체 + `NEXON_SERVER_RATE_PER_SEC=500`.
+- **Discord**: Redirect URL 에 `https://<domain>/api/auth/callback/discord` 추가.
+- **SEO**: `robots.txt`(로그인 경로 disallow), `sitemap.xml`(공개 페이지 + 열린 모집글). 기준 URL 은 `AUTH_URL`.

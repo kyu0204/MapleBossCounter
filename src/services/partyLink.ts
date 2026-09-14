@@ -1,0 +1,60 @@
+import "server-only";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { characters, parties, partyMembers } from "@/lib/db/schema";
+
+/**
+ * 유저의 캐릭터가 속한 파티들로 (characterId, boss, diff) → 인원 조회 함수를 만든다.
+ * 파티 인원 = party_members 수. 같은 캐릭터가 같은 보스에 여러 파티면 첫 것.
+ */
+export function partySizeLookup(userId: string): (characterId: number, boss: string, diff: string) => number {
+  const rows = db
+    .select({
+      characterId: partyMembers.characterId,
+      boss: parties.boss,
+      difficulty: parties.difficulty,
+      size: sql<number>`(select count(*) from party_members pm2 where pm2.party_id = ${parties.id})`,
+    })
+    .from(partyMembers)
+    .innerJoin(parties, eq(partyMembers.partyId, parties.id))
+    .innerJoin(characters, eq(partyMembers.characterId, characters.id))
+    .where(eq(characters.ownerUserId, userId))
+    .all();
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    if (r.characterId == null) continue;
+    const k = `${r.characterId}|${r.boss}|${r.difficulty}`;
+    if (!map.has(k)) map.set(k, Math.max(1, Number(r.size) || 1));
+  }
+  return (characterId, boss, diff) => map.get(`${characterId}|${boss}|${diff}`) ?? 1;
+}
+
+/** 캐릭터별 파티 유래 고정 픽: characterId → { "보스 diff": 인원 } */
+export function partyPicksByCharacter(userId: string): Map<number, Record<string, number>> {
+  const rows = db
+    .select({
+      characterId: partyMembers.characterId,
+      boss: parties.boss,
+      difficulty: parties.difficulty,
+      size: sql<number>`(select count(*) from party_members pm2 where pm2.party_id = ${parties.id})`,
+    })
+    .from(partyMembers)
+    .innerJoin(parties, eq(partyMembers.partyId, parties.id))
+    .innerJoin(characters, eq(partyMembers.characterId, characters.id))
+    .where(eq(characters.ownerUserId, userId))
+    .all();
+  const out = new Map<number, Record<string, number>>();
+  for (const r of rows) {
+    if (r.characterId == null) continue;
+    const rec = out.get(r.characterId) ?? {};
+    const key = `${r.boss} ${r.difficulty}`;
+    if (!(key in rec)) rec[key] = Math.max(1, Number(r.size) || 1);
+    out.set(r.characterId, rec);
+  }
+  return out;
+}
+
+/** 닉네임으로 미연결 멤버 자동 연결 (characterSync 이후 호출용) */
+export function linkMembersByName(characterId: number, name: string): number {
+  return db.update(partyMembers).set({ characterId }).where(and(eq(partyMembers.nickname, name), isNull(partyMembers.characterId))).run().changes;
+}

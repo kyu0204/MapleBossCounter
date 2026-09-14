@@ -1,0 +1,100 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireUserId } from "@/auth";
+import { ownedCharacterByOcid } from "@/services/characterSync";
+import { latestSnapshot, parsed, snapshotOn } from "@/services/snapshotService";
+import { powerHistory } from "@/services/characterRefresh";
+import { partySizeLookup } from "@/services/partyLink";
+import { estimateRevenue } from "@/lib/maple/scheduler";
+import { kstDateStr, lastWednesdayKst } from "@/lib/maple/kst";
+import { fmtPower } from "@/lib/maple/format";
+import { RefreshButton } from "@/components/character/RefreshButton";
+import { BossClearTable } from "@/components/character/BossClearTable";
+import { RevenueSummary } from "@/components/character/RevenueSummary";
+import { ContentsList } from "@/components/character/ContentsList";
+import { CharacterAvatar } from "@/components/character/CharacterAvatar";
+
+export default async function CharacterPage({ params, searchParams }: PageProps<"/me/characters/[ocid]">) {
+  const userId = await requireUserId();
+  const { ocid } = await params;
+  const sp = await searchParams;
+  const c = ownedCharacterByOcid(userId, ocid);
+  if (!c) notFound();
+
+  const view = sp.view === "lastweek" ? "lastweek" : "current";
+  const snap = view === "lastweek" ? parsed(snapshotOn(c.id, lastWednesdayKst())) : parsed(latestSnapshot(c.id));
+  const priceDate = view === "lastweek" ? lastWednesdayKst() : kstDateStr();
+  const partyOf = partySizeLookup(userId);
+  const revenue = snap ? estimateRevenue(snap.bosses, priceDate, (b, d) => partyOf(c.id, b, d)) : null;
+  const history = powerHistory(c.id, 30);
+  const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start gap-4">
+        <CharacterAvatar src={c.imageUrl} alt={c.name} size={144} />
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold">
+            {c.name} <span className="text-base font-normal text-zinc-500">{c.world} · {c.cls} · Lv.{c.level}</span>
+          </h1>
+          <div className="text-sm">
+            대표 전투력 <b>{fmtPower(c.bestPower)}</b>
+            {c.bestPowerAt && <span className="text-zinc-500"> ({c.bestPowerAt.slice(0, 10)} 기준)</span>}
+            <span className="ml-3">현재 {fmtPower(c.curPower)}</span>
+            {!wearingBest && c.curPower != null && <span className="ml-1 badge bg-amber-100 text-amber-800">대표값과 다른 세팅 착용 중</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            <RefreshButton ocid={c.ocid} label="전투력·스케줄러 새로고침" />
+            <a className="text-xs underline text-zinc-500" href={`https://maplescouter.com/ko/result?name=${encodeURIComponent(c.name)}`} target="_blank" rel="noreferrer">
+              maplescouter
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-sm">
+        <Link href={`/me/characters/${ocid}`} className={`btn-ghost ${view === "current" ? "bg-zinc-100 dark:bg-zinc-800" : ""}`}>
+          이번 주
+        </Link>
+        <Link href={`/me/characters/${ocid}?view=lastweek`} className={`btn-ghost ${view === "lastweek" ? "bg-zinc-100 dark:bg-zinc-800" : ""}`}>
+          지난주 ({lastWednesdayKst()})
+        </Link>
+        {snap?.date && <span className="text-zinc-500">스냅샷 기준일 {snap.date.slice(0, 10)}</span>}
+      </div>
+
+      {!snap ? (
+        <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+          <div className="space-y-4">
+            <BossClearTable bosses={snap.bosses} priceDate={priceDate} partyOf={(b, d) => partyOf(c.id, b, d)} weekly={`${snap.weeklyClearCount}/${snap.weeklyLimit}`} />
+            <ContentsList title="일간 콘텐츠" items={snap.daily} />
+            <ContentsList title="주간 콘텐츠" items={snap.weekly} />
+          </div>
+          <div className="space-y-4">
+            {revenue && <RevenueSummary revenue={revenue} priceDate={priceDate} />}
+            <div className="card text-sm">
+              <h3 className="font-semibold mb-2">전투력 이력</h3>
+              {history.length ? (
+                <ul className="space-y-0.5 text-xs">
+                  {history
+                    .slice()
+                    .reverse()
+                    .slice(0, 10)
+                    .map((h) => (
+                      <li key={h.id} className="flex justify-between">
+                        <span className="text-zinc-500">{h.measuredAt.slice(0, 16).replace("T", " ")}</span>
+                        <span>{fmtPower(h.power)}</span>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <div className="text-zinc-500 text-xs">기록 없음</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

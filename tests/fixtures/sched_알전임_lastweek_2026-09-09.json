@@ -1,0 +1,976 @@
+{
+  "fetched_at": "2026-09-14T03:17:40.695Z",
+  "date": "2026-09-09T00:00+09:00",
+  "character_name": "알전임",
+  "world_name": "스카니아",
+  "character_level": 286,
+  "character_class": "팬텀",
+  "daily_contents": [
+    {
+      "content_name": "몬스터파크",
+      "type": "contents",
+      "registration_flag": "true",
+      "now_count": 2,
+      "max_count": 14,
+      "quest_state": null
+    },
+    {
+      "content_name": "[일일 퀘스트] 소멸의 여로 조사",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 츄츄 아일랜드 최고의 요리",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 레헬른의 평온한 밤",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 아르카나의 평온한 바람",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 모라스의 안정을 위해",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 에스페라 연구 명령",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 문브릿지 조사",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 고통의 미궁 조사",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 리멘 조사",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 세르니움 조사",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "2"
+    },
+    {
+      "content_name": "[일일 퀘스트] 호텔 아르크스 주변 청소",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "2"
+    },
+    {
+      "content_name": "[일일 퀘스트] 오디움 일대 탐사",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "2"
+    },
+    {
+      "content_name": "[일일 퀘스트] 도원경 오염 정화",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "2"
+    },
+    {
+      "content_name": "[일일 퀘스트] 아르테리아 잔당 처치",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "2"
+    },
+    {
+      "content_name": "[일일 퀘스트] 카르시온 복구 지원",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "2"
+    },
+    {
+      "content_name": "[일일 퀘스트] 탈라하트 고대신의 힘 조사",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[일일 퀘스트] 기어드락 크로노스의 잔재 수집",
+      "type": "quest",
+      "registration_flag": "true",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    }
+  ],
+  "weekly_contents": [
+    {
+      "content_name": "에픽 던전 : 하이마운틴",
+      "type": "contents",
+      "registration_flag": "true",
+      "now_count": 5,
+      "max_count": 0,
+      "quest_state": null
+    },
+    {
+      "content_name": "에픽 던전 : 앵글러 컴퍼니",
+      "type": "contents",
+      "registration_flag": "true",
+      "now_count": 5,
+      "max_count": 0,
+      "quest_state": null
+    },
+    {
+      "content_name": "에픽 던전 : 악몽선경",
+      "type": "contents",
+      "registration_flag": "true",
+      "now_count": 5,
+      "max_count": 0,
+      "quest_state": null
+    },
+    {
+      "content_name": "[메이플 유니온] 주간 드래곤 퇴치",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[메이플 유니온] PC방 주간 드래곤 퇴치",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 2,
+      "max_count": 5,
+      "quest_state": "1"
+    },
+    {
+      "content_name": "에르다 스펙트럼",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 1,
+      "quest_state": null
+    },
+    {
+      "content_name": "배고픈 무토",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 1,
+      "quest_state": null
+    },
+    {
+      "content_name": "미드나잇 체이서",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 1,
+      "quest_state": null
+    },
+    {
+      "content_name": "스피릿 세이비어",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 1,
+      "quest_state": null
+    },
+    {
+      "content_name": "엔하임 디펜스",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 1,
+      "quest_state": null
+    },
+    {
+      "content_name": "프로텍트 에스페라",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 1,
+      "quest_state": null
+    },
+    {
+      "content_name": "[주간 퀘스트] 성실한 조사에 대한 보답",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[주간 퀘스트] 크리티아스 주간 임무",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[주간 퀘스트] 타락한 세계수 주간 임무",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[주간 퀘스트] 타락한 세계수 정화에 대한 보답",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[주간 퀘스트] 헤이븐 주간 임무",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "0"
+    },
+    {
+      "content_name": "[주간 퀘스트] 꾸준한 의뢰에 대한 보답",
+      "type": "quest",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": "1"
+    },
+    {
+      "content_name": "무릉도장",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": null
+    },
+    {
+      "content_name": "[길드] 주간 미션 포인트",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 8,
+      "max_count": 10,
+      "quest_state": null
+    },
+    {
+      "content_name": "[길드] 지하 수로",
+      "type": "contents",
+      "registration_flag": "true",
+      "now_count": 23530,
+      "max_count": 0,
+      "quest_state": null
+    },
+    {
+      "content_name": "[길드] 플래그 레이스",
+      "type": "contents",
+      "registration_flag": "false",
+      "now_count": 0,
+      "max_count": 0,
+      "quest_state": null
+    }
+  ],
+  "boss_contents": [
+    {
+      "content_name": "자쿰",
+      "difficulty": "easy",
+      "cycle": "bossDaily",
+      "list_order_no": 1,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "자쿰",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 2,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "자쿰",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 3,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "매그너스",
+      "difficulty": "easy",
+      "cycle": "bossDaily",
+      "list_order_no": 4,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "매그너스",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 5,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "매그너스",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 6,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "힐라",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 7,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "힐라",
+      "difficulty": "hard",
+      "cycle": "bossDaily",
+      "list_order_no": 8,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "카웅",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 9,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "파풀라투스",
+      "difficulty": "easy",
+      "cycle": "bossDaily",
+      "list_order_no": 10,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "파풀라투스",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 11,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "파풀라투스",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 12,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "피에르",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 13,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "피에르",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 14,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "반반",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 15,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "반반",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 16,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "블러디퀸",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 17,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "블러디퀸",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 18,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "벨룸",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 19,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "벨룸",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 20,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "반 레온",
+      "difficulty": "easy",
+      "cycle": "bossDaily",
+      "list_order_no": 21,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "반 레온",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 22,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "반 레온",
+      "difficulty": "hard",
+      "cycle": "bossDaily",
+      "list_order_no": 23,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "혼테일",
+      "difficulty": "easy",
+      "cycle": "bossDaily",
+      "list_order_no": 24,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "혼테일",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 25,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "혼테일",
+      "difficulty": "chaos",
+      "cycle": "bossDaily",
+      "list_order_no": 26,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "아카이럼",
+      "difficulty": "easy",
+      "cycle": "bossDaily",
+      "list_order_no": 27,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "아카이럼",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 28,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "핑크빈",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 29,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "핑크빈",
+      "difficulty": "chaos",
+      "cycle": "bossDaily",
+      "list_order_no": 30,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "시그너스",
+      "difficulty": "normal",
+      "cycle": "bossDaily",
+      "list_order_no": 32,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "스우",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 33,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "스우",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 34,
+      "registration_flag": "true",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "스우",
+      "difficulty": "extreme",
+      "cycle": "bossWeekly",
+      "list_order_no": 35,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "데미안",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 36,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "데미안",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 37,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "가디언 엔젤 슬라임",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 38,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "가디언 엔젤 슬라임",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 39,
+      "registration_flag": "true",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "루시드",
+      "difficulty": "easy",
+      "cycle": "bossWeekly",
+      "list_order_no": 40,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "루시드",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 41,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "루시드",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 42,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "윌",
+      "difficulty": "easy",
+      "cycle": "bossWeekly",
+      "list_order_no": 43,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "윌",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 44,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "윌",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 45,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "더스크",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 46,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "더스크",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 47,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "진 힐라",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 48,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "진 힐라",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 49,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "듄켈",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 50,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "듄켈",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 51,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "검은 마법사",
+      "difficulty": "hard",
+      "cycle": "bossMonthly",
+      "list_order_no": 52,
+      "registration_flag": "true",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "검은 마법사",
+      "difficulty": "extreme",
+      "cycle": "bossMonthly",
+      "list_order_no": 53,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "선택받은 세렌",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 54,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "선택받은 세렌",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 55,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "선택받은 세렌",
+      "difficulty": "extreme",
+      "cycle": "bossWeekly",
+      "list_order_no": 56,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "감시자 칼로스",
+      "difficulty": "easy",
+      "cycle": "bossWeekly",
+      "list_order_no": 57,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "감시자 칼로스",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 58,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "감시자 칼로스",
+      "difficulty": "chaos",
+      "cycle": "bossWeekly",
+      "list_order_no": 59,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "감시자 칼로스",
+      "difficulty": "extreme",
+      "cycle": "bossWeekly",
+      "list_order_no": 60,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "카링",
+      "difficulty": "easy",
+      "cycle": "bossWeekly",
+      "list_order_no": 61,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "카링",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 62,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "카링",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 63,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "카링",
+      "difficulty": "extreme",
+      "cycle": "bossWeekly",
+      "list_order_no": 64,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "림보",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 65,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "림보",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 66,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "발드릭스",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 67,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "발드릭스",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 68,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "최초의 대적자",
+      "difficulty": "easy",
+      "cycle": "bossWeekly",
+      "list_order_no": 70,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "최초의 대적자",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 71,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "최초의 대적자",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 72,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "최초의 대적자",
+      "difficulty": "extreme",
+      "cycle": "bossWeekly",
+      "list_order_no": 73,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "찬란한 흉성",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 76,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "찬란한 흉성",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 77,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "유피테르",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 78,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "유피테르",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 79,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "시즌 보스 메이린",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 80,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "시즌 보스 메이린",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 81,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "벨로나",
+      "difficulty": "easy",
+      "cycle": "bossWeekly",
+      "list_order_no": 82,
+      "registration_flag": "true",
+      "complete_flag": "true"
+    },
+    {
+      "content_name": "벨로나",
+      "difficulty": "normal",
+      "cycle": "bossWeekly",
+      "list_order_no": 83,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    },
+    {
+      "content_name": "벨로나",
+      "difficulty": "hard",
+      "cycle": "bossWeekly",
+      "list_order_no": 84,
+      "registration_flag": "false",
+      "complete_flag": "false"
+    }
+  ],
+  "weekly_boss_clear_count": 11,
+  "weekly_boss_clear_limit_count": 12
+}
