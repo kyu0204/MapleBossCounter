@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUserId } from "@/auth";
 import { ownedCharacterByOcid } from "@/services/characterSync";
-import { latestSnapshot, parsed, snapshotOn } from "@/services/snapshotService";
+import { latestSnapshot, parsed } from "@/services/snapshotService";
 import { powerHistory } from "@/services/characterRefresh";
 import { partySizeLookup } from "@/services/partyLink";
-import { kstDateStr, lastWednesdayKst } from "@/lib/maple/kst";
+import { agoStr, kstDateStr, kstTimeStr } from "@/lib/maple/kst";
 import { fmtPower } from "@/lib/maple/format";
 import { RefreshButton } from "@/components/character/RefreshButton";
 import { BossClearTable } from "@/components/character/BossClearTable";
@@ -18,17 +18,18 @@ import { normalizeBossList, bossKey } from "@/lib/maple/bossKey";
 import { mergePicks, toPickList } from "@/lib/maple/bossPicks";
 import { crystalPrice } from "@/lib/maple/prices";
 
-export default async function CharacterPage({ params, searchParams }: PageProps<"/me/characters/[ocid]">) {
+export default async function CharacterPage({ params }: PageProps<"/me/characters/[ocid]">) {
   const userId = await requireUserId();
   const { ocid } = await params;
-  const sp = await searchParams;
   const c = ownedCharacterByOcid(userId, ocid);
   if (!c) notFound();
 
-  const view = sp.view === "lastweek" ? "lastweek" : "current";
-  const latest = parsed(latestSnapshot(c.id));
-  const snap = view === "lastweek" ? parsed(snapshotOn(c.id, lastWednesdayKst())) : latest;
-  const priceDate = view === "lastweek" ? lastWednesdayKst() : kstDateStr();
+  // 지난주 보기는 없앴다. 이 화면은 "이번 주에 뭐가 남았나" 를 보는 곳이다.
+  const snapRow = latestSnapshot(c.id);
+  const snap = parsed(snapRow);
+  const latest = snap;
+  const priceDate = kstDateStr();
+  const refreshedAt = snapRow?.fetchedAt ?? null;
   const partyOf = partySizeLookup(userId);
   const history = powerHistory(c.id, 30);
   const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
@@ -40,7 +41,7 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
   const savedBosses = Object.fromEntries(normalizeBossList(charCfg.bosses).map((b) => [b.key, b.party ?? planDefaultParty]));
   const partyPicks = partyPicksByCharacter(userId).get(c.id) ?? {};
   const allPicks = toPickList(mergePicks(savedBosses, partyPicks));
-  // 클리어·등록 판정은 항상 이번 주 최신 스냅샷 기준이다 (지난주 보기에서도 마찬가지)
+  // 클리어·등록 판정은 최신 스냅샷 기준
   const weeklyRows = latest?.bosses.filter((b) => b.cycle === "bossWeekly") ?? [];
   const clearedKeys = weeklyRows.filter((b) => b.completed).map((b) => bossKey(b.boss, b.diff));
   const registeredKeys = weeklyRows.filter((b) => b.registered).map((b) => bossKey(b.boss, b.diff));
@@ -57,7 +58,7 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
 
   // 스케줄러 데이터가 없어도 고르기는 할 수 있어야 하므로 양쪽 분기에서 같은 것을 쓴다.
   const pickedBosses =
-    view === "current" && world ? (
+    world ? (
       <PickedBossList
         picks={allPicks}
         cleared={clearedKeys}
@@ -74,9 +75,9 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
         ← 내 캐릭터 목록
       </Link>
 
-      <div className="flex items-start gap-4">
+      <div className="flex flex-wrap items-start gap-4">
         <CharacterAvatar src={c.imageUrl} alt={c.name} size={144} />
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           <h1 className="text-2xl font-bold">
             {c.name} <span className="text-base font-normal text-zinc-500">{c.world} · {c.cls} · Lv.{c.level}</span>
           </h1>
@@ -86,44 +87,44 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
             <span className="ml-3">현재 {fmtPower(c.curPower)}</span>
             {!wearingBest && c.curPower != null && <span className="ml-1 badge bg-amber-100 text-amber-800">대표값과 다른 세팅 착용 중</span>}
           </div>
-          <div className="flex items-center gap-2">
-            <RefreshButton ocid={c.ocid} label="전투력·스케줄러 새로고침" />
-            <a className="text-xs underline text-zinc-500" href={`https://maplescouter.com/ko/result?name=${encodeURIComponent(c.name)}`} target="_blank" rel="noreferrer">
-              maplescouter
+          <div className="pt-1">
+            <a
+              className="btn-ghost text-sm"
+              href={`https://maplescouter.com/ko/result?name=${encodeURIComponent(c.name)}`}
+              target="_blank"
+              rel="noreferrer"
+              title="maplescouter 에서 환산 주스탯 보기 (새 창)"
+            >
+              환산 주스탯 ↗
             </a>
           </div>
         </div>
+
+        {/* 새로고침은 오른쪽 끝. 언제 받아온 값인지 바로 아래에 적는다. */}
+        <div className="ml-auto flex flex-col items-end gap-1 shrink-0">
+          <RefreshButton ocid={c.ocid} label="전투력·스케줄러 새로고침" />
+          <span className="text-[11px] text-zinc-500 text-right">
+            {refreshedAt ? (
+              <>
+                최근 새로고침 {agoStr(refreshedAt)}
+                <span className="text-zinc-400"> ({kstTimeStr(refreshedAt)})</span>
+              </>
+            ) : (
+              "아직 조회한 적 없음"
+            )}
+          </span>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        {/* 어느 쪽을 보고 있는지가 테두리와 배경으로 드러나야 한다 */}
-        <Link
-          href={`/me/characters/${ocid}`}
-          aria-current={view === "current" ? "page" : undefined}
-          className={`rounded-md border px-3 py-1 ${view === "current" ? "border-orange-400 bg-orange-50 font-medium text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-200" : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300"}`}
-        >
-          이번 주
-        </Link>
-        <Link
-          href={`/me/characters/${ocid}?view=lastweek`}
-          aria-current={view === "lastweek" ? "page" : undefined}
-          className={`rounded-md border px-3 py-1 ${view === "lastweek" ? "border-orange-400 bg-orange-50 font-medium text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-200" : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300"}`}
-        >
-          지난주 ({lastWednesdayKst()})
-        </Link>
-        {snap?.date && <span className="text-zinc-500">스냅샷 기준일 {snap.date.slice(0, 10)}</span>}
-      </div>
-
-      {view === "current" &&
-        (world ? (
-          <RemainingBossList picks={allPicks} cleared={clearedKeys} cap={cap} priceDate={priceDate} hasSnapshot={!!latest} ocid={ocid} />
-        ) : (
-          <div className="card text-sm text-zinc-600">월드 정보가 없어 보스 설정을 쓸 수 없습니다. 내 캐릭터에서 목록 동기화를 실행하세요.</div>
-        ))}
+      {world ? (
+        <RemainingBossList picks={allPicks} cleared={clearedKeys} cap={cap} priceDate={priceDate} hasSnapshot={!!latest} ocid={ocid} />
+      ) : (
+        <div className="card text-sm text-zinc-600">월드 정보가 없어 보스 설정을 쓸 수 없습니다. 내 캐릭터에서 목록 동기화를 실행하세요.</div>
+      )}
 
       {!snap ? (
         <>
-          <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
+          <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요.</div>
           {pickedBosses}
         </>
       ) : (
@@ -136,8 +137,8 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
               priceDate={priceDate}
               partyOf={(b, d) => partyOf(c.id, b, d)}
               weekly={`${snap.weeklyClearCount}/${snap.weeklyLimit}`}
-              title={view === "current" ? "일간·월간 보스" : "보스"}
-              cycles={view === "current" ? ["bossDaily", "bossMonthly"] : ["bossWeekly", "bossDaily", "bossMonthly"]}
+              title="일간·월간 보스"
+              cycles={["bossDaily", "bossMonthly"]}
             />
             <ContentsList title="일간 콘텐츠" items={snap.daily} />
             <ContentsList title="주간 콘텐츠" items={snap.weekly} />

@@ -3,7 +3,7 @@ import { crystalPrice, crystalCycle, isWeeklyCrystal, priceChangeDates, weeklyCa
 import { tierOf, tierLabel, TIER_MAP, GRADE_COLOR } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
 import { parseBossKey, normalizeBossList } from "@/lib/maple/bossKey";
-import { kstDateStr, weekStartOf, lastWednesdayKst, addDays } from "@/lib/maple/kst";
+import { kstDateStr, weekStartOf, lastWednesdayKst, addDays, kstTimeStr, agoStr } from "@/lib/maple/kst";
 
 describe("crystalPrice", () => {
   it("날짜 분기: 9/17 전후", () => {
@@ -105,5 +105,28 @@ describe("kst", () => {
     const thuKst = Date.parse("2026-09-17T01:00:00+09:00");
     expect(lastWednesdayKst(thuKst)).toBe("2026-09-16");
     expect(addDays("2026-09-30", 1)).toBe("2026-10-01");
+  });
+
+  it("kstTimeStr: DB 의 UTC 시각을 KST 로 (오늘이면 시:분만)", () => {
+    const now = Date.parse("2026-09-15T20:00:00+09:00"); // KST 9/15 20:00
+    // 같은 날(KST) → 시:분만
+    expect(kstTimeStr("2026-09-15T06:32:00.000Z", now)).toBe("15:32");
+    // 다른 날 → 월-일 시:분
+    expect(kstTimeStr("2026-09-13T22:05:00.000Z", now)).toBe("09-14 07:05");
+    // UTC 날짜가 하루 전이라도 KST 로는 오늘이 될 수 있다
+    expect(kstTimeStr("2026-09-14T16:10:00.000Z", now)).toBe("01:10");
+    expect(kstTimeStr(null, now)).toBeNull();
+    expect(kstTimeStr("이상한 값", now)).toBeNull();
+  });
+
+  it("agoStr: 경과 시간", () => {
+    const now = Date.parse("2026-09-15T12:00:00Z");
+    expect(agoStr("2026-09-15T11:59:30Z", now)).toBe("방금");
+    expect(agoStr("2026-09-15T11:55:00Z", now)).toBe("5분 전");
+    expect(agoStr("2026-09-15T09:00:00Z", now)).toBe("3시간 전");
+    expect(agoStr("2026-09-13T12:00:00Z", now)).toBe("2일 전");
+    // 미래거나 값이 없으면 없음
+    expect(agoStr("2026-09-15T12:05:00Z", now)).toBeNull();
+    expect(agoStr(null, now)).toBeNull();
   });
 });
