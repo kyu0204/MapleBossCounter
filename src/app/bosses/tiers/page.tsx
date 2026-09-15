@@ -8,6 +8,8 @@ import { bossShort, GRADE_COLOR } from "@/lib/maple/bossMeta";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
+import { DropList } from "@/components/boss/DropList";
+import { dropsOf, DROP_SETS, DROP_SET_STYLE, DROPS_META } from "@/lib/maple/drops";
 
 export const metadata: Metadata = {
   title: "보스 티어표",
@@ -43,7 +45,16 @@ export default function TiersPage() {
               ★
             </span>
           ))}
+          <span className="ml-2">드롭</span>
+          {DROP_SETS.map((s) => (
+            <span key={s} className={`rounded border px-1.5 py-0.5 text-[11px] font-bold ${DROP_SET_STYLE[s]}`}>
+              {s}
+            </span>
+          ))}
         </div>
+        <p className="text-[11px] text-zinc-400">
+          드롭은 확인된 세트 장신구·방어구만 표시합니다. 소울·훈장 같은 공통 보상과 출처를 확인하지 못한 보스는 비어 있습니다. (기준 {DROPS_META.updated})
+        </p>
       </div>
 
       <div className="card overflow-x-auto">
@@ -57,19 +68,23 @@ export default function TiersPage() {
                 <td className="py-2.5">
                   <div className="flex flex-wrap gap-2">
                     {keys
-                      .map((k) => ({ k, ref: parseBossKey(k)!, price: crystalPrice(parseBossKey(k)!.boss, parseBossKey(k)!.diff, priceDate) }))
+                      .map((k) => ({ k, ref: parseBossKey(k)!, price: crystalPrice(parseBossKey(k)!.boss, parseBossKey(k)!.diff, priceDate), drops: dropsOf(parseBossKey(k)!.boss, parseBossKey(k)!.diff) }))
                       .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
-                      .map(({ k, ref, price }) => (
-                        <span key={k} className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 pl-1 pr-2 py-1">
-                          <BossIcon boss={ref.boss} diff={ref.diff} size={44} showDiff={false} />
-                          <span className="leading-tight">
-                            <span className="flex items-center gap-1">
+                      .map(({ k, ref, price, drops }) => (
+                        <div
+                          key={k}
+                          className={`flex items-center gap-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 p-1.5 ${drops.length ? "flex-1 min-w-[17rem]" : "min-w-[10rem]"}`}
+                        >
+                          <BossIcon boss={ref.boss} diff={ref.diff} size={72} showDiff={false} />
+                          <div className="flex flex-col gap-1 min-w-0 flex-1">
+                            <div className="flex items-baseline gap-1.5 leading-tight">
                               <DifficultyBadge diff={ref.diff} size="xs" solid />
-                              <span className="font-medium">{bossShort(ref.boss)}</span>
-                            </span>
-                            <span className="block text-[11px] text-zinc-500">{price != null ? fmtPower(price) : "가격 미확인"}</span>
-                          </span>
-                        </span>
+                              <span className="font-medium truncate">{bossShort(ref.boss)}</span>
+                              <span className="ml-auto text-[11px] text-zinc-500 whitespace-nowrap">{price != null ? fmtPower(price) : "가격 미확인"}</span>
+                            </div>
+                            <DropList boss={ref.boss} diff={ref.diff} />
+                          </div>
+                        </div>
                       ))}
                   </div>
                 </td>

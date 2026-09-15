@@ -42,8 +42,9 @@ export function BossIcon({
       title={bossFullLabel(boss, diff)}
     >
       {file ? (
+        // 원본 160×153 아트워크. 축소해서 쓰므로 nearest-neighbor(pixelated) 를 쓰면 오히려 계단현상이 생긴다.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={file} alt="" className="w-full h-full object-contain [image-rendering:pixelated]" loading="lazy" />
+        <img src={file} alt="" width={160} height={153} className="w-full h-full object-contain" loading="lazy" decoding="async" />
       ) : (
         <span className="font-bold leading-none" style={{ fontSize: Math.max(10, size * 0.4) }}>
           {short.slice(0, 2)}

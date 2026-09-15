@@ -67,6 +67,7 @@ node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 
   - `TierStars` — 티어를 **등급 이름 없이 색 있는 별**로만 표시 (금 `#F0B429` / 은 `#94A3B8` / 동 `#C2703D` / 납 `#6B7280`).
     색을 못 쓰는 `<option>`·`title` 에는 `tierLabel()` 이 `🟡★★★★★` 형태 텍스트를 준다.
   - `BossIcon` / `BossChip` — 보스 아이콘, 아이콘 + 난이도 배지 + 약칭 + 실수령.
+  - `DropList` / `DropChip` — 보스 드롭 아이템 칩 (여명/칠흑/에테르넬 세트별 색).
 - `deploy/` — EC2 셋업·배포·nginx·DB 백업 스크립트. `ecosystem.config.js` — pm2.
 
 ### 갈 보스 설정
@@ -83,6 +84,17 @@ node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 
 
 > 이미지는 나무위키 보스 문서에서 수집했고 원저작권은 넥슨에 있다. 재배포·상업적 이용(광고 게재 포함)의 책임은 배포자에게 있다.
 > 아이콘 파일이 없어도 동작한다 — `BossIcon` 이 난이도 색 + 약칭 배지(`하세렌`, `카더스크`)로 자동 폴백한다.
+
+원본 해상도는 **160×153**. 축소해서 쓰므로 `image-rendering` 은 기본값(부드러운 축소)을 쓴다 — `pixelated` 은 확대용이라 축소에 쓰면 계단현상이 생긴다.
+CSS 80px 까지는 2배 DPI 화면에서도 선명하다. 그보다 크게 쓰려면 더 높은 해상도 소스가 필요하다 (maplestory.io 몹 아이콘이 496×504 이지만 장당 약 220KB, 33장이면 7MB 라 그대로는 부적합 — webp 변환이 선행돼야 한다).
+
+### 보스 드롭
+
+`src/data/boss_drops.json`. 키는 `"보스명 난이도"`, 값은 대표 드롭 목록.
+
+- **확인된 세트 장신구·방어구만** 넣는다. 소울·훈장·의지의 결정처럼 모든 보스가 공통으로 주는 것과, 출처를 확인하지 못한 하위 일간 보스는 **비워 둔다**. 추측으로 채우지 않는다.
+- `tests/unit/drops.test.ts` 가 키가 가격표·티어표에 실재하는지, 세트 색이 정의됐는지, 금별 보스에 누락이 없는지 검사한다.
+- 패치로 바뀌므로 갱신 시 `_meta.updated` 와 `sources` 를 같이 고칠 것.
 
 ## 운영 (EC2 Ubuntu)
 
