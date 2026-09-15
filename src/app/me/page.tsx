@@ -8,7 +8,7 @@ import { loadPlanConfig } from "@/services/planInput";
 import { partyPicksByCharacter } from "@/services/partyLink";
 import { normalizeBossList, bossKey } from "@/lib/maple/bossKey";
 import { mergePicks, toPickList, splitByCleared, picksTotals } from "@/lib/maple/bossPicks";
-import { aggregateFixedRewards } from "@/lib/maple/rewards";
+import { aggregateFixedRewards, isAccountWideReward } from "@/lib/maple/rewards";
 import { crystalPrice } from "@/lib/maple/prices";
 import { partySizeLookup } from "@/services/partyLink";
 import { fmtPower } from "@/lib/maple/format";
@@ -83,8 +83,11 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
     (s, x) => ({ total: s.total + (x.rev ?? 0), earned: s.earned + x.earned, remaining: s.remaining + x.remainingCount }),
     { total: 0, earned: 0, remaining: 0 },
   );
-  // 확정 보상도 캐릭터를 가로질러 합친다. 조각·큐브는 보스마다 인원으로 나눈 뒤 더해진다.
-  const grandRewards = aggregateFixedRewards(cards.flatMap((x) => x.picks), priceDate);
+  /**
+   * 확정 보상도 캐릭터를 가로질러 합친다. 조각·큐브는 보스마다 인원으로 나눈 뒤 더해진다.
+   * 계정에서 같이 쓰는 것(주문의 흔적·큐브)만 남긴다. 캐릭터에 묶인 재료는 상세에서 본다.
+   */
+  const grandRewards = aggregateFixedRewards(cards.flatMap((x) => x.picks), priceDate).filter((r) => isAccountWideReward(r.name));
 
   /**
    * 월간 보스(검은 마법사)는 고르는 대상이 아니라 스케줄러에 뜨는 그대로 센다.
@@ -107,6 +110,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const monthlyRewards = (() => {
     const acc = new Map(grandRewards.map((r) => [r.name, { ...r, total: r.total * WEEKS_PER_MONTH }]));
     for (const r of aggregateFixedRewards(monthlyPicks, priceDate)) {
+      if (!isAccountWideReward(r.name)) continue;
       const hit = acc.get(r.name);
       if (hit) hit.total += r.total;
       else acc.set(r.name, { ...r });
@@ -231,7 +235,9 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                 </div>
               </div>
             )}
-            <p className="text-[11px] text-zinc-400">표시 중인 캐릭터 기준 · 고른 보스와 설정한 인원으로 계산. 조각·큐브는 인원으로 나눈 뒤 합한 값.</p>
+            <p className="text-[11px] text-zinc-400">
+              표시 중인 캐릭터 기준 · 고른 보스와 설정한 인원으로 계산. 큐브는 인원으로 나눈 뒤 합한 값. 계정에서 같이 쓰는 주문의 흔적·큐브만 셉니다 (솔 에르다·조각류 등 캐릭터별 재료는 상세에서).
+            </p>
           </div>
         )}
       </div>

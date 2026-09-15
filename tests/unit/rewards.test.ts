@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import rawRewards from "@/data/boss_rewards.json";
-import { rewardsFor, rewardRowsFor, hasRewardsFor, cubesChangeOn, REWARDS_META, ICON_BOX, isSharedReward, rewardAmount, aggregateFixedRewards } from "@/lib/maple/rewards";
+import { rewardsFor, rewardRowsFor, hasRewardsFor, cubesChangeOn, REWARDS_META, ICON_BOX, isSharedReward, isAccountWideReward, rewardAmount, aggregateFixedRewards } from "@/lib/maple/rewards";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 
 interface Entry {
@@ -371,6 +371,42 @@ describe("파티 분배", () => {
     }
     // 부분집합에만 있는 이름이 전체에서 빠지지 않는다
     for (const name of [...Object.keys(d), ...Object.keys(r)]) expect(a[name], name).toBeDefined();
+  });
+
+  it("여러 캐릭터 합계에는 주문의 흔적과 큐브만 낸다", () => {
+    for (const n of ["주문의 흔적", "메멘토 실버 큐브", "메멘토 골드 큐브", "메멘토 브론즈 에디셔널 큐브"]) {
+      expect(isAccountWideReward(n), n).toBe(true);
+    }
+    // 캐릭터에 묶인 재료는 합쳐 봐야 쓸 수 없다
+    for (const n of [
+      "솔 에르다의 기운",
+      "뒤엉킨 흉수의 고리 조각",
+      "이어진 고대의 결의 조각",
+      "뒤틀린 갈망의 편린",
+      "나비날개 물방울석",
+      "코브웹 물방울석",
+      "뒤틀린 낙인의 영혼석",
+      "특수형 에너지 코어",
+      "영롱한 달빛 포션",
+      "생명의 보스 반지 상자",
+    ]) {
+      expect(isAccountWideReward(n), n).toBe(false);
+    }
+  });
+
+  it("합계에 남는 것은 주문의 흔적과 큐브뿐", () => {
+    const picked = [
+      { boss: "루시드", diff: "hard", party: 1 },
+      { boss: "카링", diff: "easy", party: 1 },
+      { boss: "찬란한 흉성", diff: "normal", party: 1 },
+      { boss: "검은 마법사", diff: "hard", party: 1 },
+    ] as const;
+    const all = aggregateFixedRewards([...picked], AFTER);
+    const kept = all.filter((r) => isAccountWideReward(r.name)).map((r) => r.name).sort();
+    expect(kept).toEqual(["메멘토 골드 큐브", "메멘토 브론즈 에디셔널 큐브", "메멘토 실버 큐브", "주문의 흔적"]);
+    // 걸러진 쪽에는 캐릭터 재료가 실제로 들어 있다
+    const dropped = all.filter((r) => !isAccountWideReward(r.name)).map((r) => r.name);
+    expect(dropped).toEqual(expect.arrayContaining(["솔 에르다의 기운", "나비날개 물방울석"]));
   });
 
   it("확정 보상만 합산한다 (확률 드롭은 제외)", () => {

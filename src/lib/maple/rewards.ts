@@ -110,6 +110,23 @@ export function isSharedReward(name: string): boolean {
   return /조각|편린|큐브/.test(name);
 }
 
+/**
+ * 여러 캐릭터를 합친 화면에 낼 항목인지.
+ *
+ * 주문의 흔적과 메멘토 큐브만 남긴다. 둘은 계정에서 같이 쓰는 재화라 캐릭터를
+ * 가로질러 더한 값이 그대로 쓸 수 있는 양이 된다.
+ *
+ * 솔 에르다의 기운, 조각·편린류, 물방울석·영혼석·에너지 코어 같은 것은 그 캐릭터에
+ * 묶인 성장 재료다. 합쳐 봐야 어디에도 못 쓰는 숫자라 오히려 오해를 부른다.
+ * 캐릭터별 값은 캐릭터 상세에서 본다.
+ *
+ * 뺄 것을 열거하는 대신 남길 것만 적는다. 새 보상이 생겨도 조용히 합계에
+ * 섞여 들지 않는다.
+ */
+export function isAccountWideReward(name: string): boolean {
+  return name === "주문의 흔적" || name.includes("큐브");
+}
+
 export interface RewardAmount {
   /** 화면 표기. 범위면 양끝을 각각 나눈 "2~5" 꼴 */
   text: string;
