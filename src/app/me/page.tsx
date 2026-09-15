@@ -20,6 +20,12 @@ export const metadata = { title: "내 캐릭터" };
 /** 이 레벨 미만 캐릭터는 기본 숨김 (?all=1 로 전체 보기). 수동 숨김(hidden)과는 별개. */
 export const DASHBOARD_MIN_LEVEL = Number(process.env.DASHBOARD_MIN_LEVEL ?? 260);
 
+/**
+ * 월 환산에 쓰는 주 수. 실제 한 달은 약 4.35주지만 곱셈이 눈에 보이도록 4주로 둔다.
+ * 실적이 아니라 단순 환산치라서 정확도보다 계산이 뻔한 편이 낫다.
+ */
+const WEEKS_PER_MONTH = 4;
+
 export default async function MePage({ searchParams }: PageProps<"/me">) {
   const userId = await requireUserId();
   const key = nexonKeyStatus(userId);
@@ -164,6 +170,18 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
           </div>
         </section>
       ))}
+
+      {grand.total > 0 && (
+        <div className="card flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="text-xs text-zinc-500">월 환산 수익</span>
+          <b className="text-xl tabular-nums">{fmtPower(grand.total * WEEKS_PER_MONTH)}</b>
+          <span className="text-xs text-zinc-500">
+            이번 주 총 수익 {fmtPower(grand.total)} × {WEEKS_PER_MONTH}주
+          </span>
+          {/* 실제로 번 돈이 아니라 곱셈 결과다. 그렇게 읽히지 않게 못박아 둔다. */}
+          <span className="text-[11px] text-zinc-400 ml-auto">단순 환산치입니다. 월간 보스(검은 마법사)는 빠져 있습니다.</span>
+        </div>
+      )}
     </div>
   );
 }
