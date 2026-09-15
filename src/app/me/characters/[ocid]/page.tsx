@@ -13,7 +13,7 @@ import { BossClearTable } from "@/components/character/BossClearTable";
 import { RevenueSummary } from "@/components/character/RevenueSummary";
 import { ContentsList } from "@/components/character/ContentsList";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
-import { BossPlanList } from "@/components/character/BossPlanList";
+import { RemainingBossList, PickedBossList } from "@/components/character/BossPlanList";
 import { loadCharConfig, loadPlanConfig } from "@/services/planInput";
 import { partyPicksByCharacter } from "@/services/partyLink";
 import { normalizeBossList, bossKey } from "@/lib/maple/bossKey";
@@ -58,6 +58,19 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
       return { key: bossKey(b.boss, b.diff), boss: b.boss, diff: b.diff, value: price == null ? 0 : Math.floor(price / party) };
     });
 
+  // 스케줄러 데이터가 없어도 고르기는 할 수 있어야 하므로 양쪽 분기에서 같은 것을 쓴다.
+  const pickedBosses =
+    view === "current" && world ? (
+      <PickedBossList
+        picks={allPicks}
+        cleared={clearedKeys}
+        cap={cap}
+        priceDate={priceDate}
+        extraCleared={extraCleared}
+        settings={{ ocid, cap, defaultParty: planDefaultParty, initial: savedBosses, partyPicks, registered: registeredKeys, priceDate }}
+      />
+    ) : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-4">
@@ -93,25 +106,21 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
 
       {view === "current" &&
         (world ? (
-          <BossPlanList
-            picks={allPicks}
-            cleared={clearedKeys}
-            cap={cap}
-            priceDate={priceDate}
-            hasSnapshot={!!latest}
-            extraCleared={extraCleared}
-            settings={{ ocid, cap, defaultParty: planDefaultParty, initial: savedBosses, partyPicks, registered: registeredKeys, priceDate }}
-          />
+          <RemainingBossList picks={allPicks} cleared={clearedKeys} cap={cap} priceDate={priceDate} hasSnapshot={!!latest} ocid={ocid} />
         ) : (
           <div className="card text-sm text-zinc-600">월드 정보가 없어 보스 설정을 쓸 수 없습니다. 내 캐릭터에서 목록 동기화를 실행하세요.</div>
         ))}
 
       {!snap ? (
-        <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
+        <>
+          <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
+          {pickedBosses}
+        </>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
           <div className="space-y-4">
-            {/* 주간 보스는 위 "이번 주 갈 보스" 가 고른 것만 보여준다. 여기는 고르는 대상이 아닌 일간·월간만. */}
+            {pickedBosses}
+            {/* 스케줄러가 주는 목록. 주간은 위에서 고른 것만 보여주므로 여기는 일간·월간만. */}
             <BossClearTable
               bosses={snap.bosses}
               priceDate={priceDate}
