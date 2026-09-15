@@ -12,7 +12,6 @@ export async function Nav() {
         </Link>
         <nav className="flex items-center gap-4 text-zinc-600 dark:text-zinc-300">
           <Link href="/bosses/tiers">티어표</Link>
-          <Link href="/bosses/crystals">결정 가격</Link>
           <Link href="/board">모집</Link>
           <Link href="/lookup">조회</Link>
           {user && (

@@ -22,8 +22,8 @@ export default async function Home() {
               시작하기
             </Link>
           )}
-          <Link href="/bosses/crystals" className="btn-ghost">
-            결정 가격표
+          <Link href="/bosses/tiers" className="btn-ghost">
+            보스 티어표
           </Link>
           <Link href="/board" className="btn-ghost">
             파티 모집
