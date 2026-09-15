@@ -1,5 +1,5 @@
 import type { Difficulty } from "@/lib/maple/bossKey";
-import { bossFullLabel, bossShort, DIFF_STYLE } from "@/lib/maple/bossMeta";
+import { bossFullLabel, bossName, DIFF_STYLE } from "@/lib/maple/bossMeta";
 import { tierOf } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
 import { BossIcon } from "./BossIcon";
@@ -44,7 +44,7 @@ export function BossChip({
           {pinned && <span title="고정 픽">📌</span>}
           {locked && <span title="파티 등록에서 자동 포함">🔒</span>}
           <DifficultyBadge diff={diff} size="xs" solid />
-          {bossShort(boss)}
+          {bossName(boss)}
           {party > 1 && <span className="font-normal opacity-70">{party}인</span>}
         </span>
         <span className="flex items-center gap-1.5 text-[11px] opacity-80">
@@ -59,7 +59,7 @@ export function BossChip({
       </span>
       {right}
       {onRemove && (
-        <button type="button" onClick={onRemove} className="ml-0.5 opacity-50 hover:opacity-100 text-sm leading-none" aria-label={`${bossShort(boss)} 제거`}>
+        <button type="button" onClick={onRemove} className="ml-0.5 opacity-50 hover:opacity-100 text-sm leading-none" aria-label={`${bossName(boss)} 제거`}>
           ×
         </button>
       )}

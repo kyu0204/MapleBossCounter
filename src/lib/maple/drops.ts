@@ -13,7 +13,7 @@ import rawItems from "@/data/boss_reward_items.json";
 import { type Difficulty } from "./bossKey";
 import { tierOf } from "./tiers";
 
-export type DropSet = "여명" | "칠흑" | "에테르넬" | "기타";
+export type DropSet = "여명" | "칠흑" | "광휘" | "에테르넬" | "기타";
 
 export interface RewardItem {
   name: string;
@@ -68,9 +68,21 @@ const SET_BY_NAME: { key: string; set: DropSet }[] = (() => {
   return out;
 })();
 
+/**
+ * 광휘의 보스 세트 6종. 2024-07-18 MILESTONE 2차로 나온 최상위 장신구 세트로,
+ * 세렌·칼로스·카링을 뺀 어센틱포스 보스의 하드(카오스) 이상에서만 뜬다.
+ * 이름에 '광휘' 가 안 들어가서 이름만 보고는 알 수 없다.
+ * 출처: 나무위키 '광휘의 보스 세트' 문서의 세트 효과표.
+ */
+const RADIANT_SET = ["근원의 속삭임", "황홀한 악몽", "죽음의 맹세", "불멸의 유산", "오만의 원죄", "굶주리는 핏빛 원혼"].map(norm);
+
 export function setOfItem(name: string): DropSet | null {
   const t = norm(name);
+  // 세트 이름이 아이템명에 그대로 들어가는 것들. 상자·조각·선택 상자까지 한 세트로 묶는다.
   if (t.includes("에테르넬")) return "에테르넬";
+  if (t.includes("칠흑")) return "칠흑";
+  if (t.includes("여명")) return "여명";
+  if (RADIANT_SET.includes(t)) return "광휘";
   for (const { key, set } of SET_BY_NAME) if (key === t) return set;
   for (const { key, set } of SET_BY_NAME) if (key.includes(t) || t.includes(key)) return set;
   return null;
@@ -79,10 +91,12 @@ export function setOfItem(name: string): DropSet | null {
 export const DROP_SET_STYLE: Record<DropSet, string> = {
   여명: "bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900",
   칠흑: "bg-violet-50 text-violet-900 border-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:border-violet-900",
+  광휘: "bg-cyan-50 text-cyan-900 border-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-100 dark:border-cyan-800",
   에테르넬: "bg-yellow-50 text-yellow-900 border-yellow-300 dark:bg-yellow-950/40 dark:text-yellow-100 dark:border-yellow-800",
   기타: "bg-zinc-50 text-zinc-700 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800",
 };
-export const DROP_SETS: DropSet[] = ["여명", "칠흑", "에테르넬"];
+/** 범례에 내는 순서 = 세트가 나온 순서 */
+export const DROP_SETS: DropSet[] = ["여명", "칠흑", "광휘", "에테르넬"];
 
 // ---------- 보상 조회 ----------
 

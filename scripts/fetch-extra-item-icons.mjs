@@ -50,6 +50,10 @@ const SPECS = [
   // 솔 에르다의 기운: 문서에 희미한(10)·보통(200)·짙은(500) 3종이 있다. 보스 보상은 충전량 표기라 보통 등급 아이콘을 쓴다.
   { name: "솔 에르다의 기운", doc: "솔 에르다", alt: "솔 에르다의 기운 (200)" },
 
+  // 검은 마법사 전용. 다른 보스 문서에는 없다.
+  { name: "창세의 뱃지", bossDoc: "검은 마법사", alt: "창세의 뱃지" },
+  { name: "익셉셔널 해머 (벨트)", bossDoc: "검은 마법사", alt: "익셉셔널 해머 (벨트)" },
+
   // --- 아래는 없어도 화면에 아이콘이 나온다 (더 정확한 아이콘으로 바꿔 주는 것뿐) ---
   // 보스 문서에는 무기·방어구가 "○○ 장비 상자" 아이콘 하나로 묶여 있어 지금은 둘이 같은 그림을 쓴다
   { name: "아케인셰이드 방어구 상자", bossDoc: "더스크", alt: "item 아케인셰이드 방어구 ..." },
@@ -161,7 +165,7 @@ function saveJson() {
             "보스 인포박스에 아이콘이 없는 소비·교환 아이템을 따로 모은 것이다.",
             "메멘토 큐브는 큐브 문서에 접두어 없이 '실버/골드/브론즈 에디셔널 큐브' 로 적혀 있다.",
             "영롱한 달빛 포션과 에리온의 조각은 나무위키에 아이콘 카드가 없어 여기에 없다 (짧은 라벨로 표시).",
-            "i.namu.wiki 는 연속 다운로드에 403(code:8)을 준다. 이미 받은 항목은 건너뛰므로 실패하면 나중에 다시 실행하면 된다.",
+            "i.namu.wiki 는 연속 다운로드에 403(code:8)을 주고 오래 막아 두기도 한다. 1분 안에 못 받으면 접고 손으로 받을 목록을 낸다.",
             "아이콘 원저작권은 넥슨. public/items 에 자체 호스팅하며 런타임에 외부 요청을 하지 않는다.",
             "재수집: node scripts/fetch-extra-item-icons.mjs",
           ],
@@ -174,37 +178,45 @@ function saveJson() {
   );
 }
 
-/** 라운드마다 남은 것만 다시 시도한다. 간격은 점점 벌린다. */
-const ROUNDS = [0, 60, 300, 900];
-let todo = matched.filter((it) => !out[it.name]);
-for (const [round, waitSec] of ROUNDS.entries()) {
-  if (!todo.length) break;
-  if (waitSec) {
-    console.log(`\n${todo.length}개 남음 — ${waitSec}초 쉬고 재시도 (라운드 ${round + 1}/${ROUNDS.length})`);
-    await sleep(waitSec * 1000);
+/**
+ * 한 번만, 1분 안에 끝낸다.
+ * i.namu.wiki 는 연속 다운로드에 403(code:8)을 주고 몇 시간씩 막아 두기도 한다.
+ * 기다리며 재시도해 봐야 소용이 없으므로, 안 되면 바로 접고 손으로 받을 목록을 낸다.
+ */
+const DEADLINE_MS = 60_000;
+const startedAt = Date.now();
+const left = () => DEADLINE_MS - (Date.now() - startedAt);
+
+const todo = matched.filter((it) => !out[it.name]);
+const failed = [];
+for (const it of todo) {
+  if (left() <= 0) { failed.push(it); continue; }
+  try {
+    const res = await fetch(it.src, {
+      headers: { "User-Agent": UA, Referer: "https://namu.wiki/" },
+      signal: AbortSignal.timeout(Math.min(10_000, Math.max(1_000, left()))),
+    });
+    if (!res.ok) { failed.push(it); console.log(`  실패 ${it.name} HTTP ${res.status}`); continue; }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const ct = res.headers.get("content-type") ?? "";
+    const ext = ct.includes("webp") ? ".webp" : ct.includes("gif") ? ".gif" : ".png";
+    const file = `${slug(it.name)}${ext}`;
+    writeFileSync(path.join(OUT_DIR, file), buf);
+    out[it.name] = { file: `/items/${file}`, ...dim(buf), source: it.source };
+    saveJson(); // 중간에 막혀도 받은 만큼은 남는다
+    console.log(`  받음 ${it.name} (${buf.length}바이트)`);
+  } catch (e) {
+    failed.push(it);
+    console.log(`  예외 ${it.name} ${e?.name ?? e}`);
   }
-  const failed = [];
-  for (const it of todo) {
-    try {
-      const res = await fetch(it.src, { headers: { "User-Agent": UA, Referer: "https://namu.wiki/" }, signal: AbortSignal.timeout(25000) });
-      if (!res.ok) { failed.push(it); console.log(`  실패 ${it.name} HTTP ${res.status}`); await sleep(1500); continue; }
-      const buf = Buffer.from(await res.arrayBuffer());
-      const ct = res.headers.get("content-type") ?? "";
-      const ext = ct.includes("webp") ? ".webp" : ct.includes("gif") ? ".gif" : ".png";
-      const file = `${slug(it.name)}${ext}`;
-      writeFileSync(path.join(OUT_DIR, file), buf);
-      out[it.name] = { file: `/items/${file}`, ...dim(buf), source: it.source };
-      saveJson(); // 중간에 막혀도 받은 만큼은 남는다
-      console.log(`  받음 ${it.name} (${buf.length}바이트)`);
-    } catch (e) {
-      failed.push(it);
-      console.log(`  예외 ${it.name} ${e?.name ?? e}`);
-    }
-    await sleep(1500);
-  }
-  todo = failed;
+  await sleep(300);
 }
-if (todo.length) console.log(`\n못 받은 ${todo.length}개: ${todo.map((t) => t.name).join(", ")}\n나중에 다시 실행하면 받은 것은 건너뛰고 이것만 시도한다.`);
+
+if (failed.length) {
+  console.log(`\n${Math.round((Date.now() - startedAt) / 1000)}초 안에 못 받은 ${failed.length}개. 브라우저로 열어 저장한 뒤`);
+  console.log(`node scripts/import-item-icons.mjs --from <받은 폴더> 로 넣어라.\n`);
+  for (const it of failed) console.log(`${it.name}\n  파일명: ${slug(it.name)}.png 또는 .webp (받은 형식대로)\n  주소: ${it.src}\n`);
+}
 
 saveJson();
 console.log(`\n${Object.keys(out).length}/${matched.length}개 보유 → public/items, ${OUT_JSON}`);

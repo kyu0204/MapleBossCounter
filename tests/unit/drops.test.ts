@@ -125,7 +125,23 @@ describe("아이콘·세트 표시", () => {
     expect(setOfItem("데이브레이크 펜던트")).toBe("여명");
     expect(setOfItem("고통의 근원")).toBe("칠흑");
     expect(setOfItem("놀라운 긍정의 혼돈 주문서 60%")).toBeNull();
-    for (const s of ["여명", "칠흑", "에테르넬", "기타"] as const) expect(DROP_SET_STYLE[s]).toContain("bg-");
+    for (const s of ["여명", "칠흑", "광휘", "에테르넬", "기타"] as const) expect(DROP_SET_STYLE[s]).toContain("bg-");
+  });
+
+  it("칠흑 장신구 상자류는 이름이 달라도 모두 칠흑이다", () => {
+    for (const n of ["혼돈의 칠흑 장신구 상자", "메이린의 칠흑 장신구 상자", "칠흑의 보스 세트"]) {
+      expect(setOfItem(n), n).toBe("칠흑");
+    }
+    // 창세의 뱃지는 이름에 '칠흑' 이 없지만 칠흑 세트 장비다 (검은 마법사 드롭)
+    expect(setOfItem("창세의 뱃지")).toBe("칠흑");
+  });
+
+  it("광휘의 보스 세트 6종이 광휘로 잡힌다", () => {
+    for (const n of ["근원의 속삭임", "황홀한 악몽", "죽음의 맹세", "불멸의 유산", "오만의 원죄", "굶주리는 핏빛 원혼"]) {
+      expect(setOfItem(n), n).toBe("광휘");
+    }
+    // 이름이 비슷한 다른 아이템까지 끌려오면 안 된다
+    expect(setOfItem("황홀한 환상의 단편")).not.toBe("광휘");
   });
 
   it("출처와 기준일이 기록돼 있다", () => {

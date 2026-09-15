@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateBossSelection, buildProfile, allocatePlan } from "@/lib/maple/planner";
 import { weeklyCandidates } from "@/lib/maple/prices";
-import { bossTag, bossShort, DIFF_SHORT, DIFF_LABEL, DIFF_SOLID } from "@/lib/maple/bossMeta";
+import { bossTag, bossName, bossShort, DIFF_SHORT, DIFF_LABEL, DIFF_SOLID } from "@/lib/maple/bossMeta";
 import { bossIconFile } from "@/components/boss/BossIcon";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 import { isWeeklyCrystal } from "@/lib/maple/prices";
@@ -51,13 +51,18 @@ describe("캐릭터 상세에서 고른 보스가 플래너 고정 픽으로 이
 });
 
 describe("보스 표기·아이콘", () => {
-  it("약칭 + 난이도 한 글자", () => {
-    expect(bossTag("선택받은 세렌", "hard")).toBe("하세렌");
-    expect(bossTag("더스크", "chaos")).toBe("카더스크");
-    expect(bossTag("스우", "extreme")).toBe("익스우");
-    expect(bossTag("가디언 엔젤 슬라임", "chaos")).toBe("카가엔슬");
-    expect(bossShort("림보")).toBe("림보");
+  it("보스 이름은 줄이지 않는다 — 난이도 + 풀 네임", () => {
+    expect(bossTag("선택받은 세렌", "hard")).toBe("하드 선택받은 세렌");
+    expect(bossTag("더스크", "chaos")).toBe("카오스 더스크");
+    expect(bossTag("스우", "extreme")).toBe("익스트림 스우");
+    expect(bossTag("가디언 엔젤 슬라임", "chaos")).toBe("카오스 가디언 엔젤 슬라임");
+    expect(bossName("선택받은 세렌")).toBe("선택받은 세렌");
     expect(DIFF_SHORT.easy).toBe("이");
+  });
+
+  it("약칭은 아이콘 안 글자처럼 좁은 자리에만 쓴다", () => {
+    expect(bossShort("선택받은 세렌")).toBe("세렌");
+    expect(bossShort("림보")).toBe("림보"); // 약칭이 없으면 이름 그대로
   });
   it("난이도 표기는 배지 한 벌로 통일 (한 글자 / 전체 / 색)", () => {
     for (const d of ["easy", "normal", "hard", "chaos", "extreme"] as const) {

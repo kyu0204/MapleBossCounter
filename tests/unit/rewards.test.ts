@@ -32,13 +32,14 @@ describe("boss_rewards.json 무결성", () => {
   });
 
   it("보상과 큐브 전부 아이콘이 있다 (이름은 마우스 오버용)", () => {
-    // 짧은 글자 라벨은 아이콘을 못 구했을 때의 대체 수단이다. 지금은 336건 전부 아이콘이 있다.
+    // 짧은 글자 라벨은 아이콘을 못 구했을 때의 대체 수단이다. 지금은 전부 아이콘이 있다.
     // 새 보상이 추가됐는데 아이콘이 없으면 여기서 잡힌다.
     const bad: string[] = [];
     for (const [boss, diffs] of Object.entries(file.bosses)) {
       for (const [diff, row] of Object.entries(diffs)) {
-        for (const r of row.rewards) if (!r.icon) bad.push(`${boss} ${diff} / ${r.name}`);
-        for (const c of Object.values(row.cubes ?? {})) if (!c.icon) bad.push(`${boss} ${diff} / ${c.name}`);
+        for (const r of [...row.rewards, ...Object.values(row.cubes ?? {})]) {
+          if (!r.icon) bad.push(`${boss} ${diff} / ${r.name}`);
+        }
       }
     }
     expect(bad).toEqual([]);
@@ -285,6 +286,25 @@ describe("표시 여부", () => {
   it("보상이 있는 행만 참", () => {
     expect(hasRewardsFor("유피테르", "hard", AFTER)).toBe(true);
     expect(hasRewardsFor("자쿰", "chaos", AFTER)).toBe(false); // 문서에 보상 섹션이 없는 구형 보스
+  });
+
+  it("월간 보스인 검은 마법사도 보상이 들어 있다", () => {
+    const hard = rewardRowsFor("검은 마법사", "hard", AFTER);
+    expect(hard.fixed.map((r) => r.name)).toEqual(
+      expect.arrayContaining(["주문의 흔적", "솔 에르다의 기운", "메멘토 실버 큐브", "메멘토 브론즈 에디셔널 큐브"]),
+    );
+    // 어둠의 흔적은 쓸모가 좁아 빼기로 했다
+    expect(hard.fixed.some((r) => r.name.includes("어둠의 흔적"))).toBe(false);
+    expect(hard.random.map((r) => r.name)).toContain("창세의 뱃지");
+    // 하드는 실측 확인값 그대로
+    expect(hard.fixed.find((r) => r.name === "메멘토 브론즈 에디셔널 큐브")!.count).toBe(24);
+    expect(hard.fixed.find((r) => r.name === "주문의 흔적")!.count).toBe(800);
+
+    const ext = rewardRowsFor("검은 마법사", "extreme", AFTER);
+    expect(ext.fixed.find((r) => r.name === "솔 에르다의 기운")!.count).toBe(600);
+    expect(ext.random.map((r) => r.name)).toContain("익셉셔널 해머 (벨트)");
+    // 익스트림은 큐브가 없다
+    expect(ext.fixed.some((r) => r.name.includes("큐브"))).toBe(false);
   });
   it("출처·기준일이 기록돼 있다", () => {
     expect(REWARDS_META.updated).toMatch(/^\d{4}-\d{2}-\d{2}$/);

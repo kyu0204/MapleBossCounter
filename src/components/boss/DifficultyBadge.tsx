@@ -1,11 +1,16 @@
 import type { Difficulty } from "@/lib/maple/bossKey";
 import { DIFF_LABEL, DIFF_SHORT, DIFF_SOLID, DIFF_STYLE } from "@/lib/maple/bossMeta";
 
+/**
+ * 배지는 한 글자(이/노/하/카/익)가 기본이라 가로로 퍼지면 어색하다.
+ * 글씨는 키우고 위아래 여백은 늘리되 좌우 여백과 최소 너비는 줄여 세로로 선 모양으로 맞춘다.
+ * full 일 때는 글자가 길어지므로 min-w 가 알아서 밀린다.
+ */
 const SIZE = {
-  xs: "text-[10px] px-1 py-px min-w-[16px]",
-  sm: "text-[11px] px-1.5 py-0.5 min-w-[20px]",
-  md: "text-xs px-2 py-0.5 min-w-[26px]",
-  lg: "text-sm px-2.5 py-1 min-w-[32px]",
+  xs: "text-[11px] px-1 py-[3px] min-w-[15px]",
+  sm: "text-xs px-1 py-1 min-w-[17px]",
+  md: "text-sm px-1.5 py-1 min-w-[21px]",
+  lg: "text-base px-1.5 py-1.5 min-w-[26px]",
 } as const;
 
 export interface DifficultyBadgeProps {

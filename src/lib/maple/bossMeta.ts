@@ -4,7 +4,10 @@
  */
 import type { Difficulty } from "./bossKey";
 
-/** 보스 약칭. 없으면 보스명 그대로. */
+/**
+ * 보스 약칭. 자리가 정말 좁은 곳(아이콘 폴백 글자)에서만 쓴다.
+ * 화면 표기의 기본은 풀 네임이다 — bossName() 을 쓴다.
+ */
 const SHORT: Record<string, string> = {
   매그너스: "매그",
   파풀라투스: "파풀",
@@ -24,6 +27,12 @@ const SHORT: Record<string, string> = {
   "검은 마법사": "검마",
 };
 
+/** 화면에 내는 보스 이름. 기본은 풀 네임이다. */
+export function bossName(boss: string): string {
+  return boss;
+}
+
+/** 약칭. 아이콘 안 글자처럼 두세 글자만 들어가는 자리에만 쓴다. */
 export function bossShort(boss: string): string {
   return SHORT[boss] ?? boss;
 }
@@ -88,10 +97,10 @@ export const DIFF_SOLID: Record<Difficulty, string> = {
 
 export { GRADE_COLOR, GRADE_MARK, type Grade } from "./tiers";
 
-/** "하세렌", "카더스크", "익스우" */
+/** "하드 선택받은 세렌". 보스 이름은 줄이지 않는다. */
 export function bossTag(boss: string, diff: Difficulty | string): string {
-  const d = DIFF_SHORT[diff as Difficulty] ?? "";
-  return `${d}${bossShort(boss)}`;
+  const d = DIFF_LABEL[diff as Difficulty] ?? String(diff);
+  return `${d} ${bossName(boss)}`;
 }
 
 /** "선택받은 세렌 하드" */

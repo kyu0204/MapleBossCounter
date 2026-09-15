@@ -4,7 +4,7 @@ import { crystalPrice } from "@/lib/maple/prices";
 import { kstDateStr } from "@/lib/maple/kst";
 import { fmtPower } from "@/lib/maple/format";
 import { parseBossKey } from "@/lib/maple/bossKey";
-import { bossShort, GRADE_COLOR } from "@/lib/maple/bossMeta";
+import { bossName, GRADE_COLOR } from "@/lib/maple/bossMeta";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
@@ -85,7 +85,7 @@ export default function TiersPage() {
                           <div className="flex flex-col gap-1 min-w-0 flex-1">
                             <div className="flex items-baseline gap-1.5 leading-tight">
                               <DifficultyBadge diff={ref.diff} size="xs" solid />
-                              <span className="font-medium truncate">{bossShort(ref.boss)}</span>
+                              <span className="font-medium truncate">{bossName(ref.boss)}</span>
                               <span className="ml-auto text-[11px] text-zinc-500 whitespace-nowrap">{price != null ? fmtPower(price) : "가격 미확인"}</span>
                             </div>
                             <DropList boss={ref.boss} diff={ref.diff} priceDate={priceDate} />

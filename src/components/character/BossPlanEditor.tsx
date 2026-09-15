@@ -5,7 +5,7 @@ import { setCharacterBosses } from "@/actions/planner";
 import { bossKey, parseBossKey, type Difficulty } from "@/lib/maple/bossKey";
 import { crystalPrice, isWeeklyCrystal, PRICE_TABLE } from "@/lib/maple/prices";
 import { tierOf } from "@/lib/maple/tiers";
-import { bossShort, DIFF_LABEL } from "@/lib/maple/bossMeta";
+import { bossName, DIFF_LABEL } from "@/lib/maple/bossMeta";
 import { fmtPower } from "@/lib/maple/format";
 import { BossChip } from "@/components/boss/BossChip";
 import { BossIcon } from "@/components/boss/BossIcon";
@@ -232,7 +232,7 @@ export function BossPlanEditor({ ocid, cap, defaultParty, initial, partyPicks, r
                   <BossIcon boss={row.boss} diff={selectedDiff ?? row.diffs[row.diffs.length - 1].diff} size={44} showDiff={false} />
                   <span className="flex flex-col gap-0.5 flex-1 min-w-0 leading-tight">
                     <span className="text-sm font-medium truncate" title={row.boss}>
-                      {bossShort(row.boss)}
+                      {bossName(row.boss)}
                     </span>
                     <TierStars tier={tierOf(row.boss, row.diffs[row.diffs.length - 1].diff)} size={10} />
                   </span>
