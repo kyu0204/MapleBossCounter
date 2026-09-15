@@ -3,7 +3,7 @@ import { fmtPower } from "@/lib/maple/format";
 import { tierOf } from "@/lib/maple/tiers";
 import { bossName } from "@/lib/maple/bossMeta";
 import { picksTotals, splitByCleared, type MergedPick } from "@/lib/maple/bossPicks";
-import { rewardRowsFor } from "@/lib/maple/rewards";
+import { rewardRowsFor, aggregateFixedRewards, ICON_BOX, type RewardTotal } from "@/lib/maple/rewards";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
@@ -21,9 +21,11 @@ function BossRow({ pick, ocid, done, priceDate }: { pick: MergedPick; ocid: stri
   const fixed = rewardRowsFor(pick.boss, pick.diff, priceDate).fixed;
   return (
     <li className={`flex items-center gap-3 py-2 ${done ? "opacity-50" : ""}`}>
-      <span className="w-5 shrink-0 text-center" title={done ? "이번 주 클리어 완료" : "아직 안 감"}>
-        {done ? "✅" : "⬜"}
-      </span>
+      {done && (
+        <span className="shrink-0" title="이번 주 클리어 완료">
+          ✅
+        </span>
+      )}
       <BossIcon boss={pick.boss} diff={pick.diff} size={64} showDiff={false} className={done ? "grayscale" : ""} />
       <span className="flex flex-col gap-0.5 min-w-0 w-40 sm:w-48 shrink-0 leading-tight">
         <span className="flex items-center gap-1.5 min-w-0">
@@ -42,9 +44,9 @@ function BossRow({ pick, ocid, done, priceDate }: { pick: MergedPick; ocid: stri
       <BossPartyInput ocid={ocid} bossKey={pick.key} party={pick.party} fromParty={pick.source === "party"} />
       <span className="flex flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-1 min-w-0">
         {fixed.length > 0 && (
-          <span className="flex flex-wrap items-center gap-1 justify-end" title="잡으면 무조건 주는 보상">
+          <span className="flex flex-wrap items-center gap-1 justify-end" title="잡으면 무조건 주는 보상 (조각·큐브는 인원수로 나눈 값)">
             {fixed.map((r) => (
-              <RewardChip key={r.name} reward={r} />
+              <RewardChip key={r.name} reward={r} party={pick.party} />
             ))}
           </span>
         )}
@@ -64,6 +66,54 @@ function BossRow({ pick, ocid, done, priceDate }: { pick: MergedPick; ocid: stri
         </span>
       </span>
     </li>
+  );
+}
+
+/** 합산한 보상 한 줄. 아이콘 + 전체 수량. */
+function RewardTotalRow({ item }: { item: RewardTotal }) {
+  return (
+    <li className="flex items-center gap-2" title={item.shared ? `${item.name} — 파티 인원으로 나눈 뒤 합한 값` : item.name}>
+      <span
+        className="inline-flex items-center justify-center rounded border border-zinc-200 dark:border-zinc-800 shrink-0"
+        style={{ width: ICON_BOX.w, height: ICON_BOX.h, boxSizing: "content-box" }}
+      >
+        {item.icon ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.icon} alt="" width={item.w} height={item.h} style={{ width: item.w, height: item.h }} className="object-contain shrink-0" loading="lazy" decoding="async" />
+        ) : (
+          <span className="text-[10px] font-medium leading-none text-center px-0.5">{item.short ?? item.name}</span>
+        )}
+      </span>
+      <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate flex-1 min-w-0">{item.name}</span>
+      <b className="text-sm tabular-nums shrink-0">{item.total.toLocaleString("ko-KR")}</b>
+    </li>
+  );
+}
+
+/**
+ * 남은 보스를 다 돌면 받는 것. 메소 실수령과 확정 보상 합계.
+ *
+ * 조각·큐브는 파티 한 몫이 떨어지므로 보스마다 인원수로 나눈 뒤 더한다.
+ * 먼저 더하고 나누면 실제보다 많아진다. 소수점은 버린다.
+ */
+function RemainingTotals({ picks, priceDate, meso }: { picks: MergedPick[]; priceDate: string; meso: number }) {
+  const items = aggregateFixedRewards(picks, priceDate);
+  return (
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+      <h3 className="text-xs font-medium text-zinc-500">남은 수익</h3>
+      <div className="flex items-baseline gap-1.5">
+        <b className="text-xl tabular-nums text-orange-600 dark:text-orange-400">{fmtPower(meso)}</b>
+        <span className="text-xs text-zinc-500">메소</span>
+      </div>
+      {items.length > 0 && (
+        <ul className="space-y-1 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+          {items.map((it) => (
+            <RewardTotalRow key={it.name} item={it} />
+          ))}
+        </ul>
+      )}
+      <p className="text-[11px] text-zinc-400">조각·큐브는 파티 인원으로 나눈 뒤 합한 값입니다. 소수점은 버립니다.</p>
+    </div>
   );
 }
 
@@ -103,12 +153,6 @@ export function RemainingBossList({
             {remaining.length}개 남음 / 고른 {picks.length}개{done.length > 0 && ` · ${done.length}개 완료`}
           </span>
         )}
-        {remaining.length > 0 && (
-          <span className="ml-auto flex items-baseline gap-1.5">
-            <span className="text-xs text-zinc-500">남은 수익</span>
-            <b className="text-lg tabular-nums text-orange-600 dark:text-orange-400">{fmtPower(left.value)}</b>
-          </span>
-        )}
       </div>
 
       {over && <div className="text-xs text-red-600">주간 입장 한도({cap})를 넘게 골랐습니다. 플래너에서는 실수령 상위 {cap}개만 배분됩니다.</div>}
@@ -120,11 +164,14 @@ export function RemainingBossList({
           고른 {picks.length}개를 모두 돌았습니다. 실수령 {fmtPower(all.value)}.
         </div>
       ) : (
-        <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-          {remaining.map((p) => (
-            <BossRow key={p.key} pick={p} ocid={ocid} done={false} priceDate={priceDate} />
-          ))}
-        </ul>
+        <div className="grid gap-4 lg:grid-cols-[1fr_15rem] items-start">
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800 min-w-0">
+            {remaining.map((p) => (
+              <BossRow key={p.key} pick={p} ocid={ocid} done={false} priceDate={priceDate} />
+            ))}
+          </ul>
+          <RemainingTotals picks={remaining} priceDate={priceDate} meso={left.value} />
+        </div>
       )}
 
       {picks.length > 0 && (

@@ -1,6 +1,6 @@
 import type { Difficulty } from "@/lib/maple/bossKey";
 import { DROP_SET_STYLE } from "@/lib/maple/drops";
-import { rewardRowsFor, ICON_BOX, type DisplayReward } from "@/lib/maple/rewards";
+import { rewardRowsFor, rewardAmount, ICON_BOX, type DisplayReward } from "@/lib/maple/rewards";
 
 /**
  * 보상 칩.
@@ -10,10 +10,13 @@ import { rewardRowsFor, ICON_BOX, type DisplayReward } from "@/lib/maple/rewards
  * 개수는 칸 오른쪽 아래에 겹쳐 놓는다 — 칸 크기가 개수 유무에 따라 달라지지 않게.
  * 전체 이름은 마우스 오버로 본다.
  */
-export function RewardChip({ reward }: { reward: DisplayReward }) {
+export function RewardChip({ reward, party = 1 }: { reward: DisplayReward; party?: number }) {
   const tone = reward.set ? DROP_SET_STYLE[reward.set] : DROP_SET_STYLE.기타;
-  const amount = reward.count && reward.count > 1 ? (reward.range ?? String(reward.count)) : null;
-  const label = amount ? `${reward.name} ×${amount}` : reward.name;
+  const a = rewardAmount(reward, party);
+  const amount = (reward.count ?? 1) > 1 || a.shared ? a.text : null;
+  const label = amount
+    ? `${reward.name} ×${amount}${a.shared && party > 1 ? ` (파티 ${party}명 분배, 원래 ${reward.range ?? reward.count})` : ""}`
+    : reward.name;
   return (
     <span
       className={`relative inline-flex items-center justify-center rounded border ${tone}`}

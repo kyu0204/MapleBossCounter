@@ -98,6 +98,75 @@ export function hasRewardsFor(boss: string, diff: Difficulty | string, priceDate
   return rewardsFor(boss, diff, priceDate).length > 0;
 }
 
+// ---------- 파티 분배 ----------
+
+/**
+ * 파티원끼리 나눠 갖는 보상인지.
+ *
+ * 조각·편린류와 큐브는 파티 한 몫이 떨어져 인원수로 나뉜다.
+ * 솔 에르다의 기운이나 주문의 흔적처럼 각자에게 들어오는 것은 나누지 않는다.
+ */
+export function isSharedReward(name: string): boolean {
+  return /조각|편린|큐브/.test(name);
+}
+
+export interface RewardAmount {
+  /** 화면 표기. 범위면 양끝을 각각 나눈 "2~5" 꼴 */
+  text: string;
+  /** 합산에 쓰는 값. 범위면 최대값 */
+  value: number;
+  shared: boolean;
+}
+
+/** 소수점은 버린다 — 나눠 떨어지지 않으면 못 받는다 */
+const share = (n: number, party: number) => Math.floor(n / Math.max(1, party));
+
+/** 인원수를 반영한 실제 수량 */
+export function rewardAmount(r: Pick<DisplayReward, "name" | "count" | "range">, party: number): RewardAmount {
+  const count = r.count ?? 1;
+  const shared = isSharedReward(r.name);
+  if (!shared || party <= 1) return { text: r.range ?? String(count), value: count, shared };
+  if (r.range) {
+    const [lo, hi] = r.range.split("~").map((s) => Number(s.trim()));
+    if (Number.isFinite(lo) && Number.isFinite(hi)) {
+      const a = share(lo, party);
+      const b = share(hi, party);
+      return { text: a === b ? String(b) : `${a}~${b}`, value: b, shared };
+    }
+  }
+  const v = share(count, party);
+  return { text: String(v), value: v, shared };
+}
+
+export interface RewardTotal {
+  name: string;
+  icon?: string;
+  w?: number;
+  h?: number;
+  short?: string;
+  /** 인원 분배까지 반영한 합 */
+  total: number;
+  shared: boolean;
+}
+
+/**
+ * 여러 보스의 확정 보상을 아이템별로 합친다.
+ * 조각·큐브는 보스마다 인원수로 나눈 뒤 더한다 — 먼저 더하고 나누면 실제보다 많아진다.
+ */
+export function aggregateFixedRewards(picks: { boss: string; diff: Difficulty | string; party: number }[], priceDate: string): RewardTotal[] {
+  const acc = new Map<string, RewardTotal>();
+  for (const p of picks) {
+    for (const r of rewardRowsFor(p.boss, p.diff, priceDate).fixed) {
+      const { value, shared } = rewardAmount(r, p.party);
+      if (value <= 0) continue;
+      const hit = acc.get(r.name);
+      if (hit) hit.total += value;
+      else acc.set(r.name, { name: r.name, icon: r.icon, w: r.w, h: r.h, short: r.short, total: value, shared });
+    }
+  }
+  return [...acc.values()].sort((a, b) => b.total - a.total);
+}
+
 /** 큐브 수량이 패치로 바뀌는 행인지 (안내용) */
 export function cubesChangeOn(boss: string, diff: Difficulty | string): boolean {
   const cubes = file.bosses[boss]?.[String(diff)]?.cubes;

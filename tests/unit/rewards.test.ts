@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import rawRewards from "@/data/boss_rewards.json";
-import { rewardsFor, rewardRowsFor, hasRewardsFor, cubesChangeOn, REWARDS_META, ICON_BOX } from "@/lib/maple/rewards";
+import { rewardsFor, rewardRowsFor, hasRewardsFor, cubesChangeOn, REWARDS_META, ICON_BOX, isSharedReward, rewardAmount, aggregateFixedRewards } from "@/lib/maple/rewards";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 
 interface Entry {
@@ -279,6 +279,85 @@ describe("아이콘 칸", () => {
       }
     }
     expect(over).toEqual([]);
+  });
+});
+
+describe("파티 분배", () => {
+  it("조각·편린·큐브만 나눈다", () => {
+    for (const n of ["파멸의 조각", "뒤틀린 갈망의 편린", "메멘토 실버 큐브", "메멘토 브론즈 에디셔널 큐브"]) {
+      expect(isSharedReward(n), n).toBe(true);
+    }
+    // 각자 받는 것은 나누지 않는다
+    for (const n of ["솔 에르다의 기운", "주문의 흔적", "에리온의 조각".replace("조각", "기운"), "영롱한 달빛 포션"]) {
+      expect(isSharedReward(n), n).toBe(false);
+    }
+  });
+
+  it("나눗셈은 소수점을 버린다", () => {
+    const cube = { name: "메멘토 브론즈 에디셔널 큐브", count: 8 };
+    expect(rewardAmount(cube, 1).text).toBe("8");
+    expect(rewardAmount(cube, 2).text).toBe("4");
+    expect(rewardAmount(cube, 3).text).toBe("2"); // 8/3 = 2.67 → 2
+    expect(rewardAmount(cube, 5).text).toBe("1");
+    expect(rewardAmount(cube, 6).value).toBe(1);
+  });
+
+  it("나누지 않는 항목은 인원과 무관하다", () => {
+    const erda = { name: "솔 에르다의 기운", count: 750 };
+    expect(rewardAmount(erda, 1).value).toBe(750);
+    expect(rewardAmount(erda, 6).value).toBe(750);
+    expect(rewardAmount(erda, 6).shared).toBe(false);
+  });
+
+  it("범위는 양끝을 각각 나눈다", () => {
+    const frag = { name: "파멸의 조각", count: 10, range: "5~10" };
+    expect(rewardAmount(frag, 1).text).toBe("5~10");
+    expect(rewardAmount(frag, 2).text).toBe("2~5");
+    expect(rewardAmount(frag, 2).value).toBe(5);
+    // 6명이면 최소 5개로는 한 개도 못 받을 수 있다
+    expect(rewardAmount(frag, 6).text).toBe("0~1");
+    // 양끝이 같아지면 하나로 합쳐 적는다
+    expect(rewardAmount({ name: "파멸의 조각", count: 7, range: "6~7" }, 4).text).toBe("1");
+  });
+
+  it("합산은 보스마다 나눈 뒤 더한다 (먼저 더하고 나누면 많아진다)", () => {
+    // 브론즈 에디셔널 큐브: 루시드 하드 8개, 윌 하드 8개
+    const solo = aggregateFixedRewards(
+      [
+        { boss: "루시드", diff: "hard", party: 1 },
+        { boss: "윌", diff: "hard", party: 1 },
+      ],
+      AFTER,
+    );
+    expect(solo.find((r) => r.name === "메멘토 브론즈 에디셔널 큐브")!.total).toBe(16);
+
+    const trio = aggregateFixedRewards(
+      [
+        { boss: "루시드", diff: "hard", party: 3 },
+        { boss: "윌", diff: "hard", party: 3 },
+      ],
+      AFTER,
+    );
+    // floor(8/3) + floor(8/3) = 2 + 2 = 4. 먼저 더했다면 floor(16/3) = 5 가 됐을 것이다
+    expect(trio.find((r) => r.name === "메멘토 브론즈 에디셔널 큐브")!.total).toBe(4);
+    // 솔 에르다의 기운은 나누지 않으므로 인원과 무관하게 같다
+    const erdaSolo = solo.find((r) => r.name === "솔 에르다의 기운")!.total;
+    expect(trio.find((r) => r.name === "솔 에르다의 기운")!.total).toBe(erdaSolo);
+  });
+
+  it("나눠서 0이 되면 합산에서 뺀다", () => {
+    // 벨룸 카오스 브론즈 에디셔널 1개를 2명이 나누면 0
+    const r = aggregateFixedRewards([{ boss: "벨룸", diff: "chaos", party: 2 }], AFTER);
+    expect(r.some((x) => x.name.includes("큐브"))).toBe(false);
+    expect(aggregateFixedRewards([{ boss: "벨룸", diff: "chaos", party: 1 }], AFTER).some((x) => x.name.includes("큐브"))).toBe(true);
+  });
+
+  it("확정 보상만 합산한다 (확률 드롭은 제외)", () => {
+    const r = aggregateFixedRewards([{ boss: "유피테르", diff: "hard", party: 1 }], AFTER);
+    const names = r.map((x) => x.name);
+    expect(names).toContain("솔 에르다의 기운");
+    expect(names).not.toContain("유피테르로이드"); // 장비 = 확률 드롭
+    expect(names).not.toContain("오만의 원죄");
   });
 });
 
