@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import rawDrops from "@/data/boss_drops.json";
-import { dropsOf, hasDrops, DROP_SET_STYLE, DROPS_META, type DropSet } from "@/lib/maple/drops";
+import rawItems from "@/data/boss_reward_items.json";
+import { dropsOf, hasDrops, hasAnyDrops, itemIconFor, rewardItemsOf, DROP_SET_STYLE, DROPS_META, type DropSet } from "@/lib/maple/drops";
 import { parseBossKey } from "@/lib/maple/bossKey";
 import { crystalPrice, PRICE_TABLE } from "@/lib/maple/prices";
 import { tierOf } from "@/lib/maple/tiers";
@@ -60,6 +63,7 @@ describe("boss_drops.json 무결성", () => {
   });
 
   it("주간 결정 보스 중 금별 등급은 모두 드롭 정보가 있다", () => {
+    // (아래 본문)
     const missing: string[] = [];
     for (const [boss, diffs] of Object.entries(PRICE_TABLE.prices)) {
       for (const diff of Object.keys(diffs)) {
@@ -71,5 +75,53 @@ describe("boss_drops.json 무결성", () => {
     }
     // 검은 마법사(월간)는 칠흑 뱃지로 채워져 있고, 나머지 금별은 에테르넬
     expect(missing).toEqual([]);
+  });
+});
+
+describe("나무위키 주요 보상 아이템 아이콘", () => {
+  const nonWeekly = new Set([...(PRICE_TABLE._meta.daily ?? []), ...(PRICE_TABLE._meta.monthly ?? [])]);
+  const isWeeklyBoss = (boss: string) => Object.keys(PRICE_TABLE.prices[boss] ?? {}).some((d) => !nonWeekly.has(`${boss} ${d}`));
+  const bosses = Object.keys((rawItems as { items: Record<string, unknown> }).items);
+
+  it("수집 대상은 가격표에 있는 주간 결정 보스뿐이다", () => {
+    for (const b of bosses) {
+      expect(PRICE_TABLE.prices[b], b).toBeTruthy();
+      expect(isWeeklyBoss(b), `${b} 는 주간 보스가 아님`).toBe(true);
+    }
+  });
+
+  it("모든 주간 보스가 주요 보상을 갖는다", () => {
+    const missing = Object.keys(PRICE_TABLE.prices).filter((b) => isWeeklyBoss(b) && rewardItemsOf(b).length === 0);
+    expect(missing).toEqual([]);
+  });
+
+  it("아이콘 파일이 public/items 에 실제로 있고 이름은 URL 인코딩된다", () => {
+    const root = path.join(__dirname, "..", "..", "public");
+    const missing: string[] = [];
+    for (const b of bosses) {
+      for (const it of rewardItemsOf(b)) {
+        expect(it.file.startsWith("/items/"), `${b}/${it.name}`).toBe(true);
+        expect(it.file, `${b}/${it.name}`).not.toMatch(/[가-힣]/); // 인코딩 완료
+        if (!existsSync(path.join(root, decodeURIComponent(it.file)))) missing.push(`${b}/${it.name}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("세트 드롭 이름으로도 아이콘을 찾는다 (표기 차이 허용)", () => {
+    // boss_drops.json 과 나무위키 표기가 다른 케이스
+    expect(itemIconFor("컴플리트 언더 컨트롤")).toBeTruthy(); // 나무위키: 컴플리트 언더컨트롤
+    expect(itemIconFor("미트라의 분노")).toBeTruthy(); // 나무위키: 미트라의 분노 선택 상자
+    expect(itemIconFor("저주받은 마도서")).toBeTruthy(); // 나무위키: 저주받은 마도서 선택 상자
+    expect(itemIconFor("고통의 근원")).toBeTruthy();
+    expect(itemIconFor("존재하지 않는 아이템 이름")).toBeNull();
+  });
+
+  it("일간·월간 행에는 주요 보상을 붙이지 않는다", () => {
+    // 자쿰은 카오스만 주간. easy/normal 은 일간이라 폴백 금지.
+    expect(hasAnyDrops("자쿰", "chaos", true)).toBe(true);
+    expect(hasAnyDrops("자쿰", "easy", false)).toBe(false);
+    // 검은 마법사는 월간이지만 난이도별 세트 드롭(태초의 뱃지)이 있어 그건 표시된다
+    expect(hasAnyDrops("검은 마법사", "hard", false)).toBe(true);
   });
 });

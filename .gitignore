@@ -48,3 +48,7 @@ next-env.d.ts
 
 # 나무위키 아이콘 수집 캐시
 .cache-namu.html
+
+.cache-namu-bosses/
+.cache-karing.html
+.cache-drops.html

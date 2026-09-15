@@ -67,7 +67,7 @@ node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 
   - `TierStars` — 티어를 **등급 이름 없이 색 있는 별**로만 표시 (금 `#F0B429` / 은 `#94A3B8` / 동 `#C2703D` / 납 `#6B7280`).
     색을 못 쓰는 `<option>`·`title` 에는 `tierLabel()` 이 `🟡★★★★★` 형태 텍스트를 준다.
   - `BossIcon` / `BossChip` — 보스 아이콘, 아이콘 + 난이도 배지 + 약칭 + 실수령.
-  - `DropList` / `DropChip` — 보스 드롭 아이템 칩 (여명/칠흑/에테르넬 세트별 색).
+  - `DropList` / `DropChip` / `RewardChip` — 드롭 아이템 칩 (아이콘 + 여명/칠흑/에테르넬 세트별 색).
 - `deploy/` — EC2 셋업·배포·nginx·DB 백업 스크립트. `ecosystem.config.js` — pm2.
 
 ### 갈 보스 설정
@@ -95,6 +95,10 @@ CSS 80px 까지는 2배 DPI 화면에서도 선명하다. 그보다 크게 쓰�
 - **확인된 세트 장신구·방어구만** 넣는다. 소울·훈장·의지의 결정처럼 모든 보스가 공통으로 주는 것과, 출처를 확인하지 못한 하위 일간 보스는 **비워 둔다**. 추측으로 채우지 않는다.
 - `tests/unit/drops.test.ts` 가 키가 가격표·티어표에 실재하는지, 세트 색이 정의됐는지, 금별 보스에 누락이 없는지 검사한다.
 - 패치로 바뀌므로 갱신 시 `_meta.updated` 와 `sources` 를 같이 고칠 것.
+
+아이템 아이콘은 `src/data/boss_reward_items.json` + `public/items/`. 나무위키 각 보스 문서의 "주요 보상" 항목에서 **주간 보스만** 수집한다 (`node scripts/fetch-namu-item-icons.mjs`). 난이도 구분은 없다.
+
+티어표는 둘을 합쳐 보여준다 — 난이도별 세트 아이템을 먼저, 그다음 겹치지 않는 주요 보상. 이름 표기가 조금 달라도(`컴플리트 언더 컨트롤` / `컴플리트 언더컨트롤`) `itemIconFor()` 가 공백 제거 + 부분 일치로 아이콘을 찾는다. 일간·월간 난이도 행에는 주요 보상을 붙이지 않는다.
 
 ## 운영 (EC2 Ubuntu)
 

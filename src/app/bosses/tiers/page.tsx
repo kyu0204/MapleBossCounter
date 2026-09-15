@@ -9,7 +9,8 @@ import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
 import { DropList } from "@/components/boss/DropList";
-import { dropsOf, DROP_SETS, DROP_SET_STYLE, DROPS_META } from "@/lib/maple/drops";
+import { hasAnyDrops, DROP_SETS, DROP_SET_STYLE, DROPS_META, REWARD_ITEMS_META } from "@/lib/maple/drops";
+import { isWeeklyCrystal } from "@/lib/maple/prices";
 
 export const metadata: Metadata = {
   title: "보스 티어표",
@@ -53,7 +54,8 @@ export default function TiersPage() {
           ))}
         </div>
         <p className="text-[11px] text-zinc-400">
-          드롭은 확인된 세트 장신구·방어구만 표시합니다. 소울·훈장 같은 공통 보상과 출처를 확인하지 못한 보스는 비어 있습니다. (기준 {DROPS_META.updated})
+          드롭은 난이도별로 확인된 세트 아이템을 우선 표시하고, 없으면 나무위키 보스 문서의 주요 보상을 보여줍니다. 주요 보상은 주간 보스만 수집했고 난이도 구분이 없습니다.
+          (세트 {DROPS_META.updated} · 주요 보상 {REWARD_ITEMS_META.updated} 기준)
         </p>
       </div>
 
@@ -68,12 +70,16 @@ export default function TiersPage() {
                 <td className="py-2.5">
                   <div className="flex flex-wrap gap-2">
                     {keys
-                      .map((k) => ({ k, ref: parseBossKey(k)!, price: crystalPrice(parseBossKey(k)!.boss, parseBossKey(k)!.diff, priceDate), drops: dropsOf(parseBossKey(k)!.boss, parseBossKey(k)!.diff) }))
+                      .map((k) => {
+                        const ref = parseBossKey(k)!;
+                        const weekly = isWeeklyCrystal(ref.boss, ref.diff);
+                        return { k, ref, price: crystalPrice(ref.boss, ref.diff, priceDate), showDrops: hasAnyDrops(ref.boss, ref.diff, weekly) };
+                      })
                       .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
-                      .map(({ k, ref, price, drops }) => (
+                      .map(({ k, ref, price, showDrops }) => (
                         <div
                           key={k}
-                          className={`flex items-center gap-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 p-1.5 ${drops.length ? "flex-1 min-w-[17rem]" : "min-w-[10rem]"}`}
+                          className={`flex items-center gap-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 p-1.5 ${showDrops ? "flex-1 min-w-[20rem]" : "min-w-[10rem]"}`}
                         >
                           <BossIcon boss={ref.boss} diff={ref.diff} size={72} showDiff={false} />
                           <div className="flex flex-col gap-1 min-w-0 flex-1">
