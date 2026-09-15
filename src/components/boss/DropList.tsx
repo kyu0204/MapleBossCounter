@@ -1,48 +1,41 @@
 import type { Difficulty } from "@/lib/maple/bossKey";
-import { rewardItemsFor, setOfItem, DROP_SET_STYLE, type RewardItem } from "@/lib/maple/drops";
+import { DROP_SET_STYLE } from "@/lib/maple/drops";
+import { rewardsFor, type DisplayReward } from "@/lib/maple/rewards";
 
-/** 아이템 아이콘. 원본 크기 그대로 (축소·왜곡 없음). */
-export function ItemIcon({ item }: { item: RewardItem }) {
+/**
+ * 보상 칩. 아이콘이 있으면 아이콘만(원본 크기), 없으면 짧은 라벨.
+ * 전체 이름은 마우스 오버로 본다. 개수는 ×N 으로 붙인다.
+ */
+export function RewardChip({ reward }: { reward: DisplayReward }) {
+  const tone = reward.set ? DROP_SET_STYLE[reward.set] : DROP_SET_STYLE.기타;
+  const label = reward.count && reward.count > 1 ? `${reward.name} ×${reward.range ?? reward.count}` : reward.name;
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={item.file}
-      alt=""
-      width={item.w}
-      height={item.h}
-      className="object-contain shrink-0"
-      style={{ width: item.w, height: item.h }}
-      loading="lazy"
-      decoding="async"
-    />
-  );
-}
-
-/** 보상 아이템 칩. 세트(여명·칠흑·에테르넬)를 알면 그 색으로. */
-export function RewardChip({ item }: { item: RewardItem }) {
-  const set = setOfItem(item.name);
-  const tone = set ? DROP_SET_STYLE[set] : DROP_SET_STYLE.기타;
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded border pl-1 pr-2 py-0.5 text-xs leading-tight ${tone}`} title={set ? `${set} · ${item.name}` : item.name}>
-      <ItemIcon item={item} />
-      <span className="font-medium">{item.name}</span>
+    <span className={`inline-flex items-center gap-1 rounded border px-1 py-0.5 leading-none ${tone}`} title={label}>
+      {reward.icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={reward.icon} alt="" width={reward.w} height={reward.h} style={{ width: reward.w, height: reward.h }} className="object-contain shrink-0" loading="lazy" decoding="async" />
+      ) : (
+        <span className="text-[11px] font-medium px-0.5">{reward.short ?? reward.name}</span>
+      )}
+      {reward.count && reward.count > 1 && (
+        <span className="text-[11px] font-bold tabular-nums pr-0.5">×{reward.range ?? reward.count}</span>
+      )}
     </span>
   );
 }
 
 /**
- * 보스+난이도의 보상 목록.
- * 표시하는 행 자체가 이미 난이도별로 나뉘어 있으므로 난이도 라벨은 붙이지 않는다 —
- * 여기 보이는 것이 곧 그 난이도에서 나오는 것이다.
- * 출처: 나무위키 보스 문서 '주요 보상'.
+ * 보스+난이도의 보상.
+ * 표시하는 행 자체가 난이도별로 나뉘어 있으므로 난이도 라벨은 붙이지 않는다.
+ * 출처: 나무위키 보스 문서의 난이도별 보상 섹션.
  */
-export function DropList({ boss, diff, className = "" }: { boss: string; diff: Difficulty | string; className?: string }) {
-  const items = rewardItemsFor(boss, diff);
+export function DropList({ boss, diff, priceDate, className = "" }: { boss: string; diff: Difficulty | string; priceDate: string; className?: string }) {
+  const items = rewardsFor(boss, diff, priceDate);
   if (!items.length) return null;
   return (
-    <span className={`flex flex-wrap gap-1 ${className}`}>
-      {items.map((it) => (
-        <RewardChip key={it.name} item={it} />
+    <span className={`flex flex-wrap items-center gap-1 ${className}`}>
+      {items.map((r) => (
+        <RewardChip key={r.name} reward={r} />
       ))}
     </span>
   );

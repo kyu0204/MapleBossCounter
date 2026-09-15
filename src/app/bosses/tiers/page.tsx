@@ -9,7 +9,8 @@ import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
 import { DropList } from "@/components/boss/DropList";
-import { hasRewards, DROP_SETS, DROP_SET_STYLE, REWARD_ITEMS_META } from "@/lib/maple/drops";
+import { DROP_SETS, DROP_SET_STYLE } from "@/lib/maple/drops";
+import { hasRewardsFor, REWARDS_META } from "@/lib/maple/rewards";
 
 export const metadata: Metadata = {
   title: "보스 티어표",
@@ -53,7 +54,8 @@ export default function TiersPage() {
           ))}
         </div>
         <p className="text-[11px] text-zinc-400">
-          보상은 나무위키 보스 문서의 &quot;주요 보상&quot;에서 가져왔습니다. 주간 보스만 수집했고, 각 줄에는 그 난이도에서 실제로 나오는 것만 표시됩니다. (기준 {REWARD_ITEMS_META.updated})
+          보상은 나무위키 보스 문서의 난이도별 보상에서 가져왔습니다. 모든 보스가 공통으로 주는 소모품(훈장·물약·경험치·주문서)과 결정석은 뺐습니다. 아이콘에 마우스를 올리면 이름이 나옵니다.
+          메멘토 큐브는 위 가격 기준일에 맞춰 {REWARDS_META.cubePatchDate} 패치 전후 수량이 바뀝니다. (기준 {REWARDS_META.updated})
         </p>
       </div>
 
@@ -70,7 +72,7 @@ export default function TiersPage() {
                     {keys
                       .map((k) => {
                         const ref = parseBossKey(k)!;
-                        return { k, ref, price: crystalPrice(ref.boss, ref.diff, priceDate), showDrops: hasRewards(ref.boss, ref.diff) };
+                        return { k, ref, price: crystalPrice(ref.boss, ref.diff, priceDate), showDrops: hasRewardsFor(ref.boss, ref.diff, priceDate) };
                       })
                       .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
                       .map(({ k, ref, price, showDrops }) => (
@@ -85,7 +87,7 @@ export default function TiersPage() {
                               <span className="font-medium truncate">{bossShort(ref.boss)}</span>
                               <span className="ml-auto text-[11px] text-zinc-500 whitespace-nowrap">{price != null ? fmtPower(price) : "가격 미확인"}</span>
                             </div>
-                            <DropList boss={ref.boss} diff={ref.diff} />
+                            <DropList boss={ref.boss} diff={ref.diff} priceDate={priceDate} />
                           </div>
                         </div>
                       ))}

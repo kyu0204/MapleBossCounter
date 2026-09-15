@@ -50,5 +50,9 @@ next-env.d.ts
 .cache-namu.html
 
 .cache-namu-bosses/
+.cache-namu-items/
 .cache-karing.html
 .cache-drops.html
+
+# 손으로 받은 아이템 아이콘 반입 폴더 (scripts/import-item-icons.mjs)
+.item-icons-inbox/
