@@ -174,7 +174,7 @@ export function BossSettingsModal({ ocid, cap, defaultParty, initial, partyPicks
             </div>
 
             <div className="p-4 space-y-3">
-              {over && <div className="text-xs text-red-600">주간 입장 한도({cap})를 넘었습니다. 플래너에서는 실수령 상위 {cap}개만 배분됩니다.</div>}
+              {over && <div className="text-xs text-red-600">주간 입장 한도({cap})를 넘었습니다. 실제로는 이 중 {cap}개만 입장할 수 있습니다.</div>}
               <div className="text-xs text-zinc-500">
                 보스를 누르면 난이도를 고릅니다. 한 보스당 난이도 하나. 🔒 는 파티 등록에서 자동으로 들어온 항목이라 파티에서 빼야 사라집니다. 인원은 목록에서 바꿉니다.
               </div>

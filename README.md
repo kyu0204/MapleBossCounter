@@ -1,6 +1,6 @@
-# 메이플 파티 보드
+# 메이플 보스 카운터
 
-메이플스토리(KMS) 주간 보스 결정 플래너 + 고정 파티 관리 + 파티 모집 게시판. Next.js 16 · Tailwind · SQLite(Drizzle) · Auth.js(Discord).
+메이플스토리(KMS) 주간 보스 결정 수익·확정 보상 집계 + 고정 파티 관리 + 파티 모집 게시판. Next.js 16 · Tailwind · SQLite(Drizzle) · Auth.js(Discord).
 
 ## 로컬 실행
 

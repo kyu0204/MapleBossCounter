@@ -208,7 +208,7 @@ export function RemainingBossList({
         </div>
       )}
 
-      {over && <div className="text-xs text-red-600">주간 입장 한도({cap})를 넘게 골랐습니다. 플래너에서는 실수령 상위 {cap}개만 배분됩니다.</div>}
+      {over && <div className="text-xs text-red-600">주간 입장 한도({cap})를 넘게 골랐습니다. 실제로는 이 중 {cap}개만 입장할 수 있습니다.</div>}
 
       {picks.length === 0 ? (
         <div className="text-sm text-zinc-500">아직 고른 보스가 없습니다. 아래 &apos;보스&apos; 목록의 설정에서 이번 주에 갈 보스를 고르세요.</div>
@@ -298,7 +298,7 @@ export function PickedBossList({
         </div>
       )}
 
-      {picks.length > 0 && <div className="text-[11px] text-zinc-400">인원은 바꾸는 즉시 저장되고 플래너에도 반영됩니다. 간 보스는 아래에 흐리게 내려갑니다.</div>}
+      {picks.length > 0 && <div className="text-[11px] text-zinc-400">인원은 바꾸는 즉시 저장됩니다. 간 보스는 아래에 흐리게 내려갑니다.</div>}
     </div>
   );
 }

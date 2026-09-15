@@ -41,7 +41,7 @@ export default async function BoardPage({ searchParams }: PageProps<"/board">) {
         </div>
       </div>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        고정 파티의 빈자리를 올리고, 지원자의 대표 전투력·이번 주 클리어 여부를 보고 수락하세요. 파티를 연결해 두면 수락 즉시 구성원에 추가되고 플래너 인원에 반영됩니다.
+        고정 파티의 빈자리를 올리고, 지원자의 대표 전투력·이번 주 클리어 여부를 보고 수락하세요. 파티를 연결해 두면 수락 즉시 구성원에 추가되고 인원수가 결정 실수령 계산에 반영됩니다.
       </p>
 
       <form method="get" action="/board" className="card flex flex-wrap gap-2 items-end text-sm">

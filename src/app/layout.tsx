@@ -3,8 +3,8 @@ import "./globals.css";
 import { Nav } from "@/components/ui/Nav";
 
 export const metadata: Metadata = {
-  title: { default: "메이플 파티 보드", template: "%s · 메이플 파티 보드" },
-  description: "메이플스토리 주간 보스 결정 플래너와 파티 관리",
+  title: { default: "메이플 보스 카운터", template: "%s · 메이플 보스 카운터" },
+  description: "메이플스토리 주간 보스 결정 수익과 확정 보상을 캐릭터별로 세는 곳",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -19,5 +19,6 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   // /board 목록·상세, /lookup 은 공개. 글쓰기/수정/내 글만 로그인 필요.
-  matcher: ["/me/:path*", "/settings/:path*", "/parties/:path*", "/planner/:path*", "/board/new", "/board/mine", "/board/:id/edit"],
+  // /planner 는 빼 둔다 — 지금 꺼져 있어서 404 인데, 여기 두면 로그인부터 시키고 404 를 준다.
+  matcher: ["/me/:path*", "/settings/:path*", "/parties/:path*", "/board/new", "/board/mine", "/board/:id/edit"],
 };

@@ -70,6 +70,10 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
 
   return (
     <div className="space-y-6">
+      <Link href="/me" className="btn-ghost text-sm w-fit">
+        ← 내 캐릭터 목록
+      </Link>
+
       <div className="flex items-start gap-4">
         <CharacterAvatar src={c.imageUrl} alt={c.name} size={144} />
         <div className="space-y-1">
@@ -91,11 +95,20 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-sm">
-        <Link href={`/me/characters/${ocid}`} className={`btn-ghost ${view === "current" ? "bg-zinc-100 dark:bg-zinc-800" : ""}`}>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        {/* 어느 쪽을 보고 있는지가 테두리와 배경으로 드러나야 한다 */}
+        <Link
+          href={`/me/characters/${ocid}`}
+          aria-current={view === "current" ? "page" : undefined}
+          className={`rounded-md border px-3 py-1 ${view === "current" ? "border-orange-400 bg-orange-50 font-medium text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-200" : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300"}`}
+        >
           이번 주
         </Link>
-        <Link href={`/me/characters/${ocid}?view=lastweek`} className={`btn-ghost ${view === "lastweek" ? "bg-zinc-100 dark:bg-zinc-800" : ""}`}>
+        <Link
+          href={`/me/characters/${ocid}?view=lastweek`}
+          aria-current={view === "lastweek" ? "page" : undefined}
+          className={`rounded-md border px-3 py-1 ${view === "lastweek" ? "border-orange-400 bg-orange-50 font-medium text-orange-800 dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-200" : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300"}`}
+        >
           지난주 ({lastWednesdayKst()})
         </Link>
         {snap?.date && <span className="text-zinc-500">스냅샷 기준일 {snap.date.slice(0, 10)}</span>}
