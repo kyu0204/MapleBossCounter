@@ -83,6 +83,8 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   );
   // 확정 보상도 캐릭터를 가로질러 합친다. 조각·큐브는 보스마다 인원으로 나눈 뒤 더해진다.
   const grandRewards = aggregateFixedRewards(cards.flatMap((x) => x.picks), priceDate);
+  // 월 환산은 주간 값에 주 수를 곱한 것뿐이다. 나눗셈(인원 분배)은 이미 주간 단계에서 끝났다.
+  const monthlyRewards = grandRewards.map((r) => ({ ...r, total: r.total * WEEKS_PER_MONTH }));
 
   const byWorld = new Map<string, typeof cards>();
   for (const x of cards) {
@@ -120,24 +122,44 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
       </div>
       {grand.total > 0 && (
         <div className="card space-y-3">
-          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+          {/* 맨 위는 월 환산. 실적이 아니라 주간 값에 주 수를 곱한 것이다. */}
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span className="text-xs text-zinc-500">월 환산 수익</span>
+            <b className="text-2xl tabular-nums text-orange-600 dark:text-orange-400">{fmtPower(grand.total * WEEKS_PER_MONTH)}</b>
+            <span className="text-xs text-zinc-500">
+              이번 주 {fmtPower(grand.total)} × {WEEKS_PER_MONTH}주
+            </span>
+            <span className="text-[11px] text-zinc-400 ml-auto">단순 환산치 · 월간 보스(검은 마법사)는 빠져 있습니다</span>
+          </div>
+          {monthlyRewards.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="text-xs text-zinc-500 shrink-0">확정 보상</span>
+              <span className="flex flex-wrap items-center gap-1">
+                {monthlyRewards.map((it) => (
+                  <RewardTotalChip key={it.name} item={it} />
+                ))}
+              </span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">
             <span className="flex items-baseline gap-2">
               <span className="text-xs text-zinc-500">이번 주 총 수익</span>
-              <b className="text-2xl tabular-nums text-orange-600 dark:text-orange-400">{fmtPower(grand.total)}</b>
+              <b className="text-lg tabular-nums">{fmtPower(grand.total)}</b>
             </span>
             <span className="flex items-baseline gap-2">
               <span className="text-xs text-zinc-500">지금까지</span>
-              <span className="text-lg tabular-nums">{fmtPower(grand.earned)}</span>
+              <span className="tabular-nums">{fmtPower(grand.earned)}</span>
             </span>
             <span className="flex items-baseline gap-2">
               <span className="text-xs text-zinc-500">남은 것</span>
-              <span className="text-lg tabular-nums">{fmtPower(grand.total - grand.earned)}</span>
+              <span className="tabular-nums">{fmtPower(grand.total - grand.earned)}</span>
               {grand.remaining > 0 && <span className="text-xs text-zinc-500">보스 {grand.remaining}개</span>}
             </span>
             <span className="text-[11px] text-zinc-400 ml-auto">표시 중인 캐릭터 기준 · 고른 보스와 설정한 인원으로 계산</span>
           </div>
           {grandRewards.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <span className="text-xs text-zinc-500 shrink-0">확정 보상</span>
               <span className="flex flex-wrap items-center gap-1">
                 {grandRewards.map((it) => (
@@ -171,17 +193,6 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
         </section>
       ))}
 
-      {grand.total > 0 && (
-        <div className="card flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <span className="text-xs text-zinc-500">월 환산 수익</span>
-          <b className="text-xl tabular-nums">{fmtPower(grand.total * WEEKS_PER_MONTH)}</b>
-          <span className="text-xs text-zinc-500">
-            이번 주 총 수익 {fmtPower(grand.total)} × {WEEKS_PER_MONTH}주
-          </span>
-          {/* 실제로 번 돈이 아니라 곱셈 결과다. 그렇게 읽히지 않게 못박아 둔다. */}
-          <span className="text-[11px] text-zinc-400 ml-auto">단순 환산치입니다. 월간 보스(검은 마법사)는 빠져 있습니다.</span>
-        </div>
-      )}
     </div>
   );
 }
