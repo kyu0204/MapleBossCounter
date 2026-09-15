@@ -153,7 +153,18 @@ export const parties = sqliteTable(
     boss: text("boss").notNull(),
     difficulty: text("difficulty").notNull(),
     world: text("world"),
+    /** 예전 자유 입력 메모. 요일·시각이 칸으로 나뉘면서 새 파티에는 안 쓴다. */
     scheduleNote: text("schedule_note"),
+    /** 0=일 … 6=토. 안 정했으면 null */
+    dayOfWeek: integer("day_of_week"),
+    /** 0~23. 안 정했으면 null */
+    hour: integer("hour"),
+    /** 0~59. 안 정했으면 null */
+    minute: integer("minute"),
+    /** 매주 도는 고정 파티인지. false 면 만든 주에만 유효하다. */
+    repeats: integer("repeats", { mode: "boolean" }).notNull().default(true),
+    /** 만든 주의 시작(목요일). 반복이 아닌 파티의 유효 기간 판정에 쓴다. */
+    weekStart: text("week_start"),
     memo: text("memo"),
     createdAt: text("created_at").notNull().default(nowIso),
     updatedAt: text("updated_at").notNull().default(nowIso),

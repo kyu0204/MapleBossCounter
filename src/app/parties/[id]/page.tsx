@@ -3,6 +3,8 @@ import { requireUserId } from "@/auth";
 import { getParty } from "@/lib/db/queries/parties";
 import { listOwnedCharacters } from "@/services/characterSync";
 import { kstDateStr } from "@/lib/maple/kst";
+import { crystalPrice } from "@/lib/maple/prices";
+import { fmtPower } from "@/lib/maple/format";
 import { PartyForm } from "@/components/party/PartyForm";
 import { PartyCard } from "@/components/party/PartyCard";
 import { LeavePartyButton } from "@/components/party/LeavePartyButton";
@@ -17,6 +19,8 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
   const mine = listOwnedCharacters(userId).map((c) => c.name);
   // 탈퇴 대상: 이 파티 구성원 중 내가 소유한 캐릭터로 연결된 것
   const myMembers = party.members.filter((m) => m.ownerUserId === userId).map((m) => m.linkedName ?? m.nickname);
+  const price = crystalPrice(party.boss, party.difficulty, kstDateStr());
+  const perPerson = price == null ? null : Math.floor(price / Math.max(1, party.size));
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -24,6 +28,27 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
         {party.boss} {party.difficulty} · {party.size}인격
       </h1>
       <PartyCard party={party} />
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-zinc-500">
+          1인 실수령 <b className="text-zinc-900 dark:text-zinc-100">{fmtPower(perPerson)}</b>
+        </span>
+        {party.members.length >= 2 && (
+          <a
+            className="btn-ghost"
+            href={`https://maplescouter.com/ko/multi-result?name=${encodeURIComponent(party.members.map((m) => m.linkedName ?? m.nickname).join(","))}`}
+            target="_blank"
+            rel="noreferrer"
+            title="maplescouter 에서 구성원 환산 주스탯 한 번에 보기 (새 창)"
+          >
+            환산 주스탯 한 번에 보기
+          </a>
+        )}
+      </div>
+      {party.expired && (
+        <div className="card text-sm text-amber-700 dark:text-amber-400">
+          이번 주만 도는 파티였고 주간 리셋이 지났습니다. 인원 계산에서 빠져 있습니다. 계속 쓰려면 수정에서 &apos;매주 반복&apos;으로 바꾸거나 그대로 저장하세요.
+        </div>
+      )}
       {party.isOwner ? (
         <>
           <PartyForm
@@ -35,7 +60,10 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
               boss: party.boss,
               difficulty: party.difficulty as Difficulty,
               world: party.world ?? "",
-              scheduleNote: party.scheduleNote ?? "",
+              dayOfWeek: party.dayOfWeek,
+              hour: party.hour,
+              minute: party.minute,
+              repeats: party.repeats,
               memo: party.memo ?? "",
               members: party.members.map((m) => m.nickname),
               leader: party.members.find((m) => m.isLeader)?.nickname ?? "",
