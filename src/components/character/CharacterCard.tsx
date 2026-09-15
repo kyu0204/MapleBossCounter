@@ -7,8 +7,6 @@ import { CharacterAvatar } from "./CharacterAvatar";
 export interface CardRevenue {
   /** 고른 보스를 다 돌았을 때의 실수령 합 */
   total: number;
-  /** 그중 이미 잡은 것 */
-  earned: number;
   /** 아직 안 간 보스 수 */
   remainingCount: number;
 }
@@ -52,10 +50,7 @@ export function CharacterCard({ character: c, snapshot, revenue }: { character: 
           <div className="flex items-baseline gap-2">
             <span className="text-xs text-zinc-500">총 수익</span>
             <b className="tabular-nums">{fmtPower(revenue.total)}</b>
-            <span className="text-xs text-zinc-500">
-              지금까지 {fmtPower(revenue.earned)}
-              {revenue.remainingCount > 0 && ` · ${revenue.remainingCount}개 남음`}
-            </span>
+            {revenue.remainingCount > 0 && <span className="text-xs text-zinc-500">{revenue.remainingCount}개 남음</span>}
           </div>
         )}
       </div>
