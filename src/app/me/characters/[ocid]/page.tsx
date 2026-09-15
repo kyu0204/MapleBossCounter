@@ -95,7 +95,7 @@ export default async function CharacterPage({ params }: PageProps<"/me/character
               rel="noreferrer"
               title="maplescouter 에서 환산 주스탯 보기 (새 창)"
             >
-              환산 주스탯 ↗
+              환산 주스탯
             </a>
           </div>
         </div>

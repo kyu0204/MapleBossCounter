@@ -6,6 +6,7 @@ import { latestSnapshot, parsed } from "@/services/snapshotService";
 import { estimateRevenue } from "@/lib/maple/scheduler";
 import { kstDateStr } from "@/lib/maple/kst";
 import { CharacterCard } from "@/components/character/CharacterCard";
+import { CharacterSettingsModal } from "@/components/character/CharacterSettingsModal";
 import { ResyncButton } from "@/components/character/ResyncButton";
 import { partySizeLookup } from "@/services/partyLink";
 
@@ -69,7 +70,11 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
             </Link>
           )
         )}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <CharacterSettingsModal
+            characters={all.map((c) => ({ ocid: c.ocid, name: c.name, world: c.world, cls: c.cls, level: c.level, imageUrl: c.imageUrl, hidden: c.hidden }))}
+            minLevel={DASHBOARD_MIN_LEVEL}
+          />
           <ResyncButton />
         </div>
       </div>
