@@ -5,6 +5,7 @@ import { listOwnedCharacters } from "@/services/characterSync";
 import { kstDateStr } from "@/lib/maple/kst";
 import { PartyForm } from "@/components/party/PartyForm";
 import { PartyCard } from "@/components/party/PartyCard";
+import { LeavePartyButton } from "@/components/party/LeavePartyButton";
 import { deleteParty } from "@/actions/parties";
 import type { Difficulty } from "@/lib/maple/bossKey";
 
@@ -14,6 +15,8 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
   const party = getParty(Number(id), userId);
   if (!party) notFound();
   const mine = listOwnedCharacters(userId).map((c) => c.name);
+  // 탈퇴 대상: 이 파티 구성원 중 내가 소유한 캐릭터로 연결된 것
+  const myMembers = party.members.filter((m) => m.ownerUserId === userId).map((m) => m.linkedName ?? m.nickname);
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -48,7 +51,10 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
           </form>
         </>
       ) : (
-        <div className="text-sm text-zinc-500">다른 유저가 만든 파티입니다. 내 캐릭터가 구성원으로 포함되어 있어 표시됩니다.</div>
+        <div className="space-y-3">
+          <div className="text-sm text-zinc-500">다른 유저가 만든 파티입니다. 내 캐릭터가 구성원으로 포함되어 있어 표시됩니다.</div>
+          {myMembers.length > 0 && <LeavePartyButton partyId={party.id} names={myMembers} />}
+        </div>
       )}
     </div>
   );
