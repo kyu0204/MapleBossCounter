@@ -229,5 +229,11 @@
     "src": "https://i.namu.wiki/i/B3dXxjGbaA3Gk5HuexIQbczywfn19BlwetVq4gOV2K_vNl8BhR1-S6W9Jg_t1-q0AuWo1xo7hPZusf9FcGKXxg.webp",
     "file": "/bosses/검은-마법사.webp",
     "bytes": 2600
+  },
+  "시즌 보스 카이": {
+    "source": "user",
+    "doc": "사용자 제공",
+    "file": "/bosses/시즌-보스-카이.webp",
+    "bytes": 6842
   }
 }

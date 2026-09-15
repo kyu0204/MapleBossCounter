@@ -2,8 +2,11 @@ import iconMap from "@/data/boss_icons.json";
 import type { Difficulty } from "@/lib/maple/bossKey";
 import { bossFullLabel, bossShort, DIFF_SHORT, DIFF_SOLID, DIFF_STYLE } from "@/lib/maple/bossMeta";
 
-/** scripts/fetch-namu-boss-icons.mjs 가 만든다. 파일은 public/bosses 에 자체 호스팅. */
-type IconEntry = { source: string; doc: string; src: string; file: string; bytes?: number };
+/**
+ * scripts/fetch-namu-boss-icons.mjs 가 만든다. 파일은 public/bosses 에 자체 호스팅.
+ * source 가 "namu" 가 아닌 항목은 손으로 넣은 것이라 원본 주소(src)가 없다.
+ */
+type IconEntry = { source: string; doc: string; src?: string; file: string; bytes?: number };
 const ICONS = iconMap as Record<string, IconEntry>;
 
 export function bossIconFile(boss: string): string | null {

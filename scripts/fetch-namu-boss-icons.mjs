@@ -172,5 +172,21 @@ for (const [boss, e] of Object.entries(map)) {
   await sleep(120);
 }
 
-writeFileSync(MAP_FILE, JSON.stringify(map, null, 2) + "\n");
-console.log(`\n${Object.keys(map).length}개 저장 → public/bosses, ${MAP_FILE}`);
+/**
+ * 손으로 넣은 아이콘은 지우지 않는다.
+ * 이 스크립트는 가격표에 있는 보스만 훑으므로, 티어표에만 있고 결정 가격이 없는 보스
+ * (예: 시즌 보스 카이)는 여기서 절대 안 잡힌다. 그런 항목은 source 가 "namu" 가 아니다.
+ */
+const kept = {};
+if (existsSync(MAP_FILE)) {
+  const prev = JSON.parse(readFileSync(MAP_FILE, "utf8"));
+  for (const [boss, e] of Object.entries(prev)) {
+    if (e?.source === "namu" || map[boss]) continue;
+    if (!existsSync(path.join(process.cwd(), "public", decodeURIComponent(e.file).replace(/^\//, "")))) continue;
+    kept[boss] = e;
+  }
+}
+if (Object.keys(kept).length) console.log(`\n손으로 넣은 ${Object.keys(kept).length}개 유지: ${Object.keys(kept).join(", ")}`);
+
+writeFileSync(MAP_FILE, JSON.stringify({ ...map, ...kept }, null, 2) + "\n");
+console.log(`\n${Object.keys(map).length + Object.keys(kept).length}개 저장 → public/bosses, ${MAP_FILE}`);
