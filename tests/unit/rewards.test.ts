@@ -352,6 +352,27 @@ describe("파티 분배", () => {
     expect(aggregateFixedRewards([{ boss: "벨룸", diff: "chaos", party: 1 }], AFTER).some((x) => x.name.includes("큐브"))).toBe(true);
   });
 
+  it("간 것 + 남은 것 = 전체 (상단 요약과 우측 남은 수익란이 어긋나지 않는다)", () => {
+    const picks = [
+      { boss: "루시드", diff: "hard", party: 3 },
+      { boss: "윌", diff: "hard", party: 2 },
+      { boss: "카링", diff: "easy", party: 1 },
+      { boss: "찬란한 흉성", diff: "normal", party: 2 },
+    ] as const;
+    const done = picks.slice(0, 2);
+    const remaining = picks.slice(2);
+    const total = (l: readonly { boss: string; diff: string; party: number }[]) =>
+      Object.fromEntries(aggregateFixedRewards([...l], AFTER).map((r) => [r.name, r.total]));
+    const a = total(picks);
+    const d = total(done);
+    const r = total(remaining);
+    for (const name of Object.keys(a)) {
+      expect((d[name] ?? 0) + (r[name] ?? 0), name).toBe(a[name]);
+    }
+    // 부분집합에만 있는 이름이 전체에서 빠지지 않는다
+    for (const name of [...Object.keys(d), ...Object.keys(r)]) expect(a[name], name).toBeDefined();
+  });
+
   it("확정 보상만 합산한다 (확률 드롭은 제외)", () => {
     const r = aggregateFixedRewards([{ boss: "유피테르", diff: "hard", party: 1 }], AFTER);
     const names = r.map((x) => x.name);

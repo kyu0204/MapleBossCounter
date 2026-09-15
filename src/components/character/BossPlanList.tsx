@@ -20,12 +20,8 @@ function BossRow({ pick, ocid, done, priceDate }: { pick: MergedPick; ocid: stri
   const value = price == null ? null : Math.floor(price / Math.max(1, pick.party));
   const fixed = rewardRowsFor(pick.boss, pick.diff, priceDate).fixed;
   return (
-    <li className={`flex items-center gap-3 py-2 ${done ? "opacity-50" : ""}`}>
-      {done && (
-        <span className="shrink-0" title="이번 주 클리어 완료">
-          ✅
-        </span>
-      )}
+    // 클리어 여부는 흐림 처리로 드러나므로 따로 표시를 붙이지 않는다
+    <li className={`flex items-center gap-3 py-2 ${done ? "opacity-50" : ""}`} title={done ? "이번 주 클리어 완료" : undefined}>
       <BossIcon boss={pick.boss} diff={pick.diff} size={64} showDiff={false} className={done ? "grayscale" : ""} />
       <span className="flex flex-col gap-0.5 min-w-0 w-40 sm:w-48 shrink-0 leading-tight">
         <span className="flex items-center gap-1.5 min-w-0">
@@ -66,6 +62,56 @@ function BossRow({ pick, ocid, done, priceDate }: { pick: MergedPick; ocid: stri
         </span>
       </span>
     </li>
+  );
+}
+
+/** 합산한 보상 아이콘 하나. 개수는 오른쪽 아래에 겹쳐 놓는다 (보스 목록의 칩과 같은 규격). */
+function RewardTotalChip({ item }: { item: RewardTotal }) {
+  return (
+    <span
+      className="relative inline-flex items-center justify-center rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900"
+      style={{ width: ICON_BOX.w, height: ICON_BOX.h, boxSizing: "content-box" }}
+      title={`${item.name} ×${item.total.toLocaleString("ko-KR")}${item.shared ? " (파티 인원으로 나눈 뒤 합한 값)" : ""}`}
+    >
+      {item.icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.icon} alt="" width={item.w} height={item.h} style={{ width: item.w, height: item.h }} className="object-contain shrink-0" loading="lazy" decoding="async" />
+      ) : (
+        <span className="text-[10px] font-medium leading-none text-center px-0.5">{item.short ?? item.name}</span>
+      )}
+      <span className="absolute -bottom-0.5 -right-0.5 rounded-sm bg-zinc-900/85 px-0.5 text-[10px] font-bold leading-[1.3] text-white tabular-nums dark:bg-zinc-100/90 dark:text-zinc-900">
+        {item.total.toLocaleString("ko-KR")}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * 요약 한 칸. 메소 실수령과 확정 보상 합계.
+ * 상단의 "전체"·"지금까지 번 것" 에 쓴다.
+ */
+function TotalsBlock({ label, sub, meso, picks, priceDate, strong = false }: { label: string; sub: string; meso: number; picks: MergedPick[]; priceDate: string; strong?: boolean }) {
+  const items = aggregateFixedRewards(picks, priceDate);
+  return (
+    <div className="flex-1 min-w-[14rem] space-y-1.5">
+      <div className="flex items-baseline gap-2">
+        <span className="text-xs text-zinc-500">{label}</span>
+        <span className="text-[11px] text-zinc-400">{sub}</span>
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <b className={`tabular-nums ${strong ? "text-xl text-orange-600 dark:text-orange-400" : "text-lg"}`}>{fmtPower(meso)}</b>
+        <span className="text-xs text-zinc-500">메소</span>
+      </div>
+      {items.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {items.map((it) => (
+            <RewardTotalChip key={it.name} item={it} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-xs text-zinc-400">확정 보상 없음</div>
+      )}
+    </div>
   );
 }
 
@@ -154,6 +200,13 @@ export function RemainingBossList({
           </span>
         )}
       </div>
+
+      {picks.length > 0 && (
+        <div className="flex flex-wrap gap-x-8 gap-y-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2.5">
+          <TotalsBlock label="전체" sub={`고른 ${picks.length}개`} meso={all.value} picks={picks} priceDate={priceDate} />
+          <TotalsBlock label="지금까지 번 것" sub={done.length ? `${done.length}개 완료` : "아직 없음"} meso={picksTotals(done, priceDate).value} picks={done} priceDate={priceDate} />
+        </div>
+      )}
 
       {over && <div className="text-xs text-red-600">주간 입장 한도({cap})를 넘게 골랐습니다. 플래너에서는 실수령 상위 {cap}개만 배분됩니다.</div>}
 
