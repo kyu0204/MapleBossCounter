@@ -13,12 +13,12 @@ import { BossClearTable } from "@/components/character/BossClearTable";
 import { RevenueSummary } from "@/components/character/RevenueSummary";
 import { ContentsList } from "@/components/character/ContentsList";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
-import { WeeklyBossPlan } from "@/components/character/WeeklyBossPlan";
-import { BossSettings } from "@/components/character/BossSettings";
+import { BossPlanList } from "@/components/character/BossPlanList";
 import { loadCharConfig, loadPlanConfig } from "@/services/planInput";
 import { partyPicksByCharacter } from "@/services/partyLink";
 import { normalizeBossList, bossKey } from "@/lib/maple/bossKey";
 import { mergePicks, toPickList } from "@/lib/maple/bossPicks";
+import { crystalPrice } from "@/lib/maple/prices";
 
 export default async function CharacterPage({ params, searchParams }: PageProps<"/me/characters/[ocid]">) {
   const userId = await requireUserId();
@@ -48,23 +48,15 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
   const clearedKeys = weeklyRows.filter((b) => b.completed).map((b) => bossKey(b.boss, b.diff));
   const registeredKeys = weeklyRows.filter((b) => b.registered).map((b) => bossKey(b.boss, b.diff));
   const cap = latest?.weeklyLimit ?? 12;
-  const SETTINGS_ID = "boss-settings";
-
-  // 보스 표 바로 아래에 두되, 스케줄러 데이터가 없어도 설정은 할 수 있어야 한다.
-  const bossSettings =
-    view === "current" && world ? (
-      <BossSettings
-        id={SETTINGS_ID}
-        ocid={ocid}
-        cap={cap}
-        defaultParty={planDefaultParty}
-        initial={savedBosses}
-        partyPicks={partyPicks}
-        registered={registeredKeys}
-        cleared={clearedKeys}
-        priceDate={priceDate}
-      />
-    ) : null;
+  // 고르지 않았는데 클리어한 주간 보스 — 수익에는 잡히므로 참고로 알려 준다
+  const pickedKeys = new Set(allPicks.map((p) => p.key));
+  const extraCleared = weeklyRows
+    .filter((b) => b.completed && !pickedKeys.has(bossKey(b.boss, b.diff)))
+    .map((b) => {
+      const price = crystalPrice(b.boss, b.diff, priceDate);
+      const party = partyOf(c.id, b.boss, b.diff);
+      return { key: bossKey(b.boss, b.diff), boss: b.boss, diff: b.diff, value: price == null ? 0 : Math.floor(price / party) };
+    });
 
   return (
     <div className="space-y-6">
@@ -101,21 +93,33 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
 
       {view === "current" &&
         (world ? (
-          <WeeklyBossPlan picks={allPicks} cleared={clearedKeys} cap={cap} priceDate={priceDate} settingsId={SETTINGS_ID} hasSnapshot={!!latest} />
+          <BossPlanList
+            picks={allPicks}
+            cleared={clearedKeys}
+            cap={cap}
+            priceDate={priceDate}
+            hasSnapshot={!!latest}
+            extraCleared={extraCleared}
+            settings={{ ocid, cap, defaultParty: planDefaultParty, initial: savedBosses, partyPicks, registered: registeredKeys, priceDate }}
+          />
         ) : (
           <div className="card text-sm text-zinc-600">월드 정보가 없어 보스 설정을 쓸 수 없습니다. 내 캐릭터에서 목록 동기화를 실행하세요.</div>
         ))}
 
       {!snap ? (
-        <>
-          <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
-          {bossSettings}
-        </>
+        <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
           <div className="space-y-4">
-            <BossClearTable bosses={snap.bosses} priceDate={priceDate} partyOf={(b, d) => partyOf(c.id, b, d)} weekly={`${snap.weeklyClearCount}/${snap.weeklyLimit}`} />
-            {bossSettings}
+            {/* 주간 보스는 위 "이번 주 갈 보스" 가 고른 것만 보여준다. 여기는 고르는 대상이 아닌 일간·월간만. */}
+            <BossClearTable
+              bosses={snap.bosses}
+              priceDate={priceDate}
+              partyOf={(b, d) => partyOf(c.id, b, d)}
+              weekly={`${snap.weeklyClearCount}/${snap.weeklyLimit}`}
+              title={view === "current" ? "일간·월간 보스" : "보스"}
+              cycles={view === "current" ? ["bossDaily", "bossMonthly"] : ["bossWeekly", "bossDaily", "bossMonthly"]}
+            />
             <ContentsList title="일간 콘텐츠" items={snap.daily} />
             <ContentsList title="주간 콘텐츠" items={snap.weekly} />
           </div>

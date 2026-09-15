@@ -6,6 +6,7 @@ import { requireUserId } from "@/auth";
 import { ownedCharacterByOcid } from "@/services/characterSync";
 import { patchCharConfig, savePlanConfigRow } from "@/services/planInput";
 import { kstDateStr } from "@/lib/maple/kst";
+import { normalizeBossList } from "@/lib/maple/bossKey";
 import { validateBossSelection, type PlanConfig } from "@/lib/maple/planner";
 import type { ActionResult } from "./nexon-key";
 
@@ -65,4 +66,43 @@ export async function setCharacterBosses(ocid: string, bosses: Record<string, nu
   revalidatePath("/planner");
   revalidatePath("/me");
   return { ok: true, message: `${Object.keys(clean).length}개 저장됨`, data: { count: Object.keys(clean).length } };
+}
+
+const KeySchema = z.string().max(40);
+const PartySchema = z.number().int().min(1).max(6);
+
+/**
+ * 보스 한 줄의 파티 인원만 바꾼다.
+ *
+ * 목록에서 여러 줄을 잇따라 고칠 수 있으므로, 클라이언트가 들고 있는 목록을 통째로
+ * 다시 보내면 안 된다 — 재검증이 끝나기 전에 다음 줄을 고치면 앞의 변경이 덮인다.
+ * 여기서 서버에 저장된 값을 읽어 그 키 하나만 얹는다.
+ *
+ * 파티 등록에서 자동으로 들어온 보스도 여기서 인원을 정하면 직접 고른 픽으로 굳는다.
+ * 목록의 모든 줄에서 인원을 정할 수 있어야 하고, 사용자가 정한 값이 파티 인원 변동에
+ * 흔들리지 않아야 하기 때문이다.
+ */
+export async function setCharacterBossParty(ocid: string, key: string, party: number): Promise<ActionResult<{ party: number }>> {
+  const userId = await requireUserId();
+  const c = ownedCharacterByOcid(userId, ocid);
+  if (!c) return { ok: false, message: "내 캐릭터가 아닙니다" };
+  if (!c.world) return { ok: false, message: "캐릭터 월드 정보가 없습니다. 캐릭터 목록을 동기화해주세요" };
+
+  const k = KeySchema.safeParse(key);
+  const n = PartySchema.safeParse(party);
+  if (!k.success || !n.success) return { ok: false, message: "인원은 1~6 사이여야 합니다" };
+
+  const prev = patchCharConfig(userId, c.world, ocid, {});
+  const cur = Object.fromEntries(normalizeBossList(prev.bosses).map((b) => [b.key, b.party ?? 1]));
+  const next = { ...cur, [k.data]: n.data };
+
+  const v = validateBossSelection(next, kstDateStr());
+  if (!v.ok) return { ok: false, message: v.error };
+
+  patchCharConfig(userId, c.world, ocid, { bosses: v.clean, auto: prev.auto ?? false });
+
+  revalidatePath(`/me/characters/${ocid}`);
+  revalidatePath("/planner");
+  revalidatePath("/me");
+  return { ok: true, message: `${n.data}인격으로 저장됨`, data: { party: n.data } };
 }

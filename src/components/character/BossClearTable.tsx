@@ -7,14 +7,35 @@ import { BossIcon } from "@/components/boss/BossIcon";
 
 const CYCLE_LABEL: Record<string, string> = { bossWeekly: "주간", bossDaily: "일간", bossMonthly: "월간" };
 
-export function BossClearTable({ bosses, priceDate, partyOf, weekly }: { bosses: BossClearRow[]; priceDate: string; partyOf: (boss: string, diff: string) => number; weekly: string }) {
+/**
+ * 스케줄러가 주는 보스 목록 그대로.
+ *
+ * 주간 보스는 "이번 주 갈 보스" 카드가 고른 것만 보여주므로, 여기서는 cycles 로
+ * 일간·월간만 받는다. 이 둘은 고르는 대상이 아니라 스케줄러 기록을 그대로 보는 것이다.
+ */
+export function BossClearTable({
+  bosses,
+  priceDate,
+  partyOf,
+  weekly,
+  title = "보스",
+  cycles = ["bossWeekly", "bossDaily", "bossMonthly"],
+}: {
+  bosses: BossClearRow[];
+  priceDate: string;
+  partyOf: (boss: string, diff: string) => number;
+  weekly: string;
+  title?: string;
+  cycles?: string[];
+}) {
   const groups: Record<string, BossClearRow[]> = {};
-  for (const b of bosses) (groups[b.cycle] ??= []).push(b);
-  const order = ["bossWeekly", "bossDaily", "bossMonthly"];
+  for (const b of bosses) if (cycles.includes(b.cycle)) (groups[b.cycle] ??= []).push(b);
+  const order = cycles;
+  if (!order.some((k) => groups[k]?.length)) return null;
   return (
     <div className="card space-y-4">
       <div className="flex items-baseline gap-2">
-        <h2 className="font-semibold">보스</h2>
+        <h2 className="font-semibold">{title}</h2>
         <span className="text-sm text-zinc-500">주간 {weekly} 클리어</span>
       </div>
       {order.filter((k) => groups[k]?.length).map((cycle) => (
@@ -32,7 +53,7 @@ export function BossClearTable({ bosses, priceDate, partyOf, weekly }: { bosses:
                       <td className="py-1.5 w-6">{b.completed ? "✅" : "⬜"}</td>
                       <td className="py-1.5">
                         <span className="inline-flex items-center gap-2">
-                          <BossIcon boss={b.boss} diff={b.diff} size={34} showDiff={false} className={b.completed ? "" : "opacity-60 grayscale"} />
+                          <BossIcon boss={b.boss} diff={b.diff} size={48} showDiff={false} className={b.completed ? "" : "opacity-60 grayscale"} />
                           <span className="inline-flex items-center gap-1.5">
                             <DifficultyBadge diff={b.diff} size="xs" solid />
                             {b.boss}
