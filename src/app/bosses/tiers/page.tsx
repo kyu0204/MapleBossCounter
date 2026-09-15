@@ -53,8 +53,7 @@ export default function TiersPage() {
           ))}
         </div>
         <p className="text-[11px] text-zinc-400">
-          보상은 나무위키 보스 문서의 &quot;주요 보상&quot;에서 가져왔습니다. 주간 보스만 수집했고, 난이도 전용 보상은 배지로 구분합니다(<code>+</code> 는 그 난이도 이상).
-          (기준 {REWARD_ITEMS_META.updated})
+          보상은 나무위키 보스 문서의 &quot;주요 보상&quot;에서 가져왔습니다. 주간 보스만 수집했고, 각 줄에는 그 난이도에서 실제로 나오는 것만 표시됩니다. (기준 {REWARD_ITEMS_META.updated})
         </p>
       </div>
 

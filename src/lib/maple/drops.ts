@@ -118,6 +118,23 @@ export function rewardGroupsOf(boss: string, diff: Difficulty | string): RewardG
   return out.sort((a, b) => Number(a.difficultyScoped) - Number(b.difficultyScoped));
 }
 
+/**
+ * 보스+난이도에 실제로 해당하는 보상만 평평한 목록으로.
+ * 카테고리는 필터링에만 쓰고 화면에는 내보내지 않는다 — 행이 이미 난이도별이라 라벨이 중복이다.
+ */
+export function rewardItemsFor(boss: string, diff: Difficulty | string): RewardItem[] {
+  const out: RewardItem[] = [];
+  const seen = new Set<string>();
+  for (const g of rewardGroupsOf(boss, diff)) {
+    for (const it of g.items) {
+      if (seen.has(it.name)) continue;
+      seen.add(it.name);
+      out.push(it);
+    }
+  }
+  return out;
+}
+
 /** 보스의 모든 보상 (난이도 무관) */
 export function allRewardsOf(boss: string): RewardItem[] {
   return Object.values(itemFile.items[boss] ?? {})

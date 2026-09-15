@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import rawItems from "@/data/boss_reward_items.json";
-import { rewardGroupsOf, allRewardsOf, hasRewards, itemIconFor, setOfItem, REWARD_ITEMS_META, DROP_SET_STYLE } from "@/lib/maple/drops";
+import { rewardGroupsOf, rewardItemsFor, allRewardsOf, hasRewards, itemIconFor, setOfItem, REWARD_ITEMS_META, DROP_SET_STYLE } from "@/lib/maple/drops";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 import { tierOf } from "@/lib/maple/tiers";
 
@@ -75,6 +75,21 @@ describe("난이도별 보상 필터", () => {
     const normalNames = rewardGroupsOf("유피테르", "normal").flatMap((g) => g.items.map((i) => i.name));
     expect(normalNames).toContain("유피테르로이드"); // 공통
     expect(normalNames).not.toContain("오만의 원죄"); // 하드 전용
+  });
+
+  it("화면용 목록은 카테고리 없이 평평하고, 중복이 없다", () => {
+    // 행 자체가 난이도별이므로 라벨 없이 해당 아이템만 낸다
+    const hard = rewardItemsFor("유피테르", "hard").map((i) => i.name);
+    expect(hard).toEqual(["유피테르로이드", "놀라운 긍정의 혼돈 주문서 60%", "뒤틀린 갈망의 편린", "갈망의 에테르넬 방어구 상자", "오만의 원죄"]);
+    expect(new Set(hard).size).toBe(hard.length);
+    expect(rewardItemsFor("유피테르", "normal").map((i) => i.name)).not.toContain("오만의 원죄");
+    // 모든 보스·난이도에서 이름 중복이 없어야 한다
+    for (const b of bosses) {
+      for (const d of Object.keys(PRICE_TABLE.prices[b] ?? {})) {
+        const names = rewardItemsFor(b, d).map((i) => i.name);
+        expect(new Set(names).size, `${b} ${d}`).toBe(names.length);
+      }
+    }
   });
 
   it("'노멀+'(노멀 이상)은 노멀과 그 위 난이도에 모두 적용된다", () => {
