@@ -5,12 +5,10 @@ import { ownedCharacterByOcid } from "@/services/characterSync";
 import { latestSnapshot, parsed, snapshotOn } from "@/services/snapshotService";
 import { powerHistory } from "@/services/characterRefresh";
 import { partySizeLookup } from "@/services/partyLink";
-import { estimateRevenue } from "@/lib/maple/scheduler";
 import { kstDateStr, lastWednesdayKst } from "@/lib/maple/kst";
 import { fmtPower } from "@/lib/maple/format";
 import { RefreshButton } from "@/components/character/RefreshButton";
 import { BossClearTable } from "@/components/character/BossClearTable";
-import { RevenueSummary } from "@/components/character/RevenueSummary";
 import { ContentsList } from "@/components/character/ContentsList";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
 import { RemainingBossList, PickedBossList } from "@/components/character/BossPlanList";
@@ -32,7 +30,6 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
   const snap = view === "lastweek" ? parsed(snapshotOn(c.id, lastWednesdayKst())) : latest;
   const priceDate = view === "lastweek" ? lastWednesdayKst() : kstDateStr();
   const partyOf = partySizeLookup(userId);
-  const revenue = snap ? estimateRevenue(snap.bosses, priceDate, (b, d) => partyOf(c.id, b, d)) : null;
   const history = powerHistory(c.id, 30);
   const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
 
@@ -133,7 +130,6 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
             <ContentsList title="주간 콘텐츠" items={snap.weekly} />
           </div>
           <div className="space-y-4">
-            {revenue && <RevenueSummary revenue={revenue} priceDate={priceDate} />}
             <div className="card text-sm">
               <h3 className="font-semibold mb-2">전투력 이력</h3>
               {history.length ? (
