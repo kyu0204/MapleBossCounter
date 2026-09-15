@@ -4,12 +4,6 @@ import type { ParsedSnapshot } from "@/lib/maple/scheduler";
 import { fmtPower } from "@/lib/maple/format";
 import { CharacterAvatar } from "./CharacterAvatar";
 
-export interface CardRevenue {
-  /** 고른 보스를 다 돌았을 때의 실수령 합 */
-  total: number;
-  /** 아직 안 간 보스 수 */
-  remainingCount: number;
-}
 
 /**
  * 목록의 캐릭터 카드. 카드 전체가 상세로 가는 링크다.
@@ -17,7 +11,16 @@ export interface CardRevenue {
  * 새로고침은 상세에, 숨기기는 목록 위 설정에 모았다. 카드에 버튼을 두면
  * 카드를 통째로 누르는 동작과 부딪히고, 카드 12개마다 버튼이 붙어 시끄럽다.
  */
-export function CharacterCard({ character: c, snapshot, revenue }: { character: Character; snapshot: ParsedSnapshot | null; revenue: CardRevenue | null }) {
+export function CharacterCard({
+  character: c,
+  snapshot,
+  revenue,
+}: {
+  character: Character;
+  snapshot: ParsedSnapshot | null;
+  /** 고른 보스를 다 돌았을 때의 실수령 합. 고른 보스가 없으면 null */
+  revenue: number | null;
+}) {
   const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
   return (
     <Link
@@ -46,11 +49,10 @@ export function CharacterCard({ character: c, snapshot, revenue }: { character: 
           <span>주간 보스 {snapshot ? `${snapshot.weeklyClearCount}/${snapshot.weeklyLimit}` : "-"}</span>
           {c.hidden && <span className="text-zinc-400">숨김</span>}
         </div>
-        {revenue && revenue.total > 0 && (
+        {revenue != null && revenue > 0 && (
           <div className="flex items-baseline gap-2">
             <span className="text-xs text-zinc-500">총 수익</span>
-            <b className="tabular-nums">{fmtPower(revenue.total)}</b>
-            {revenue.remainingCount > 0 && <span className="text-xs text-zinc-500">{revenue.remainingCount}개 남음</span>}
+            <b className="tabular-nums">{fmtPower(revenue)}</b>
           </div>
         )}
       </div>

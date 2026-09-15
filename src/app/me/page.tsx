@@ -61,15 +61,16 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
     const picks = toPickList(mergePicks(saved, partyPicksAll.get(c.id) ?? {}));
     const cleared = (snap?.bosses ?? []).filter((b) => b.cycle === "bossWeekly" && b.completed).map((b) => bossKey(b.boss, b.diff));
     const { remaining, done } = splitByCleared(picks, cleared);
-    // 카드에는 총 수익만 낸다. 지금까지 번 것은 맨 위 합계와 캐릭터 상세에서 본다.
-    const rev = picks.length ? { total: picksTotals(picks, priceDate).value, remainingCount: remaining.length } : null;
+    // 카드에는 총 수익만 낸다. 진행 상황은 "주간 보스 n/12" 줄이 이미 보여 주고,
+    // 지금까지 번 것은 맨 위 합계와 캐릭터 상세에 있다.
+    const rev = picks.length ? picksTotals(picks, priceDate).value : null;
     const earned = picks.length ? picksTotals(done, priceDate).value : 0;
-    return { c, snap, rev, earned };
+    return { c, snap, rev, earned, remainingCount: remaining.length };
   });
 
   // 표시 중인 캐릭터 전체 합계
   const grand = cards.reduce(
-    (s, x) => ({ total: s.total + (x.rev?.total ?? 0), earned: s.earned + x.earned, remaining: s.remaining + (x.rev?.remainingCount ?? 0) }),
+    (s, x) => ({ total: s.total + (x.rev ?? 0), earned: s.earned + x.earned, remaining: s.remaining + x.remainingCount }),
     { total: 0, earned: 0, remaining: 0 },
   );
 
