@@ -32,6 +32,9 @@ npm run db:generate      # 스키마 변경 후 마이그레이션 SQL 생성 (d
 npm run job -- <name>    # 잡 수동 실행: weekly_snapshot_realtime | weekly_snapshot_backfill | daily_snapshot | weekly_power_refresh | cache_sweep
 npx tsx scripts/seed-dev.ts tester 270   # dev 유저에 서버 키 등록 + 캐릭터/스냅샷/예시 파티 시드
 npx tsx scripts/smoke.ts 알전임          # 별도 DB(data/smoke.db) 로 파이프라인 검증
+npx tsx scripts/check-bossplan.ts 알전임 # "갈 보스" 저장→재읽기→플래너 반영 검증 (app.db 복사본, 실데이터 비변경)
+node scripts/fetch-namu-boss-icons.mjs --inspect   # 보스 아이콘 매칭만 확인
+node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 재수집
 ```
 
 ## 페이지
@@ -42,7 +45,8 @@ npx tsx scripts/smoke.ts 알전임          # 별도 DB(data/smoke.db) 로 파�
 | `/lookup?name=` | ○ | 닉네임으로 전투력 조회 (서버 키, IP 분당 20회, 캐릭터당 10분 쿨다운) |
 | `/board` `/board/[id]` | ○ | 파티 모집 게시판. 글쓰기·지원은 로그인 |
 | `/board/new` `/board/mine` `/board/[id]/edit` | 로그인 | 모집글 작성·수정, 내 글·지원 현황 |
-| `/me` `/me/characters/[ocid]` | 로그인 | 캐릭터 대시보드, 보스 클리어·수익, 전투력 이력 |
+| `/me` | 로그인 | 캐릭터 대시보드 (기본 Lv.260+ 표시, `?all=1` 로 전체) |
+| `/me/characters/[ocid]` | 로그인 | **이번 주 갈 보스 설정**, 보스 클리어·수익, 전투력 이력 |
 | `/parties` | 로그인 | 고정 파티 CRUD. 인원수가 플래너 실수령에 반영 |
 | `/planner` | 로그인 | 주간 결정 배분 플래너 |
 | `/settings/nexon-key` | 로그인 | 넥슨 API 키 등록 |
@@ -57,8 +61,24 @@ npx tsx scripts/smoke.ts 알전임          # 별도 DB(data/smoke.db) 로 파�
 - `src/lib/db/queries/` — 파티·게시판 조회. `src/actions/` — Server Actions (인증·소유권·zod 검증).
 - `src/services/` — DB + API 조합 (캐릭터 동기화/갱신/조회, 스냅샷, 파티 연결, 플래너 입력, 공개 조회).
 - `src/jobs/` — node-cron 잡. `CRON_ENABLED=1` 일 때 `instrumentation.ts` 에서 시작.
-- `src/data/` — `boss_crystal_prices.json`(패치별 가격), `boss_tiers.json`(나무위키 티어).
+- `src/data/` — `boss_crystal_prices.json`(패치별 가격), `boss_tiers.json`(나무위키 티어), `boss_icons.json`(아이콘 매핑).
+- `src/components/boss/` — `BossIcon`(아이콘 + 난이도 색/글자), `BossChip`(아이콘 + 약칭 + 실수령).
 - `deploy/` — EC2 셋업·배포·nginx·DB 백업 스크립트. `ecosystem.config.js` — pm2.
+
+### 갈 보스 설정
+
+캐릭터 상세의 "이번 주 갈 보스"와 플래너의 고정 픽은 **같은 저장소**(`plan_configs.characters[ocid].bosses`)를 쓴다. 어느 쪽에서 고쳐도 반대쪽에 그대로 반영된다.
+
+- 규칙: 주간 결정만 · 한 보스당 난이도 1개 · 인원 1~6. 검증은 `validateBossSelection()` 한 곳에서.
+- 파티 등록(`/parties`)에서 유래한 픽은 🔒 로 표시되고 여기서 못 지운다 (파티를 고쳐야 함).
+- `스케줄러 등록 불러오기` 는 인게임 스케줄러에 등록해 둔 주간 보스로 선택을 채운다.
+
+### 보스 아이콘
+
+`public/bosses/*.webp` 로 **자체 호스팅**한다 (런타임 외부 요청 없음). 매핑은 `src/data/boss_icons.json`.
+
+> 이미지는 나무위키 보스 문서에서 수집했고 원저작권은 넥슨에 있다. 재배포·상업적 이용(광고 게재 포함)의 책임은 배포자에게 있다.
+> 아이콘 파일이 없어도 동작한다 — `BossIcon` 이 난이도 색 + 약칭 배지(`하세렌`, `카더스크`)로 자동 폴백한다.
 
 ## 운영 (EC2 Ubuntu)
 

@@ -1,0 +1,233 @@
+{
+  "자쿰": {
+    "source": "namu",
+    "doc": "자쿰(메이플스토리)",
+    "src": "https://i.namu.wiki/i/HwgwPJtcyvbd92AbI5gNxU-zRurG8kcuAXigk6ZSxZ1mnFYeyL4NI__FEKuML6fc2QMgAQQWORKhUaQevKvnOw.webp",
+    "file": "/bosses/자쿰.webp",
+    "bytes": 7532
+  },
+  "피에르": {
+    "source": "namu",
+    "doc": "피에르(메이플스토리)",
+    "src": "https://i.namu.wiki/i/R57DVkD8RyJmS3EyFgF9T-_Zm3rLGfSBIvQ_jCotcPnXf-DFH_k-qHl9ShAf8X-aoOpT9ujv3H3ZOxU46Ghspw.webp",
+    "file": "/bosses/피에르.webp",
+    "bytes": 6042
+  },
+  "반반": {
+    "source": "namu",
+    "doc": "반반(메이플스토리)",
+    "src": "https://i.namu.wiki/i/K6r6PxEKEtTGz8SJuqLVaaNGg_7AOUydQsiXHwRxRu-qB1HqXWu75r87jw-qh-giDDjkcJ5T3rFRcPfqtCCY_w.webp",
+    "file": "/bosses/반반.webp",
+    "bytes": 4060
+  },
+  "블러디퀸": {
+    "source": "namu",
+    "doc": "블러디 퀸",
+    "src": "https://i.namu.wiki/i/M7snvBxvv4fnd1vz0-9LdaAXnX79hK2M2mGWG4ljUrLzihY_KjdNNYU0qlxJDfAT8A5KmRuTSeKU_4R2-yhlsA.webp",
+    "file": "/bosses/블러디퀸.webp",
+    "bytes": 4222
+  },
+  "벨룸": {
+    "source": "namu",
+    "doc": "벨룸/보스 몬스터",
+    "src": "https://i.namu.wiki/i/nRhomNJCgsRD5Ri6hw89zbKMDk2x2mM70BBnAL4MFt7QdBtrYbUElJPmMq4Jd1iwwswTjd1I3n0--L2UKGl4Lw.webp",
+    "file": "/bosses/벨룸.webp",
+    "bytes": 6074
+  },
+  "매그너스": {
+    "source": "namu",
+    "doc": "매그너스(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/jnYuYrZGyYG1_Kq4mvZIvHruYp6Sumche3zCQwhVFdZkc_bF1qHohrFHGdEIXr06FVIiqnFks81PKATXP8Qw2Q.webp",
+    "file": "/bosses/매그너스.webp",
+    "bytes": 7054
+  },
+  "파풀라투스": {
+    "source": "namu",
+    "doc": "파풀라투스",
+    "src": "https://i.namu.wiki/i/gYP7IsNtWyQhQXzh-iyDBA9NH_fmhfyiYPTxI6432P-tsNYYInSLS_qPyXxvnkm7en6YDPfQvLaISZsBBUnANQ.webp",
+    "file": "/bosses/파풀라투스.webp",
+    "bytes": 6986
+  },
+  "힐라": {
+    "source": "namu",
+    "doc": "힐라/보스 몬스터",
+    "src": "https://i.namu.wiki/i/oQ19VEJfQPXLw-0yh6HjlotuOcf-ZAGwhknKi16bvFWkmIBN5u27xdWaLIR3XxQ0In_bSvA-vlqlxtc1phelSw.webp",
+    "file": "/bosses/힐라.webp",
+    "bytes": 8076
+  },
+  "카웅": {
+    "source": "namu",
+    "doc": "카웅",
+    "src": "https://i.namu.wiki/i/PH0YFge9X8uzxaGO7MQNmuHNczznXp2UTlrrAU9QAvSSz82pAHn18Azje-wHI2UgCtXywp89-iral_frreogsA.webp",
+    "file": "/bosses/카웅.webp",
+    "bytes": 6648
+  },
+  "반 레온": {
+    "source": "namu",
+    "doc": "반 레온/보스 몬스터",
+    "src": "https://i.namu.wiki/i/adHUtOxNd-aTm3Qn5jo1qU_eFQs7gq2AUAGr0kAjGJ_Iu8SzVE7yKde-CVATle62nME6t5NHXHtzwgQswfH3jQ.webp",
+    "file": "/bosses/반-레온.webp",
+    "bytes": 5482
+  },
+  "혼테일": {
+    "source": "namu",
+    "doc": "혼테일",
+    "src": "https://i.namu.wiki/i/CxEeuWdpWqdnevZXRS-q7QfFF84WHB0fuNqjY1Cm699AZI7a4W-28kNZbhPioNN6LrwvB4JCJ8fCjoy2NoQGQQ.webp",
+    "file": "/bosses/혼테일.webp",
+    "bytes": 7574
+  },
+  "아카이럼": {
+    "source": "namu",
+    "doc": "아카이럼/보스 몬스터",
+    "src": "https://i.namu.wiki/i/FCHSjYo-oj1UfzELpctw13fqOqp0Pti9nfSbmKYPaGVDc_E1ACnrVJVAM1UmOrevNDywxcgA2tC_hfnrM73o1Q.webp",
+    "file": "/bosses/아카이럼.webp",
+    "bytes": 6794
+  },
+  "핑크빈": {
+    "source": "namu",
+    "doc": "핑크빈",
+    "src": "https://i.namu.wiki/i/960WY9Vq38Bnmo9n-p5UQ_eBeGiM3V-rYYU4qtyYGoLWxP_ZVcXGAbfXzBoNFdjevhuh4gjrsMz1hfUMjAkt-Q.webp",
+    "file": "/bosses/핑크빈.webp",
+    "bytes": 5178
+  },
+  "시그너스": {
+    "source": "namu",
+    "doc": "시그너스(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/WiJLdpN4i84Ed1DZ0dmaAiR-7Nhk-2NlF3Kna18qttHyJg7Tswxfuwh4R7HdGdGPxW6xv0UsCDuLDJkTNuk1cA.webp",
+    "file": "/bosses/시그너스.webp",
+    "bytes": 8128
+  },
+  "스우": {
+    "source": "namu",
+    "doc": "스우/보스 몬스터",
+    "src": "https://i.namu.wiki/i/nlf6odKprT0LLjoYMUSUyLhO-wSqOCc0LVW0Y5amor3tnBcUwONLZV2aw78XURvWjxinCrekL6scbyxoOrtmYw.webp",
+    "file": "/bosses/스우.webp",
+    "bytes": 6848
+  },
+  "데미안": {
+    "source": "namu",
+    "doc": "데미안(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/RoOo-yGoGJOw0bbA8tap7qenFfZGRUyatJmMXJVhZ2DIbenMC2wFnPNycGlr1Jgy7SALcU4bbQcC8prE_vOZ9w.webp",
+    "file": "/bosses/데미안.webp",
+    "bytes": 6640
+  },
+  "가디언 엔젤 슬라임": {
+    "source": "namu",
+    "doc": "가디언 엔젤 슬라임",
+    "src": "https://i.namu.wiki/i/0SASPhnlpBk773MYrYTg4KDlYky_TjbSFc4Qlvzm1ziUETA5OAIR0U0aFRx5CduYzFk7GM8AUJx81kDNMM5Z-g.webp",
+    "file": "/bosses/가디언-엔젤-슬라임.webp",
+    "bytes": 5650
+  },
+  "루시드": {
+    "source": "namu",
+    "doc": "루시드(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/qdi9MVxsI62R5q4VUuZV5kMN9YhUV2m46b_s6GGA88OUSn-gjAOxQAvOFcxSZ-habC9Nvwlxaz2BkUvtVu-31Q.webp",
+    "file": "/bosses/루시드.webp",
+    "bytes": 7730
+  },
+  "윌": {
+    "source": "namu",
+    "doc": "윌(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/qE4Wt4OSkWfi8XJA-AU7f1Roc9ehIcb_5XaYlEsKPla3LydVoi0FnWqElA5D4PXMav-j2DQLxzCZmKKJ2K0H2g.webp",
+    "file": "/bosses/윌.webp",
+    "bytes": 7032
+  },
+  "더스크": {
+    "source": "namu",
+    "doc": "더스크",
+    "src": "https://i.namu.wiki/i/3kvlqSenHzA-Jt-dyCn3LayCBrQ2uP-2O4I7LTOHttqWeGV-HMR4RCTkwvKSYsSlCqWID8ftHhfdwatLs0NuEw.webp",
+    "file": "/bosses/더스크.webp",
+    "bytes": 5368
+  },
+  "듄켈": {
+    "source": "namu",
+    "doc": "듄켈/보스 몬스터",
+    "src": "https://i.namu.wiki/i/3NMtlBHT2BrL4Pda5aCLql2gAH6zavyLGsktci9yvNhUh5IalPBfmvm-OGhc3XDRi9QKfW1mnGekkorAuNI48w.webp",
+    "file": "/bosses/듄켈.webp",
+    "bytes": 5298
+  },
+  "진 힐라": {
+    "source": "namu",
+    "doc": "진 힐라",
+    "src": "https://i.namu.wiki/i/Gu0d_cOrphy8xp9fMnHv6K507LZYtxEHVNya5smHOfWRw78e4lFShPPtSfk8wJiLlP9OuqkeBCJJ0S8N4G6rHw.webp",
+    "file": "/bosses/진-힐라.webp",
+    "bytes": 6044
+  },
+  "선택받은 세렌": {
+    "source": "namu",
+    "doc": "선택받은 세렌",
+    "src": "https://i.namu.wiki/i/wtwgTz2izsdTA7CaxLe8KjAffyk0RaASwPzcUf2Xa0b2Fe0vUJZureNaAKdFvxKtnIy1YCKpQ_wZgyXm4MsOWg.webp",
+    "file": "/bosses/선택받은-세렌.webp",
+    "bytes": 7470
+  },
+  "감시자 칼로스": {
+    "source": "namu",
+    "doc": "감시자 칼로스",
+    "src": "https://i.namu.wiki/i/bEOXjs3lWrqiNH2cX6BbodTu0gVLTAhYKcaRv2vk6RqCz5EOCwIPBrZfLJW1ej-IXe2JKbClqa1KIS7QI8JA1Q.webp",
+    "file": "/bosses/감시자-칼로스.webp",
+    "bytes": 5130
+  },
+  "최초의 대적자": {
+    "source": "namu",
+    "doc": "최초의 대적자",
+    "src": "https://i.namu.wiki/i/M_rHxpmWhyv_slKnOvVtWWtFM1Lb7xKpG-eWddAJsVzeTrikqU-TsI7AOyGwYcND5M5CUKAD8ydV8KtdZTy_eA.webp",
+    "file": "/bosses/최초의-대적자.webp",
+    "bytes": 5846
+  },
+  "카링": {
+    "source": "namu",
+    "doc": "카링/보스 몬스터",
+    "src": "https://i.namu.wiki/i/2qmCYHl2gdC_1U5jZ-iBAzjhoQcuBttlaK5CAWZ-DvJvMd9qcYGrFhabw2Pueyq4yGlfpconVVbASrrtnWWL0w.webp",
+    "file": "/bosses/카링.webp",
+    "bytes": 7142
+  },
+  "벨로나": {
+    "source": "namu",
+    "doc": "벨로나(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/JLKI3xVkS_XRF2jCI2JHJ-7xwGDNxzMkCL8GJah2rsLiiUM3ZwL4Q_KuOEtd52AZbcoohtuiqoPIHIy-3sPASQ.webp",
+    "file": "/bosses/벨로나.webp",
+    "bytes": 4604
+  },
+  "찬란한 흉성": {
+    "source": "namu",
+    "doc": "찬란한 흉성",
+    "src": "https://i.namu.wiki/i/V4192tag9chXzGfmk3Z_p7hzp1XrPu0aDjp3QRRd0UsCFgv6KrC_tfsmuWNNWqSmxsr_o97xMoWNkKioxI40jA.webp",
+    "file": "/bosses/찬란한-흉성.webp",
+    "bytes": 8636
+  },
+  "림보": {
+    "source": "namu",
+    "doc": "림보(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/VzQnf1NGK14VidjzlaCsqsqnCy1K2sflvhiMG1X4y9bkJpFWRC4KDYRc56q4sFPTFa7HX4tQcGgesEk7kYs_Og.webp",
+    "file": "/bosses/림보.webp",
+    "bytes": 5822
+  },
+  "발드릭스": {
+    "source": "namu",
+    "doc": "발드릭스/보스 몬스터",
+    "src": "https://i.namu.wiki/i/6E3DvcWDNerfd-9elhOHbv0OIq19C0F8RC-eEbwrSgC69YYsB0yLMwBlW0tcod9OZ5zohH0ISlvRDVEpfDIbuQ.webp",
+    "file": "/bosses/발드릭스.webp",
+    "bytes": 9326
+  },
+  "유피테르": {
+    "source": "namu",
+    "doc": "유피테르(메이플스토리)/보스 몬스터",
+    "src": "https://i.namu.wiki/i/laZCYlRV6CcYvJ0wLiMAFR9NoAuRcxYN6R_I3_XywHWtL3oVPGTqMmS0JhCaRHfLhYOfdFEqjdnZUnwJ1-Ishw.webp",
+    "file": "/bosses/유피테르.webp",
+    "bytes": 7836
+  },
+  "시즌 보스 메이린": {
+    "source": "namu",
+    "doc": "메이린(메이플스토리)",
+    "src": "https://i.namu.wiki/i/6TnZS_ryKUcCupdYDBozxwuFe-gdEus6sQbkcy-tCUkp8SZ4yk9l3kc4BBa78XWDImbWA_Bhj71fqJAHk5113g.webp",
+    "file": "/bosses/시즌-보스-메이린.webp",
+    "bytes": 8940
+  },
+  "검은 마법사": {
+    "source": "namu",
+    "doc": "검은 마법사/보스 몬스터",
+    "src": "https://i.namu.wiki/i/B3dXxjGbaA3Gk5HuexIQbczywfn19BlwetVq4gOV2K_vNl8BhR1-S6W9Jg_t1-q0AuWo1xo7hPZusf9FcGKXxg.webp",
+    "file": "/bosses/검은-마법사.webp",
+    "bytes": 2600
+  }
+}

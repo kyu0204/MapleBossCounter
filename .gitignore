@@ -45,3 +45,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 나무위키 아이콘 수집 캐시
+.cache-namu.html

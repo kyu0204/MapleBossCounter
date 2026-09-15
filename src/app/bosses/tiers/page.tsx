@@ -4,6 +4,8 @@ import { crystalPrice } from "@/lib/maple/prices";
 import { kstDateStr } from "@/lib/maple/kst";
 import { fmtPower } from "@/lib/maple/format";
 import { parseBossKey } from "@/lib/maple/bossKey";
+import { bossTag } from "@/lib/maple/bossMeta";
+import { BossIcon } from "@/components/boss/BossIcon";
 
 export const metadata: Metadata = {
   title: "보스 티어표",
@@ -44,14 +46,17 @@ export default function TiersPage() {
                   <tr key={stars} className="border-t border-zinc-100 dark:border-zinc-800 align-top">
                     <td className="py-2 pr-3 whitespace-nowrap text-zinc-500 w-28">{"★".repeat(stars)}</td>
                     <td className="py-2">
-                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <div className="flex flex-wrap gap-2">
                         {keys
                           .map((k) => ({ k, ref: parseBossKey(k)!, price: crystalPrice(parseBossKey(k)!.boss, parseBossKey(k)!.diff, priceDate) }))
                           .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
                           .map(({ k, ref, price }) => (
-                            <span key={k}>
-                              {ref.boss} <span className="text-xs text-zinc-500">{ref.diff}</span>
-                              {price != null && <span className="text-xs text-zinc-400"> ({fmtPower(price)})</span>}
+                            <span key={k} className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 dark:border-zinc-800 pl-1 pr-2 py-0.5">
+                              <BossIcon boss={ref.boss} diff={ref.diff} size={26} />
+                              <span className="leading-tight">
+                                <span className="font-medium">{bossTag(ref.boss, ref.diff)}</span>
+                                {price != null && <span className="block text-[11px] text-zinc-500">{fmtPower(price)}</span>}
+                              </span>
                             </span>
                           ))}
                       </div>

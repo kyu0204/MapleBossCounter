@@ -7,6 +7,8 @@ import { normalizeBossList, parseBossKey } from "@/lib/maple/bossKey";
 import { crystalPrice, isWeeklyCrystal, PRICE_TABLE } from "@/lib/maple/prices";
 import { tierLabel, tierOf, type Tier } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
+import { bossTag } from "@/lib/maple/bossMeta";
+import { BossIcon } from "@/components/boss/BossIcon";
 
 export function CharacterPlanRow({
   character: c,
@@ -70,12 +72,15 @@ export function CharacterPlanRow({
       </div>
 
       {row && !open && (
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-2 flex flex-wrap gap-1.5">
           {row.picks.map((p) => (
-            <span key={`${p.boss}|${p.diff}`} className={`badge ${p.fixed ? "bg-orange-50 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200" : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"}`} title={`${fmtPower(p.price)}${p.party > 1 ? ` ÷${p.party}` : ""} · ${tierLabel(p.tier)}${p.source === "party" ? " · 파티" : ""}`}>
-              {p.fixed && "📌"}
-              {p.boss} {p.diff}
-              {p.party > 1 && <span className="opacity-60"> {p.party}인</span>}
+            <span key={`${p.boss}|${p.diff}`} className="inline-flex items-center gap-1" title={`${fmtPower(p.price)}${p.party > 1 ? ` ÷${p.party}` : ""} · ${tierLabel(p.tier)}${p.source === "party" ? " · 파티" : ""}`}>
+              <BossIcon boss={p.boss} diff={p.diff} size={26} />
+              <span className={`text-xs ${p.fixed ? "font-semibold" : ""}`}>
+                {p.fixed && "📌"}
+                {bossTag(p.boss, p.diff)}
+                {p.party > 1 && <span className="opacity-60"> {p.party}인</span>}
+              </span>
             </span>
           ))}
         </div>
@@ -150,7 +155,10 @@ export function CharacterPlanRow({
                     <tr key={`${p.boss}|${p.diff}`} className="border-t border-zinc-100 dark:border-zinc-800">
                       <td className="py-0.5 w-5">{p.fixed ? "📌" : ""}</td>
                       <td className="py-0.5">
-                        {p.boss} <span className="text-xs text-zinc-500">{p.diff}</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <BossIcon boss={p.boss} diff={p.diff} size={24} />
+                          {p.boss} <span className="text-xs text-zinc-500">{p.diff}</span>
+                        </span>
                       </td>
                       <td className="py-0.5 text-xs text-zinc-500">{tierLabel(p.tier)}</td>
                       <td className="py-0.5 text-right whitespace-nowrap">

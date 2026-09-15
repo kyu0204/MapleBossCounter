@@ -2,6 +2,7 @@ import type { BossClearRow } from "@/lib/maple/scheduler";
 import { crystalPrice } from "@/lib/maple/prices";
 import { tierLabel } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
+import { BossIcon } from "@/components/boss/BossIcon";
 
 const CYCLE_LABEL: Record<string, string> = { bossWeekly: "주간", bossDaily: "일간", bossMonthly: "월간" };
 
@@ -29,8 +30,13 @@ export function BossClearTable({ bosses, priceDate, partyOf, weekly }: { bosses:
                     <tr key={`${b.boss}|${b.diff}`} className={`border-t border-zinc-100 dark:border-zinc-800 ${b.completed ? "" : "text-zinc-400"} ${!b.registered && !b.completed ? "hidden sm:table-row" : ""}`}>
                       <td className="py-1 w-6">{b.completed ? "✅" : "⬜"}</td>
                       <td className="py-1">
-                        {b.boss} <span className="text-xs">{b.diff}</span>
-                        {!b.registered && <span className="ml-1 text-[10px] text-zinc-400">미등록</span>}
+                        <span className="inline-flex items-center gap-1.5">
+                          <BossIcon boss={b.boss} diff={b.diff} size={22} className={b.completed ? "" : "opacity-60 grayscale"} />
+                          <span>
+                            {b.boss} <span className="text-xs">{b.diff}</span>
+                            {!b.registered && <span className="ml-1 text-[10px] text-zinc-400">미등록</span>}
+                          </span>
+                        </span>
                       </td>
                       <td className="py-1 text-xs text-zinc-500 whitespace-nowrap">{tierLabel(b.tier)}</td>
                       <td className="py-1 text-right whitespace-nowrap">

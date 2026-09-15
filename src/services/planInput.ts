@@ -6,7 +6,7 @@ import { listOwnedCharacters } from "./characterSync";
 import { ceilingSnapshots, latestSnapshot, parsed } from "./snapshotService";
 import { partyPicksByCharacter } from "./partyLink";
 import type { BossClearRow } from "@/lib/maple/scheduler";
-import type { PlanConfig } from "@/lib/maple/planner";
+import type { CharPlanConfig, PlanConfig } from "@/lib/maple/planner";
 
 /** 클라이언트 PlannerBoard 에 넘기는 캐릭터 단위 입력. 상한 산정용 클리어 행은 주간·완료만 추린다. */
 export interface PlannerCharacter {
@@ -43,6 +43,27 @@ export function savePlanConfigRow(userId: string, world: string, config: PlanCon
     .values({ userId, world, config, updatedAt: new Date().toISOString() })
     .onConflictDoUpdate({ target: [planConfigs.userId, planConfigs.world], set: { config, updatedAt: new Date().toISOString() } })
     .run();
+}
+
+/** 캐릭터 한 명의 설정만 읽는다 (캐릭터 상세 페이지용). */
+export function loadCharConfig(userId: string, world: string, ocid: string): CharPlanConfig {
+  return loadPlanConfig(userId, world).characters[ocid] ?? {};
+}
+
+/**
+ * 캐릭터 한 명의 설정만 갱신한다. 나머지 캐릭터·월드 설정은 그대로 둔다.
+ * patch 의 값이 undefined 인 키는 삭제로 취급.
+ */
+export function patchCharConfig(userId: string, world: string, ocid: string, patch: Partial<CharPlanConfig>): CharPlanConfig {
+  const cfg = loadPlanConfig(userId, world);
+  const next: CharPlanConfig = { ...(cfg.characters[ocid] ?? {}) };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) delete next[k as keyof CharPlanConfig];
+    else (next as Record<string, unknown>)[k] = v;
+  }
+  cfg.characters = { ...cfg.characters, [ocid]: next };
+  savePlanConfigRow(userId, world, cfg);
+  return next;
 }
 
 /** 플래너 기본 표시 레벨. 이보다 낮아도 파티 등록·설정에 있으면 포함. */

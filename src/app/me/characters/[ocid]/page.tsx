@@ -13,6 +13,10 @@ import { BossClearTable } from "@/components/character/BossClearTable";
 import { RevenueSummary } from "@/components/character/RevenueSummary";
 import { ContentsList } from "@/components/character/ContentsList";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
+import { BossPlanEditor } from "@/components/character/BossPlanEditor";
+import { loadCharConfig, loadPlanConfig } from "@/services/planInput";
+import { partyPicksByCharacter } from "@/services/partyLink";
+import { normalizeBossList, bossKey } from "@/lib/maple/bossKey";
 
 export default async function CharacterPage({ params, searchParams }: PageProps<"/me/characters/[ocid]">) {
   const userId = await requireUserId();
@@ -22,12 +26,20 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
   if (!c) notFound();
 
   const view = sp.view === "lastweek" ? "lastweek" : "current";
-  const snap = view === "lastweek" ? parsed(snapshotOn(c.id, lastWednesdayKst())) : parsed(latestSnapshot(c.id));
+  const latest = parsed(latestSnapshot(c.id));
+  const snap = view === "lastweek" ? parsed(snapshotOn(c.id, lastWednesdayKst())) : latest;
   const priceDate = view === "lastweek" ? lastWednesdayKst() : kstDateStr();
   const partyOf = partySizeLookup(userId);
   const revenue = snap ? estimateRevenue(snap.bosses, priceDate, (b, d) => partyOf(c.id, b, d)) : null;
   const history = powerHistory(c.id, 30);
   const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
+
+  // "이번 주 갈 보스": 플래너와 같은 저장소(plan_configs) 사용
+  const world = c.world ?? "";
+  const charCfg = world ? loadCharConfig(userId, world, ocid) : {};
+  const planDefaultParty = world ? loadPlanConfig(userId, world).default_party ?? 1 : 1;
+  const savedBosses = Object.fromEntries(normalizeBossList(charCfg.bosses).map((b) => [b.key, b.party ?? planDefaultParty]));
+  const weeklyRows = latest?.bosses.filter((b) => b.cycle === "bossWeekly") ?? [];
 
   return (
     <div className="space-y-6">
@@ -61,6 +73,22 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
         </Link>
         {snap?.date && <span className="text-zinc-500">스냅샷 기준일 {snap.date.slice(0, 10)}</span>}
       </div>
+
+      {view === "current" &&
+        (world ? (
+          <BossPlanEditor
+            ocid={ocid}
+            cap={latest?.weeklyLimit ?? 12}
+            defaultParty={planDefaultParty}
+            initial={savedBosses}
+            partyPicks={partyPicksByCharacter(userId).get(c.id) ?? {}}
+            registered={weeklyRows.filter((b) => b.registered).map((b) => bossKey(b.boss, b.diff))}
+            cleared={weeklyRows.filter((b) => b.completed).map((b) => bossKey(b.boss, b.diff))}
+            priceDate={priceDate}
+          />
+        ) : (
+          <div className="card text-sm text-zinc-600">월드 정보가 없어 보스 설정을 쓸 수 없습니다. 내 캐릭터에서 목록 동기화를 실행하세요.</div>
+        ))}
 
       {!snap ? (
         <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>

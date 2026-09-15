@@ -259,6 +259,31 @@ export function allocatePlan(input: PlanInput): PlanOutput {
   };
 }
 
+// ---------- "갈 보스" 선택 검증 ----------
+
+export type BossSelectionResult = { ok: true; clean: Record<string, number> } | { ok: false; error: string };
+
+/**
+ * 캐릭터 상세에서 고른 "갈 보스" 맵을 검증·정규화한다.
+ * 규칙: 주간 결정만 · 가격·티어표에 존재 · 보스당 난이도 1개 · 인원 1~6.
+ */
+export function validateBossSelection(bosses: Record<string, unknown>, priceDate: string): BossSelectionResult {
+  const clean: Record<string, number> = {};
+  const seenBoss = new Set<string>();
+  for (const [key, rawParty] of Object.entries(bosses ?? {})) {
+    const k = parseBossKey(key);
+    if (!k) return { ok: false, error: `보스 표기 오류: ${key}` };
+    const party = Number(rawParty);
+    if (!Number.isInteger(party) || party < 1 || party > 6) return { ok: false, error: `${key} 인원은 1~6 이어야 합니다` };
+    if (!isWeeklyCrystal(k.boss, k.diff)) return { ok: false, error: `${key} 는 주간 결정이 아닙니다` };
+    if (!tierOf(k.boss, k.diff) || crystalPrice(k.boss, k.diff, priceDate) == null) return { ok: false, error: `${key} 는 가격·티어표에 없습니다` };
+    if (seenBoss.has(k.boss)) return { ok: false, error: `${k.boss} 는 난이도 하나만 고를 수 있습니다` };
+    seenBoss.add(k.boss);
+    clean[key] = party;
+  }
+  return { ok: true, clean };
+}
+
 // ---------- 스케줄러 등록 기반 설정 생성 (cmdPlanInit 포팅) ----------
 
 export interface InitFromRegistrationInput {

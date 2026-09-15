@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { PriceTable } from "@/lib/maple/prices";
 import { tierOf, tierLabel } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
+import { BossIcon } from "@/components/boss/BossIcon";
 
 type Prices = PriceTable["prices"];
 
@@ -74,7 +75,12 @@ export function CrystalTable({ table, changeDates, today }: { table: Prices; cha
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.boss}|${r.diff}`} className="border-t border-zinc-100 dark:border-zinc-800">
-                <td className="py-1">{r.boss}</td>
+                <td className="py-1">
+                  <span className="inline-flex items-center gap-2">
+                    <BossIcon boss={r.boss} diff={r.diff} size={28} />
+                    {r.boss}
+                  </span>
+                </td>
                 <td className="py-1 text-zinc-500">{r.diff}</td>
                 <td className="py-1 text-xs text-zinc-500">{r.tier}</td>
                 <td className="py-1 text-right">{fmtPower(r.price)}</td>

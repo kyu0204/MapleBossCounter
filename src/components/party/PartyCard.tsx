@@ -4,13 +4,15 @@ import { crystalPrice } from "@/lib/maple/prices";
 import { tierLabel, tierOf } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
 import { kstDateStr } from "@/lib/maple/kst";
+import { BossIcon } from "@/components/boss/BossIcon";
 
 export function PartyCard({ party: p }: { party: PartyWithMembers }) {
   const price = crystalPrice(p.boss, p.difficulty, kstDateStr());
   const per = price == null ? null : Math.floor(price / Math.max(1, p.size));
   return (
     <Link href={`/parties/${p.id}`} className="card block hover:border-orange-300 transition text-sm space-y-2">
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-center gap-2">
+        <BossIcon boss={p.boss} diff={p.difficulty} size={32} />
         <span className="font-semibold">
           {p.boss} <span className="text-xs text-zinc-500">{p.difficulty}</span>
         </span>
