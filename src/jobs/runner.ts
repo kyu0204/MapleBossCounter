@@ -6,10 +6,11 @@ import { userCredential } from "@/lib/nexon/credentials";
 import { cacheSweep } from "@/lib/nexon/cache";
 import { fetchAndSaveDated, fetchAndSaveRealtime } from "@/services/snapshotService";
 import { refreshCharacter } from "@/services/characterRefresh";
+import { purgeExpiredOneOffParties } from "@/services/partyCleanup";
 import { kstDateStr, lastWednesdayKst } from "@/lib/maple/kst";
 import { userMessageFor } from "@/lib/nexon/errors";
 
-export const JOB_NAMES = ["weekly_snapshot_realtime", "weekly_snapshot_backfill", "daily_snapshot", "weekly_power_refresh", "cache_sweep"] as const;
+export const JOB_NAMES = ["weekly_snapshot_realtime", "weekly_snapshot_backfill", "daily_snapshot", "weekly_power_refresh", "party_cleanup", "cache_sweep"] as const;
 export type JobName = (typeof JOB_NAMES)[number];
 
 const LOCK_MS = 10 * 60e3;
@@ -84,6 +85,13 @@ const JOBS: Record<JobName, () => Promise<JobStats>> = {
     const y = kstDateStr(-1);
     s.date = y;
     await forEachLinkedCharacter(s, async (cred, ch) => ((await fetchAndSaveDated(ch.id, ch.ocid, y, cred)) ? "ok" : "skipped"));
+    return s;
+  },
+  /** "이번 주만" 파티 정리. 주간 리셋 직후에 돈다. */
+  async party_cleanup() {
+    const s = emptyStats();
+    s.deleted = purgeExpiredOneOffParties();
+    s.ok = 1;
     return s;
   },
   async weekly_power_refresh() {

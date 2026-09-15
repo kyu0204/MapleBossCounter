@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { requireUserId } from "@/auth";
 import { listPartiesForUser } from "@/lib/db/queries/parties";
+import { purgeExpiredOneOffParties } from "@/services/partyCleanup";
 import { PartyCard } from "@/components/party/PartyCard";
 
 export const metadata = { title: "파티" };
 
 export default async function PartiesPage() {
   const userId = await requireUserId();
+  // 크론이 꺼진 환경에서도 지난 "이번 주만" 파티가 남아 있지 않게 한 번 더 정리한다
+  purgeExpiredOneOffParties();
   const list = listPartiesForUser(userId);
   return (
     <div className="space-y-4">

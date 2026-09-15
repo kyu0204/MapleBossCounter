@@ -15,7 +15,7 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
   const per = price == null ? null : Math.floor(price / Math.max(1, p.size));
   const schedule = scheduleLabel(p) ?? p.scheduleNote;
   return (
-    <Link href={`/parties/${p.id}`} className={`card block hover:border-orange-300 transition text-sm space-y-2 ${p.expired ? "opacity-60" : ""}`}>
+    <Link href={`/parties/${p.id}`} className={`card block hover:border-orange-300 transition text-sm space-y-2`}>
       <div className="flex items-center gap-2">
         <BossIcon boss={p.boss} diff={p.difficulty} size={44} showDiff={false} />
         <span className="flex flex-col gap-0.5 leading-tight min-w-0">
@@ -42,8 +42,7 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
       <div className="text-xs text-zinc-500">
         결정 {fmtPower(price)} → 1인 {fmtPower(per)}
         {schedule && <span className="ml-2">· {schedule}</span>}
-        {!p.repeats && <span className="ml-2">· 이번 주만</span>}
-        {p.expired && <span className="ml-2 text-amber-600">· 지난 주 파티</span>}
+        {!p.repeats && <span className="ml-2 text-amber-600">· 이번 주만</span>}
         {!p.isOwner && <span className="ml-2">· 참여 중</span>}
       </div>
     </Link>

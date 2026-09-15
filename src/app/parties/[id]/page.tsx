@@ -44,9 +44,9 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
           </a>
         )}
       </div>
-      {party.expired && (
+      {!party.repeats && (
         <div className="card text-sm text-amber-700 dark:text-amber-400">
-          이번 주만 도는 파티였고 주간 리셋이 지났습니다. 인원 계산에서 빠져 있습니다. 계속 쓰려면 수정에서 &apos;매주 반복&apos;으로 바꾸거나 그대로 저장하세요.
+          이번 주만 도는 파티입니다. 다음 목요일 00:00(KST)에 자동으로 삭제됩니다. 계속 쓰려면 수정에서 &apos;매주 반복&apos;으로 바꾸세요.
         </div>
       )}
       {party.isOwner ? (
