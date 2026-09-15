@@ -7,12 +7,14 @@ import { crystalPrice, isWeeklyCrystal, PRICE_TABLE } from "@/lib/maple/prices";
 import { tierOf } from "@/lib/maple/tiers";
 import { bossName, DIFF_LABEL } from "@/lib/maple/bossMeta";
 import { fmtPower } from "@/lib/maple/format";
+import { mergePicks, picksTotals, toPickList } from "@/lib/maple/bossPicks";
 import { BossChip } from "@/components/boss/BossChip";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyButton } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
 
-export interface BossPlanEditorProps {
+export interface BossSettingsProps {
+  id: string;
   ocid: string;
   /** 주간 보스 입장 한도 (weekly_boss_clear_limit_count, 보통 12) */
   cap: number;
@@ -30,13 +32,31 @@ export interface BossPlanEditorProps {
 
 type BossRow = { boss: string; diffs: { diff: Difficulty; price: number; rank: number }[]; topRank: number };
 
-export function BossPlanEditor({ ocid, cap, defaultParty, initial, partyPicks, registered, cleared, priceDate }: BossPlanEditorProps) {
+/**
+ * "보스 - 설정" — 이번 주에 갈 보스를 고르는 곳.
+ *
+ * 저장하면 플래너와 같은 저장소(plan_configs)에 들어가서 양쪽이 항상 같은 목록을 본다.
+ * 위쪽 "이번 주 갈 보스" 카드는 여기서 고른 것 중 아직 안 간 것만 보여준다.
+ * 저장 후 페이지가 다시 그려지며 그 카드도 같이 갱신된다.
+ */
+export function BossSettings({ id, ocid, cap, defaultParty, initial, partyPicks, registered, cleared, priceDate }: BossSettingsProps) {
   const [picks, setPicks] = useState<Record<string, number>>(initial);
-  const [editing, setEditing] = useState(Object.keys(initial).length === 0 && Object.keys(partyPicks).length === 0);
   const [msg, setMsg] = useState<string | null>(null);
+  // 고른 것이 하나도 없으면 바로 펼쳐 준다. 이미 골라 뒀으면 접어 둔다.
+  const [open, setOpen] = useState(Object.keys(initial).length === 0 && Object.keys(partyPicks).length === 0);
   const [pending, start] = useTransition();
 
   const clearedSet = useMemo(() => new Set(cleared), [cleared]);
+  // 키 순서가 바뀌어도 내용이 같으면 변경으로 보지 않는다 (토글하다 원래대로 돌아온 경우)
+  const dirty = useMemo(() => {
+    const norm = (o: Record<string, number>) =>
+      JSON.stringify(
+        Object.keys(o)
+          .sort()
+          .map((k) => [k, o[k]]),
+      );
+    return norm(picks) !== norm(initial);
+  }, [picks, initial]);
 
   /** 가격표의 주간 보스를 보스 단위로 묶고, 티어 높은 보스부터 */
   const rows = useMemo<BossRow[]>(() => {
@@ -57,31 +77,9 @@ export function BossPlanEditor({ ocid, cap, defaultParty, initial, partyPicks, r
     return out.sort((a, b) => b.topRank - a.topRank);
   }, [priceDate]);
 
-  // 파티 유래는 항상 포함되고 수동 선택보다 우선순위가 낮다(같은 보스면 수동이 이김).
-  const merged = useMemo(() => {
-    const m: Record<string, { party: number; source: "config" | "party" }> = {};
-    const bossesTaken = new Set(Object.keys(picks).map((k) => parseBossKey(k)?.boss));
-    for (const [k, v] of Object.entries(picks)) m[k] = { party: v, source: "config" };
-    for (const [k, v] of Object.entries(partyPicks)) {
-      const b = parseBossKey(k)?.boss;
-      if (b && bossesTaken.has(b)) continue;
-      m[k] = { party: v, source: "party" };
-    }
-    return m;
-  }, [picks, partyPicks]);
-
-  const totals = useMemo(() => {
-    let value = 0, gross = 0;
-    for (const [k, { party }] of Object.entries(merged)) {
-      const r = parseBossKey(k);
-      const p = r && crystalPrice(r.boss, r.diff, priceDate);
-      if (p == null) continue;
-      gross += p;
-      value += Math.floor(p / Math.max(1, party));
-    }
-    return { count: Object.keys(merged).length, value, gross };
-  }, [merged, priceDate]);
-
+  const merged = useMemo(() => mergePicks(picks, partyPicks), [picks, partyPicks]);
+  const list = useMemo(() => toPickList(merged), [merged]);
+  const totals = useMemo(() => picksTotals(list, priceDate), [list, priceDate]);
   const over = totals.count > cap;
 
   function toggle(boss: string, diff: Difficulty) {
@@ -122,108 +120,83 @@ export function BossPlanEditor({ ocid, cap, defaultParty, initial, partyPicks, r
     start(async () => {
       const r = await setCharacterBosses(ocid, picks);
       setMsg(r.message);
-      if (r.ok) setEditing(false);
     });
   }
 
-  const selectedKeys = Object.keys(merged).sort((a, b) => {
-    const ra = tierOf(parseBossKey(a)!.boss, parseBossKey(a)!.diff)?.rank ?? 0;
-    const rb = tierOf(parseBossKey(b)!.boss, parseBossKey(b)!.diff)?.rank ?? 0;
-    return rb - ra;
-  });
-
   return (
-    <div className="card space-y-3">
+    <div id={id} className="card space-y-3 scroll-mt-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="font-semibold">이번 주 갈 보스</h2>
+        <h2 className="font-semibold">보스 - 설정</h2>
         <span className={`text-sm ${over ? "text-red-600 font-medium" : "text-zinc-500"}`}>
           {totals.count}/{cap}개
         </span>
         {totals.count > 0 && <span className="text-sm text-zinc-500">실수령 {fmtPower(totals.value)}</span>}
-        <div className="ml-auto flex items-center gap-2">
-          {editing ? (
-            <>
-              <button className="btn-ghost text-xs" onClick={loadRegistered} disabled={!registered.length} title={registered.length ? "인게임 스케줄러에 등록해 둔 보스로 채웁니다" : "스케줄러 등록 정보가 없습니다"}>
-                스케줄러 등록 불러오기
-              </button>
-              <button
-                className="btn-ghost text-xs"
-                onClick={() => {
-                  setPicks(initial);
-                  setEditing(false);
-                  setMsg(null);
-                }}
-              >
-                취소
-              </button>
-              <button className="btn-primary text-xs" onClick={save} disabled={pending}>
-                {pending ? "저장 중…" : "저장"}
-              </button>
-            </>
-          ) : (
-            <button className="btn-ghost text-xs" onClick={() => setEditing(true)}>
-              보스 설정
-            </button>
-          )}
-        </div>
+        {dirty && <span className="text-sm text-amber-600">저장 안 됨</span>}
+        <button className="ml-auto btn-ghost text-xs" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          {open ? "접기" : "펼쳐서 고르기"}
+        </button>
       </div>
 
       {over && <div className="text-xs text-red-600">주간 입장 한도({cap})를 넘었습니다. 플래너에서는 실수령 상위 {cap}개만 배분됩니다.</div>}
 
-      {selectedKeys.length === 0 ? (
-        <div className="text-sm text-zinc-500">
-          아직 선택한 보스가 없습니다.{!editing && " '보스 설정'을 눌러 이번 주에 갈 보스를 고르세요."}
-        </div>
+      {list.length === 0 ? (
+        <div className="text-sm text-zinc-500">아직 고른 보스가 없습니다.{!open && " '펼쳐서 고르기'를 누르세요."}</div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          {selectedKeys.map((k) => {
-            const r = parseBossKey(k)!;
-            const { party, source } = merged[k];
-            const price = crystalPrice(r.boss, r.diff, priceDate);
-            return (
-              <BossChip
-                key={k}
-                boss={r.boss}
-                diff={r.diff}
-                price={price}
-                party={party}
-                pinned={source === "config"}
-                locked={source === "party"}
-                onRemove={editing && source === "config" ? () => toggle(r.boss, r.diff) : undefined}
-                right={
-                  editing && source === "config" ? (
-                    <input
-                      type="number"
-                      min={1}
-                      max={6}
-                      value={party}
-                      onChange={(e) => setParty(k, Number(e.target.value))}
-                      className="w-11 rounded border border-current/20 bg-white/60 dark:bg-black/20 px-1 py-0.5 text-xs"
-                      title="파티 인원"
-                      aria-label={`${r.boss} 파티 인원`}
-                    />
-                  ) : clearedSet.has(k) ? (
-                    <span className="text-xs" title="이번 주 클리어 완료">
-                      ✅
-                    </span>
-                  ) : undefined
-                }
-              />
-            );
-          })}
+          {list.map((p) => (
+            <BossChip
+              key={p.key}
+              boss={p.boss}
+              diff={p.diff}
+              price={crystalPrice(p.boss, p.diff, priceDate)}
+              party={p.party}
+              pinned={p.source === "config"}
+              locked={p.source === "party"}
+              onRemove={open && p.source === "config" ? () => toggle(p.boss, p.diff) : undefined}
+              right={
+                open && p.source === "config" ? (
+                  <input
+                    type="number"
+                    min={1}
+                    max={6}
+                    value={p.party}
+                    onChange={(e) => setParty(p.key, Number(e.target.value))}
+                    className="w-11 rounded border border-current/20 bg-white/60 dark:bg-black/20 px-1 py-0.5 text-xs"
+                    title="파티 인원"
+                    aria-label={`${p.boss} 파티 인원`}
+                  />
+                ) : clearedSet.has(p.key) ? (
+                  <span className="text-xs" title="이번 주 클리어 완료">
+                    ✅
+                  </span>
+                ) : undefined
+              }
+            />
+          ))}
         </div>
       )}
 
-      {editing && (
+      {open && (
         <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-          <div className="text-xs text-zinc-500">
-            보스를 누르면 난이도를 고릅니다. 한 보스당 난이도 하나. 🔒 는 파티 등록에서 자동으로 들어온 항목이라 파티에서 빼야 사라집니다.
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-xs text-zinc-500 flex-1 min-w-[16rem]">
+              보스를 누르면 난이도를 고릅니다. 한 보스당 난이도 하나. 🔒 는 파티 등록에서 자동으로 들어온 항목이라 파티에서 빼야 사라집니다.
+            </div>
+            <button className="btn-ghost text-xs" onClick={loadRegistered} disabled={!registered.length} title={registered.length ? "인게임 스케줄러에 등록해 둔 보스로 채웁니다" : "스케줄러 등록 정보가 없습니다"}>
+              스케줄러 등록 불러오기
+            </button>
+            <button className="btn-ghost text-xs" onClick={() => { setPicks(initial); setMsg(null); }} disabled={!dirty}>
+              되돌리기
+            </button>
+            <button className="btn-primary text-xs" onClick={save} disabled={pending || !dirty}>
+              {pending ? "저장 중…" : "저장"}
+            </button>
           </div>
           <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map((row) => {
-              const selectedKey = Object.keys(merged).find((k) => parseBossKey(k)?.boss === row.boss);
-              const selectedDiff = selectedKey ? parseBossKey(selectedKey)!.diff : null;
-              const fromParty = selectedKey ? merged[selectedKey].source === "party" : false;
+              const hit = list.find((p) => p.boss === row.boss);
+              const selectedDiff = hit?.diff ?? null;
+              const fromParty = hit?.source === "party";
               return (
                 <div
                   key={row.boss}
@@ -256,11 +229,7 @@ export function BossPlanEditor({ ocid, cap, defaultParty, initial, partyPicks, r
       )}
 
       {msg && <div className={`text-sm ${msg.includes("오류") || msg.includes("아닙") ? "text-red-600" : "text-zinc-600 dark:text-zinc-400"}`}>{msg}</div>}
-      {!editing && totals.count > 0 && (
-        <div className="text-xs text-zinc-500">
-          결정 정가 합 {fmtPower(totals.gross)} · 플래너에 그대로 고정 픽으로 들어갑니다.
-        </div>
-      )}
+      {totals.count > 0 && <div className="text-xs text-zinc-500">결정 정가 합 {fmtPower(totals.gross)} · 플래너에 그대로 고정 픽으로 들어갑니다.</div>}
     </div>
   );
 }

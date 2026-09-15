@@ -13,10 +13,12 @@ import { BossClearTable } from "@/components/character/BossClearTable";
 import { RevenueSummary } from "@/components/character/RevenueSummary";
 import { ContentsList } from "@/components/character/ContentsList";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
-import { BossPlanEditor } from "@/components/character/BossPlanEditor";
+import { WeeklyBossPlan } from "@/components/character/WeeklyBossPlan";
+import { BossSettings } from "@/components/character/BossSettings";
 import { loadCharConfig, loadPlanConfig } from "@/services/planInput";
 import { partyPicksByCharacter } from "@/services/partyLink";
 import { normalizeBossList, bossKey } from "@/lib/maple/bossKey";
+import { mergePicks, toPickList } from "@/lib/maple/bossPicks";
 
 export default async function CharacterPage({ params, searchParams }: PageProps<"/me/characters/[ocid]">) {
   const userId = await requireUserId();
@@ -34,12 +36,35 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
   const history = powerHistory(c.id, 30);
   const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
 
-  // "이번 주 갈 보스": 플래너와 같은 저장소(plan_configs) 사용
+  // 갈 보스 목록: 플래너와 같은 저장소(plan_configs)를 쓴다. 두 화면이 항상 같은 목록을 본다.
   const world = c.world ?? "";
   const charCfg = world ? loadCharConfig(userId, world, ocid) : {};
   const planDefaultParty = world ? loadPlanConfig(userId, world).default_party ?? 1 : 1;
   const savedBosses = Object.fromEntries(normalizeBossList(charCfg.bosses).map((b) => [b.key, b.party ?? planDefaultParty]));
+  const partyPicks = partyPicksByCharacter(userId).get(c.id) ?? {};
+  const allPicks = toPickList(mergePicks(savedBosses, partyPicks));
+  // 클리어·등록 판정은 항상 이번 주 최신 스냅샷 기준이다 (지난주 보기에서도 마찬가지)
   const weeklyRows = latest?.bosses.filter((b) => b.cycle === "bossWeekly") ?? [];
+  const clearedKeys = weeklyRows.filter((b) => b.completed).map((b) => bossKey(b.boss, b.diff));
+  const registeredKeys = weeklyRows.filter((b) => b.registered).map((b) => bossKey(b.boss, b.diff));
+  const cap = latest?.weeklyLimit ?? 12;
+  const SETTINGS_ID = "boss-settings";
+
+  // 보스 표 바로 아래에 두되, 스케줄러 데이터가 없어도 설정은 할 수 있어야 한다.
+  const bossSettings =
+    view === "current" && world ? (
+      <BossSettings
+        id={SETTINGS_ID}
+        ocid={ocid}
+        cap={cap}
+        defaultParty={planDefaultParty}
+        initial={savedBosses}
+        partyPicks={partyPicks}
+        registered={registeredKeys}
+        cleared={clearedKeys}
+        priceDate={priceDate}
+      />
+    ) : null;
 
   return (
     <div className="space-y-6">
@@ -76,26 +101,21 @@ export default async function CharacterPage({ params, searchParams }: PageProps<
 
       {view === "current" &&
         (world ? (
-          <BossPlanEditor
-            ocid={ocid}
-            cap={latest?.weeklyLimit ?? 12}
-            defaultParty={planDefaultParty}
-            initial={savedBosses}
-            partyPicks={partyPicksByCharacter(userId).get(c.id) ?? {}}
-            registered={weeklyRows.filter((b) => b.registered).map((b) => bossKey(b.boss, b.diff))}
-            cleared={weeklyRows.filter((b) => b.completed).map((b) => bossKey(b.boss, b.diff))}
-            priceDate={priceDate}
-          />
+          <WeeklyBossPlan picks={allPicks} cleared={clearedKeys} cap={cap} priceDate={priceDate} settingsId={SETTINGS_ID} hasSnapshot={!!latest} />
         ) : (
           <div className="card text-sm text-zinc-600">월드 정보가 없어 보스 설정을 쓸 수 없습니다. 내 캐릭터에서 목록 동기화를 실행하세요.</div>
         ))}
 
       {!snap ? (
-        <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
+        <>
+          <div className="card text-sm text-zinc-600">스케줄러 데이터가 없습니다. 새로고침을 눌러 조회하세요. (지난주는 수요일 밤 자동 스냅샷이 있어야 표시됩니다)</div>
+          {bossSettings}
+        </>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
           <div className="space-y-4">
             <BossClearTable bosses={snap.bosses} priceDate={priceDate} partyOf={(b, d) => partyOf(c.id, b, d)} weekly={`${snap.weeklyClearCount}/${snap.weeklyLimit}`} />
+            {bossSettings}
             <ContentsList title="일간 콘텐츠" items={snap.daily} />
             <ContentsList title="주간 콘텐츠" items={snap.weekly} />
           </div>
