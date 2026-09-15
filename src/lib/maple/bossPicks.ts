@@ -37,16 +37,22 @@ export function mergePicks(picks: Record<string, number>, partyPicks: Record<str
   return out;
 }
 
-/** 티어 높은 보스부터 */
+/**
+ * 난이도 낮은 보스부터.
+ *
+ * 티어 rank 가 (보스, 난이도) 를 합친 난이도 순서다. 실제로 도는 순서도 대개
+ * 쉬운 것부터이므로 목록도 그렇게 낸다. 티어가 같으면 이름으로 갈라 순서를 고정한다
+ * (안 그러면 저장 순서에 따라 줄이 들썩인다).
+ */
 export function sortKeysByTier(keys: string[]): string[] {
   const rank = (k: string) => {
     const r = parseBossKey(k);
     return r ? tierOf(r.boss, r.diff)?.rank ?? 0 : 0;
   };
-  return [...keys].sort((a, b) => rank(b) - rank(a));
+  return [...keys].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, "ko"));
 }
 
-/** 합친 픽을 화면에 쓰기 좋은 배열로. 티어 내림차순. */
+/** 합친 픽을 화면에 쓰기 좋은 배열로. 난이도 오름차순. */
 export function toPickList(merged: Record<string, { party: number; source: PickSource }>): MergedPick[] {
   return sortKeysByTier(Object.keys(merged)).flatMap((key) => {
     const r = parseBossKey(key);

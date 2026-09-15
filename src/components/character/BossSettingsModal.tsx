@@ -67,7 +67,7 @@ export function BossSettingsModal({ ocid, cap, defaultParty, initial, partyPicks
     return norm(picks) !== norm(initial);
   }, [picks, initial]);
 
-  /** 가격표의 주간 보스를 보스 단위로 묶고, 티어 높은 보스부터 */
+  /** 가격표의 주간 보스를 보스 단위로 묶고, 난이도 낮은 보스부터 (목록과 같은 순서) */
   const rows = useMemo<BossRow[]>(() => {
     const out: BossRow[] = [];
     for (const [boss, diffs] of Object.entries(PRICE_TABLE.prices)) {
@@ -83,7 +83,7 @@ export function BossSettingsModal({ ocid, cap, defaultParty, initial, partyPicks
       list.sort((a, b) => a.rank - b.rank);
       out.push({ boss, diffs: list, topRank: Math.max(...list.map((d) => d.rank)) });
     }
-    return out.sort((a, b) => b.topRank - a.topRank);
+    return out.sort((a, b) => a.topRank - b.topRank || a.boss.localeCompare(b.boss, "ko"));
   }, [priceDate]);
 
   const merged = useMemo(() => mergePicks(picks, partyPicks), [picks, partyPicks]);

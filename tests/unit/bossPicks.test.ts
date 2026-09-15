@@ -25,10 +25,16 @@ describe("직접 고른 픽 + 파티 유래 픽 합치기", () => {
 });
 
 describe("정렬과 합계", () => {
-  it("티어 높은 보스가 앞에 온다", () => {
-    const sorted = sortKeysByTier(["스우 normal", "유피테르 hard", "진 힐라 hard"]);
-    expect(sorted[0]).toBe("유피테르 hard"); // 금별 9티어
-    expect(sorted[sorted.length - 1]).toBe("스우 normal"); // 동별 5티어
+  it("난이도 낮은 보스가 앞에 온다", () => {
+    const sorted = sortKeysByTier(["유피테르 hard", "스우 normal", "진 힐라 hard"]);
+    expect(sorted).toEqual(["스우 normal", "진 힐라 hard", "유피테르 hard"]);
+  });
+
+  it("티어가 같으면 이름으로 갈라 순서가 흔들리지 않는다", () => {
+    // 루시드 하드와 윌 하드는 같은 은별 3티어
+    const a = sortKeysByTier(["윌 hard", "루시드 hard"]);
+    const b = sortKeysByTier(["루시드 hard", "윌 hard"]);
+    expect(a).toEqual(b);
   });
 
   it("실수령은 인원으로 나눈 값의 합, 정가 합은 나누지 않는다", () => {
