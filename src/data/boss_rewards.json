@@ -3,10 +3,16 @@
     "updated": "2026-09-15",
     "source": "나무위키 보스 문서의 난이도별 보상 섹션 (수집본: boss_rewards_raw.json)",
     "cubePatchDate": "2026-09-17",
+    "iconBox": {
+      "w": 40,
+      "h": 41
+    },
     "notes": [
       "표시 대상만 걸러 담았다. 훈장·물약·경험치·주문서 교환권 등 모든 보스 공통 소모품은 제외.",
       "강렬한 힘의 결정은 가격표(boss_crystal_prices.json)에 있으므로 여기서 제외.",
+      "rewards 의 fixed 는 잡으면 무조건 주는 확정 보상이라는 뜻이다. 없으면 확률 드롭. 큐브는 전부 확정이다.",
       "cubes 의 before/after 는 2026-09-17 패치 전/후 수량. 화면에서 기준일로 고른다.",
+      "iconBox 는 전체 아이콘 중 가장 큰 가로·세로. 아이콘은 원본 크기로 두고 이 칸에 가운데 정렬한다.",
       "검은 마법사(월간)는 보상 섹션을 긁지 않았고 큐브 수량만 담았다. 브론즈 에디셔널 24개는 사용자 실측 확인값.",
       "매그너스·피에르·반반·블러디퀸·파풀라투스는 문서에 보상 섹션이 없어 큐브 수량만 담았다. 출처는 나무위키 큐브 문서의 보스별 획득량 표.",
       "재생성: node scripts/build-boss-rewards.mjs"
@@ -33,6 +39,15 @@
       "chaos": {
         "rewards": [
           {
+            "name": "파멸의 조각",
+            "count": 10,
+            "fixed": true,
+            "icon": "/items/파멸의-조각(5~10개).png",
+            "w": 30,
+            "h": 30,
+            "range": "5~10"
+          },
+          {
             "name": "벨룸의 헬름",
             "icon": "/items/벨룸의-헬름.webp",
             "w": 30,
@@ -49,14 +64,6 @@
             "icon": "/items/기암괴석-의자.png",
             "w": 34,
             "h": 35
-          },
-          {
-            "name": "파멸의 조각",
-            "count": 10,
-            "icon": "/items/파멸의-조각(5~10개).png",
-            "w": 30,
-            "h": 30,
-            "range": "5~10"
           }
         ],
         "cubes": {
@@ -75,14 +82,9 @@
       "normal": {
         "rewards": [
           {
-            "name": "녹옥의 보스 반지 상자",
-            "icon": "/items/녹옥의-보스-반지-상자.png",
-            "w": 31,
-            "h": 27
-          },
-          {
             "name": "특수형 에너지 코어",
             "count": 3,
+            "fixed": true,
             "icon": "/items/특수형-에너지-코어(S급).webp",
             "w": 34,
             "h": 35,
@@ -91,9 +93,16 @@
           {
             "name": "주문의 흔적",
             "count": 160,
+            "fixed": true,
             "icon": "/items/주문의-흔적.webp",
             "w": 33,
             "h": 32
+          },
+          {
+            "name": "녹옥의 보스 반지 상자",
+            "icon": "/items/녹옥의-보스-반지-상자.png",
+            "w": 31,
+            "h": 27
           }
         ],
         "cubes": {
@@ -109,6 +118,31 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "특수형 에너지 코어",
+            "count": 4,
+            "fixed": true,
+            "icon": "/items/특수형-에너지-코어(S급).webp",
+            "w": 34,
+            "h": 35,
+            "range": "1~4"
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 50,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "루즈 컨트롤 머신 마크",
             "icon": "/items/루즈-컨트롤-머신-마크.png",
@@ -138,28 +172,6 @@
             "icon": "/items/홍옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "특수형 에너지 코어",
-            "count": 4,
-            "icon": "/items/특수형-에너지-코어(S급).webp",
-            "w": 34,
-            "h": 35,
-            "range": "1~4"
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 50,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -183,6 +195,14 @@
       },
       "extreme": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 280,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "루즈 컨트롤 머신 마크",
             "icon": "/items/루즈-컨트롤-머신-마크.png",
@@ -218,13 +238,6 @@
             "icon": "/items/백옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 36
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 280,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ]
       }
@@ -232,6 +245,23 @@
     "데미안": {
       "normal": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "뒤틀린 낙인의 영혼석",
+            "count": 3,
+            "fixed": true,
+            "icon": "/items/뒤틀린-낙인의-영혼석.webp",
+            "w": 35,
+            "h": 33,
+            "range": "1~3"
+          },
           {
             "name": "루인 포스실드",
             "icon": "/items/루인-포스실드.png",
@@ -243,21 +273,6 @@
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "뒤틀린 낙인의 영혼석",
-            "count": 3,
-            "icon": "/items/뒤틀린-낙인의-영혼석.webp",
-            "w": 35,
-            "h": 33,
-            "range": "1~3"
           }
         ],
         "cubes": {
@@ -273,6 +288,31 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "뒤틀린 낙인의 영혼석",
+            "count": 4,
+            "fixed": true,
+            "icon": "/items/뒤틀린-낙인의-영혼석.webp",
+            "w": 35,
+            "h": 33,
+            "range": "2~4"
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 50,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "마력이 깃든 안대",
             "icon": "/items/마력이-깃든-안대.webp",
@@ -308,28 +348,6 @@
             "icon": "/items/홍옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "뒤틀린 낙인의 영혼석",
-            "count": 4,
-            "icon": "/items/뒤틀린-낙인의-영혼석.webp",
-            "w": 35,
-            "h": 33,
-            "range": "2~4"
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 50,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -356,6 +374,14 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
             "name": "가디언 엔젤 링",
             "icon": "/items/가디언-엔젤-링.png",
             "w": 34,
@@ -366,13 +392,6 @@
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
           }
         ],
         "cubes": {
@@ -389,6 +408,22 @@
       "chaos": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 70,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
             "name": "가디언 엔젤 링",
             "icon": "/items/가디언-엔젤-링.png",
             "w": 34,
@@ -399,20 +434,6 @@
             "icon": "/items/흑옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 34
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 70,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -439,17 +460,18 @@
       "easy": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
             "name": "녹옥의 보스 반지 상자",
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
           }
         ],
         "cubes": {
@@ -466,6 +488,23 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "나비날개 물방울석",
+            "count": 2,
+            "fixed": true,
+            "icon": "/items/나비날개-물방울석.webp",
+            "w": 34,
+            "h": 37,
+            "range": "1~2"
+          },
+          {
             "name": "트와일라이트 마크",
             "icon": "/items/트와일라이트-마크.png",
             "w": 23,
@@ -476,21 +515,6 @@
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "나비날개 물방울석",
-            "count": 2,
-            "icon": "/items/나비날개-물방울석.webp",
-            "w": 34,
-            "h": 37,
-            "range": "1~2"
           }
         ],
         "cubes": {
@@ -506,6 +530,31 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "나비날개 물방울석",
+            "count": 3,
+            "fixed": true,
+            "icon": "/items/나비날개-물방울석.webp",
+            "w": 34,
+            "h": 37,
+            "range": "1~3"
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 50,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "몽환의 벨트",
             "icon": "/items/몽환의-벨트.png",
@@ -541,28 +590,6 @@
             "icon": "/items/홍옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "나비날개 물방울석",
-            "count": 3,
-            "icon": "/items/나비날개-물방울석.webp",
-            "w": 34,
-            "h": 37,
-            "range": "1~3"
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 50,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -589,17 +616,18 @@
       "easy": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
             "name": "녹옥의 보스 반지 상자",
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
           }
         ],
         "cubes": {
@@ -616,6 +644,23 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "코브웹 물방울석",
+            "count": 2,
+            "fixed": true,
+            "icon": "/items/코브웹-물방울석.webp",
+            "w": 34,
+            "h": 36,
+            "range": "1~2"
+          },
+          {
             "name": "트와일라이트 마크",
             "icon": "/items/트와일라이트-마크.png",
             "w": 23,
@@ -626,21 +671,6 @@
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "코브웹 물방울석",
-            "count": 2,
-            "icon": "/items/코브웹-물방울석.webp",
-            "w": 34,
-            "h": 36,
-            "range": "1~2"
           }
         ],
         "cubes": {
@@ -656,6 +686,31 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "코브웹 물방울석",
+            "count": 3,
+            "fixed": true,
+            "icon": "/items/코브웹-물방울석.webp",
+            "w": 34,
+            "h": 36,
+            "range": "2~3"
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 50,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "트와일라이트 마크",
             "icon": "/items/트와일라이트-마크.png",
@@ -685,28 +740,6 @@
             "icon": "/items/홍옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "코브웹 물방울석",
-            "count": 3,
-            "icon": "/items/코브웹-물방울석.webp",
-            "w": 34,
-            "h": 36,
-            "range": "2~3"
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 50,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -733,6 +766,14 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
             "name": "에스텔라 이어링",
             "icon": "/items/에스텔라-이어링.png",
             "w": 32,
@@ -743,13 +784,6 @@
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
           }
         ],
         "cubes": {
@@ -765,6 +799,22 @@
       },
       "chaos": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 100,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "거대한 공포",
             "icon": "/items/거대한-공포.webp",
@@ -794,20 +844,6 @@
             "icon": "/items/흑옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 34
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 100,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -834,6 +870,14 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 160,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
             "name": "에스텔라 이어링",
             "icon": "/items/에스텔라-이어링.png",
             "w": 32,
@@ -844,13 +888,6 @@
             "icon": "/items/녹옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 160,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
           }
         ],
         "cubes": {
@@ -866,6 +903,22 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 120,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "커맨더 포스 이어링",
             "icon": "/items/커맨더-포스-이어링.webp",
@@ -895,20 +948,6 @@
             "icon": "/items/흑옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 34
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 120,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -935,6 +974,22 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 70,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
             "name": "데이브레이크 펜던트",
             "icon": "/items/데이브레이크-펜던트.webp",
             "w": 34,
@@ -957,20 +1012,6 @@
             "icon": "/items/홍옥의-보스-반지-상자.png",
             "w": 31,
             "h": 27
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 70,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -994,6 +1035,22 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 120,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "고통의 근원",
             "icon": "/items/고통의-근원.png",
@@ -1023,20 +1080,6 @@
             "icon": "/items/흑옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 34
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 120,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -1063,6 +1106,22 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 150,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
             "name": "데이브레이크 펜던트",
             "icon": "/items/데이브레이크-펜던트.webp",
             "w": 34,
@@ -1073,20 +1132,6 @@
             "icon": "/items/흑옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 34
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 150,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -1119,6 +1164,22 @@
       "hard": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 220,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
             "name": "데이브레이크 펜던트",
             "icon": "/items/데이브레이크-펜던트.webp",
             "w": 34,
@@ -1135,20 +1196,6 @@
             "icon": "/items/미트라의-분노-선택-상자.webp",
             "w": 38,
             "h": 36
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 220,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -1172,6 +1219,30 @@
       },
       "extreme": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 560,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 30,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "데이브레이크 펜던트",
             "icon": "/items/데이브레이크-펜던트.webp",
@@ -1201,27 +1272,6 @@
             "icon": "/items/익셉셔널-해머-(얼굴장식).png",
             "w": 37,
             "h": 31
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 560,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 30,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -1230,14 +1280,9 @@
       "easy": {
         "rewards": [
           {
-            "name": "백옥의 보스 반지 상자",
-            "icon": "/items/백옥의-보스-반지-상자.webp",
-            "w": 36,
-            "h": 36
-          },
-          {
             "name": "주문의 흔적",
             "count": 240,
+            "fixed": true,
             "icon": "/items/주문의-흔적.webp",
             "w": 33,
             "h": 32
@@ -1245,9 +1290,16 @@
           {
             "name": "솔 에르다의 기운",
             "count": 200,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
+          },
+          {
+            "name": "백옥의 보스 반지 상자",
+            "icon": "/items/백옥의-보스-반지-상자.webp",
+            "w": 36,
+            "h": 36
           }
         ],
         "cubes": {
@@ -1272,6 +1324,30 @@
       "normal": {
         "rewards": [
           {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 250,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "남겨진 칼로스의 의지 조각",
+            "count": 3,
+            "fixed": true,
+            "icon": "/items/남겨진-칼로스의-의지-조각.webp",
+            "w": 30,
+            "h": 27
+          },
+          {
             "name": "니키로이드",
             "icon": "/items/니키로이드.png",
             "w": 32,
@@ -1288,27 +1364,6 @@
             "icon": "/items/생명의-연마석.webp",
             "w": 34,
             "h": 34
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 250,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "남겨진 칼로스의 의지 조각",
-            "count": 3,
-            "icon": "/items/남겨진-칼로스의-의지-조각.webp",
-            "w": 30,
-            "h": 27
           }
         ],
         "cubes": {
@@ -1324,6 +1379,30 @@
       },
       "chaos": {
         "rewards": [
+          {
+            "name": "주문의 흔적",
+            "count": 240,
+            "fixed": true,
+            "icon": "/items/주문의-흔적.webp",
+            "w": 33,
+            "h": 32
+          },
+          {
+            "name": "솔 에르다의 기운",
+            "count": 400,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "남겨진 칼로스의 의지",
+            "count": 5,
+            "fixed": true,
+            "icon": "/items/남겨진-칼로스의-의지.webp",
+            "w": 35,
+            "h": 34
+          },
           {
             "name": "니키로이드",
             "icon": "/items/니키로이드.png",
@@ -1347,32 +1426,35 @@
             "icon": "/items/생명의-연마석.webp",
             "w": 34,
             "h": 34
-          },
-          {
-            "name": "주문의 흔적",
-            "count": 240,
-            "icon": "/items/주문의-흔적.webp",
-            "w": 33,
-            "h": 32
-          },
+          }
+        ]
+      },
+      "extreme": {
+        "rewards": [
           {
             "name": "솔 에르다의 기운",
-            "count": 400,
+            "count": 700,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "남겨진 칼로스의 의지",
-            "count": 5,
+            "count": 14,
+            "fixed": true,
             "icon": "/items/남겨진-칼로스의-의지.webp",
             "w": 35,
             "h": 34
-          }
-        ]
-      },
-      "extreme": {
-        "rewards": [
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 180,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "니키로이드",
             "icon": "/items/니키로이드.png",
@@ -1408,27 +1490,6 @@
             "icon": "/items/익셉셔널-해머-(눈장식).png",
             "w": 37,
             "h": 31
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 700,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "남겨진 칼로스의 의지",
-            "count": 14,
-            "icon": "/items/남겨진-칼로스의-의지.webp",
-            "w": 35,
-            "h": 34
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 180,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -1437,17 +1498,18 @@
       "easy": {
         "rewards": [
           {
+            "name": "솔 에르다의 기운",
+            "count": 200,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
             "name": "백옥의 보스 반지 상자",
             "icon": "/items/백옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 36
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 200,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -1472,6 +1534,22 @@
       "normal": {
         "rewards": [
           {
+            "name": "솔 에르다의 기운",
+            "count": 280,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "이어진 고대의 결의 조각",
+            "count": 4,
+            "fixed": true,
+            "icon": "/items/이어진-고대의-결의-조각.webp",
+            "w": 34,
+            "h": 31
+          },
+          {
             "name": "대적자로이드",
             "icon": "/items/대적자로이드.png",
             "w": 34,
@@ -1488,20 +1566,6 @@
             "icon": "/items/생명의-연마석.webp",
             "w": 34,
             "h": 34
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 280,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "이어진 고대의 결의 조각",
-            "count": 4,
-            "icon": "/items/이어진-고대의-결의-조각.webp",
-            "w": 34,
-            "h": 31
           }
         ],
         "cubes": {
@@ -1517,6 +1581,30 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 450,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "이어진 고대의 결의",
+            "count": 6,
+            "fixed": true,
+            "icon": "/items/이어진-고대의-결의.webp",
+            "w": 36,
+            "h": 37
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 30,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "불멸의 유산",
             "icon": "/items/불멸의-유산.webp",
@@ -1546,32 +1634,35 @@
             "icon": "/items/생명의-연마석.webp",
             "w": 34,
             "h": 34
-          },
+          }
+        ]
+      },
+      "extreme": {
+        "rewards": [
           {
             "name": "솔 에르다의 기운",
-            "count": 450,
+            "count": 750,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "이어진 고대의 결의",
-            "count": 6,
+            "count": 16,
+            "fixed": true,
             "icon": "/items/이어진-고대의-결의.webp",
             "w": 36,
             "h": 37
           },
           {
             "name": "에리온의 조각",
-            "count": 30,
+            "count": 240,
+            "fixed": true,
             "icon": "/items/에리온의-조각.webp",
             "w": 37,
             "h": 37
-          }
-        ]
-      },
-      "extreme": {
-        "rewards": [
+          },
           {
             "name": "불멸의 유산",
             "icon": "/items/불멸의-유산.webp",
@@ -1613,27 +1704,6 @@
             "icon": "/items/익셉셔널-해머-(훈장).png",
             "w": 37,
             "h": 31
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 750,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "이어진 고대의 결의",
-            "count": 16,
-            "icon": "/items/이어진-고대의-결의.webp",
-            "w": 36,
-            "h": 37
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 240,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -1642,23 +1712,25 @@
       "easy": {
         "rewards": [
           {
-            "name": "백옥의 보스 반지 상자",
-            "icon": "/items/백옥의-보스-반지-상자.webp",
-            "w": 36,
-            "h": 36
-          },
-          {
             "name": "솔 에르다의 기운",
             "count": 200,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "뒤엉킨 흉수의 고리 조각",
+            "fixed": true,
             "icon": "/items/뒤엉킨-흉수의-고리-조각.webp",
             "w": 32,
             "h": 31
+          },
+          {
+            "name": "백옥의 보스 반지 상자",
+            "icon": "/items/백옥의-보스-반지-상자.webp",
+            "w": 36,
+            "h": 36
           }
         ],
         "cubes": {
@@ -1683,6 +1755,22 @@
       "normal": {
         "rewards": [
           {
+            "name": "솔 에르다의 기운",
+            "count": 300,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "뒤엉킨 흉수의 고리 조각",
+            "count": 5,
+            "fixed": true,
+            "icon": "/items/뒤엉킨-흉수의-고리-조각.webp",
+            "w": 32,
+            "h": 31
+          },
+          {
             "name": "카링로이드",
             "icon": "/items/카링로이드.png",
             "w": 40,
@@ -1705,20 +1793,6 @@
             "icon": "/items/생명의-연마석.webp",
             "w": 34,
             "h": 34
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 300,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "뒤엉킨 흉수의 고리 조각",
-            "count": 5,
-            "icon": "/items/뒤엉킨-흉수의-고리-조각.webp",
-            "w": 32,
-            "h": 31
           }
         ],
         "cubes": {
@@ -1734,6 +1808,30 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 500,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "뒤엉킨 흉수의 고리",
+            "count": 7,
+            "fixed": true,
+            "icon": "/items/뒤엉킨-흉수의-고리.webp",
+            "w": 33,
+            "h": 33
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 60,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "카링로이드",
             "icon": "/items/카링로이드.png",
@@ -1763,32 +1861,35 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
+          }
+        ]
+      },
+      "extreme": {
+        "rewards": [
           {
             "name": "솔 에르다의 기운",
-            "count": 500,
+            "count": 800,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "뒤엉킨 흉수의 고리",
-            "count": 7,
+            "count": 18,
+            "fixed": true,
             "icon": "/items/뒤엉킨-흉수의-고리.webp",
             "w": 33,
             "h": 33
           },
           {
             "name": "에리온의 조각",
-            "count": 60,
+            "count": 480,
+            "fixed": true,
             "icon": "/items/에리온의-조각.webp",
             "w": 37,
             "h": 37
-          }
-        ]
-      },
-      "extreme": {
-        "rewards": [
+          },
           {
             "name": "카링로이드",
             "icon": "/items/카링로이드.png",
@@ -1830,27 +1931,6 @@
             "icon": "/items/익셉셔널-해머-(귀고리).png",
             "w": 37,
             "h": 31
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 800,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "뒤엉킨 흉수의 고리",
-            "count": 18,
-            "icon": "/items/뒤엉킨-흉수의-고리.webp",
-            "w": 33,
-            "h": 33
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 480,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -1859,17 +1939,18 @@
       "easy": {
         "rewards": [
           {
+            "name": "솔 에르다의 기운",
+            "count": 200,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
             "name": "백옥의 보스 반지 상자",
             "icon": "/items/백옥의-보스-반지-상자.webp",
             "w": 36,
             "h": 36
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 200,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ],
         "cubes": {
@@ -1885,6 +1966,21 @@
       },
       "normal": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 290,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "저주받은 원혼의 잔재",
+            "fixed": true,
+            "icon": "/items/저주받은-원혼의-잔재.webp",
+            "w": 37,
+            "h": 36
+          },
           {
             "name": "벨로나로이드",
             "icon": "/items/벨로나로이드.webp",
@@ -1908,24 +2004,27 @@
             "icon": "/items/생명의-연마석.webp",
             "w": 34,
             "h": 34
-          },
+          }
+        ]
+      },
+      "hard": {
+        "rewards": [
           {
             "name": "솔 에르다의 기운",
-            "count": 290,
+            "count": 590,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "저주받은 원혼의 잔재",
+            "count": 2,
+            "fixed": true,
             "icon": "/items/저주받은-원혼의-잔재.webp",
             "w": 37,
             "h": 36
-          }
-        ]
-      },
-      "hard": {
-        "rewards": [
+          },
           {
             "name": "벨로나로이드",
             "icon": "/items/벨로나로이드.webp",
@@ -1961,20 +2060,6 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 590,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "저주받은 원혼의 잔재",
-            "count": 2,
-            "icon": "/items/저주받은-원혼의-잔재.webp",
-            "w": 37,
-            "h": 36
           }
         ]
       }
@@ -1982,6 +2067,22 @@
     "찬란한 흉성": {
       "normal": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 380,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "황홀한 환상의 단편 조각",
+            "count": 6,
+            "fixed": true,
+            "icon": "/items/황홀한-환상의-단편-조각.webp",
+            "w": 32,
+            "h": 34
+          },
           {
             "name": "흉성로이드",
             "icon": "/items/흉성로이드.webp",
@@ -2005,20 +2106,6 @@
             "icon": "/items/생명의-연마석.webp",
             "w": 34,
             "h": 34
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 380,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "황홀한 환상의 단편 조각",
-            "count": 6,
-            "icon": "/items/황홀한-환상의-단편-조각.webp",
-            "w": 32,
-            "h": 34
           }
         ],
         "cubes": {
@@ -2034,6 +2121,30 @@
       },
       "hard": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 550,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "황홀한 환상의 단편",
+            "count": 18,
+            "fixed": true,
+            "icon": "/items/황홀한-환상의-단편.webp",
+            "w": 40,
+            "h": 41
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 90,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "흉성로이드",
             "icon": "/items/흉성로이드.webp",
@@ -2069,27 +2180,6 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 550,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "황홀한 환상의 단편",
-            "count": 18,
-            "icon": "/items/황홀한-환상의-단편.webp",
-            "w": 40,
-            "h": 41
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 90,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -2097,6 +2187,21 @@
     "림보": {
       "normal": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 400,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "왜곡된 욕망의 결정",
+            "fixed": true,
+            "icon": "/items/왜곡된-욕망의-결정.webp",
+            "w": 34,
+            "h": 37
+          },
           {
             "name": "림보로이드",
             "icon": "/items/림보로이드.png",
@@ -2120,24 +2225,35 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
+          }
+        ]
+      },
+      "hard": {
+        "rewards": [
           {
             "name": "솔 에르다의 기운",
-            "count": 400,
+            "count": 600,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "왜곡된 욕망의 결정",
+            "count": 2,
+            "fixed": true,
             "icon": "/items/왜곡된-욕망의-결정.webp",
             "w": 34,
             "h": 37
-          }
-        ]
-      },
-      "hard": {
-        "rewards": [
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 60,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "근원의 속삭임",
             "icon": "/items/근원의-속삭임.webp",
@@ -2173,27 +2289,6 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 600,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "왜곡된 욕망의 결정",
-            "count": 2,
-            "icon": "/items/왜곡된-욕망의-결정.webp",
-            "w": 34,
-            "h": 37
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 60,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -2201,6 +2296,21 @@
     "발드릭스": {
       "normal": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 450,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "영원한 충성의 흔적",
+            "fixed": true,
+            "icon": "/items/영원한-충성의-흔적.webp",
+            "w": 36,
+            "h": 34
+          },
           {
             "name": "발드릭스로이드",
             "icon": "/items/발드릭스로이드.png",
@@ -2224,24 +2334,35 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
+          }
+        ]
+      },
+      "hard": {
+        "rewards": [
           {
             "name": "솔 에르다의 기운",
-            "count": 450,
+            "count": 650,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "영원한 충성의 흔적",
+            "count": 2,
+            "fixed": true,
             "icon": "/items/영원한-충성의-흔적.webp",
             "w": 36,
             "h": 34
-          }
-        ]
-      },
-      "hard": {
-        "rewards": [
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 120,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "죽음의 맹세",
             "icon": "/items/죽음의-맹세.png",
@@ -2277,27 +2398,6 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 650,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "영원한 충성의 흔적",
-            "count": 2,
-            "icon": "/items/영원한-충성의-흔적.webp",
-            "w": 36,
-            "h": 34
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 120,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -2305,6 +2405,29 @@
     "유피테르": {
       "normal": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 450,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "뒤틀린 갈망의 편린",
+            "fixed": true,
+            "icon": "/items/뒤틀린-갈망의-편린.webp",
+            "w": 38,
+            "h": 38
+          },
+          {
+            "name": "에리온의 조각",
+            "count": 45,
+            "fixed": true,
+            "icon": "/items/에리온의-조각.webp",
+            "w": 37,
+            "h": 37
+          },
           {
             "name": "유피테르로이드",
             "icon": "/items/유피테르로이드.webp",
@@ -2328,31 +2451,35 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
+          }
+        ]
+      },
+      "hard": {
+        "rewards": [
           {
             "name": "솔 에르다의 기운",
-            "count": 450,
+            "count": 750,
+            "fixed": true,
             "icon": "/items/솔-에르다의-기운.webp",
             "w": 31,
             "h": 31
           },
           {
             "name": "뒤틀린 갈망의 편린",
+            "count": 2,
+            "fixed": true,
             "icon": "/items/뒤틀린-갈망의-편린.webp",
             "w": 38,
             "h": 38
           },
           {
             "name": "에리온의 조각",
-            "count": 45,
+            "count": 360,
+            "fixed": true,
             "icon": "/items/에리온의-조각.webp",
             "w": 37,
             "h": 37
-          }
-        ]
-      },
-      "hard": {
-        "rewards": [
+          },
           {
             "name": "유피테르로이드",
             "icon": "/items/유피테르로이드.webp",
@@ -2388,27 +2515,6 @@
             "icon": "/items/신념의-연마석.webp",
             "w": 34,
             "h": 33
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 750,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "뒤틀린 갈망의 편린",
-            "count": 2,
-            "icon": "/items/뒤틀린-갈망의-편린.webp",
-            "w": 38,
-            "h": 38
-          },
-          {
-            "name": "에리온의 조각",
-            "count": 360,
-            "icon": "/items/에리온의-조각.webp",
-            "w": 37,
-            "h": 37
           }
         ]
       }
@@ -2417,22 +2523,39 @@
       "normal": {
         "rewards": [
           {
+            "name": "솔 에르다의 기운",
+            "count": 400,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
             "name": "메이린의 칠흑 장신구 상자",
             "icon": "/items/메이린의-칠흑-장신구-상자.webp",
             "w": 39,
             "h": 38
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 400,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
           }
         ]
       },
       "hard": {
         "rewards": [
+          {
+            "name": "솔 에르다의 기운",
+            "count": 550,
+            "fixed": true,
+            "icon": "/items/솔-에르다의-기운.webp",
+            "w": 31,
+            "h": 31
+          },
+          {
+            "name": "변화하는 운명의 파편",
+            "count": 2,
+            "fixed": true,
+            "icon": "/items/변화하는-운명의-파편.webp",
+            "w": 31,
+            "h": 31
+          },
           {
             "name": "메이린의 칠흑 장신구 상자",
             "icon": "/items/메이린의-칠흑-장신구-상자.webp",
@@ -2450,20 +2573,6 @@
             "icon": "/items/메이린의-에테르넬-방어구-상자.webp",
             "w": 32,
             "h": 33
-          },
-          {
-            "name": "솔 에르다의 기운",
-            "count": 550,
-            "icon": "/items/솔-에르다의-기운.webp",
-            "w": 31,
-            "h": 31
-          },
-          {
-            "name": "변화하는 운명의 파편",
-            "count": 2,
-            "icon": "/items/변화하는-운명의-파편.webp",
-            "w": 31,
-            "h": 31
           }
         ]
       }

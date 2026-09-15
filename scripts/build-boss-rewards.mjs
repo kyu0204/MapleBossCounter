@@ -188,33 +188,24 @@ for (const [boss, modes] of Object.entries(raw.bosses)) {
     const key = `${boss} ${diff}`;
 
     const rewards = [];
-    const push = (name, count, extra = {}) => {
+    /**
+     * fixed=true 는 잡으면 무조건 주는 것, false 는 확률로 떨어지는 것.
+     * 나무위키 보상 칸의 분류를 그대로 쓴다: '고정' 은 확정, '장비'·'소비' 는 드롭이다.
+     */
+    const push = (name, count, fixed, extra = {}) => {
       if (rewards.some((r) => r.name === name)) return;
       const ic = findIcon(name);
       if (!ic) missingIcon.set(name, (missingIcon.get(name) ?? 0) + 1);
       rewards.push({
         name,
         ...(count > 1 ? { count } : {}),
+        ...(fixed ? { fixed: true } : {}),
         ...(ic ? { icon: ic.file, w: ic.w, h: ic.h } : { short: shortOf(name) }),
         ...extra,
       });
     };
 
-    // 장비: 전부
-    for (const s of v.장비 ?? []) {
-      const n = baseName(s);
-      if (isDrop(n, s) || n.length < 2) continue;
-      const { name, count } = splitCount(s);
-      push(name, count);
-    }
-    // 소비: KEEP 만
-    for (const s of v.소비 ?? []) {
-      const n = baseName(s);
-      if (!isKeep(n) || isDrop(n, s)) continue;
-      const { name, count } = splitCount(s);
-      push(name, count);
-    }
-    // 고정: 수치류만 (큐브는 아래에서 패치 반영해 따로)
+    // 고정: 수치류만 (큐브는 아래에서 패치 반영해 따로). 확정 보상이라 먼저 담는다.
     for (const s of v.고정 ?? []) {
       const n = baseName(s);
       if (n.includes("큐브")) continue;
@@ -222,7 +213,21 @@ for (const [boss, modes] of Object.entries(raw.bosses)) {
       const counted = COUNTED.some((c) => c.re.test(n)) || /\d+\s*개$/.test(n);
       if (!counted) continue;
       const { name, count, range } = splitCount(s);
-      push(name, count, range ? { range } : {});
+      push(name, count, true, range ? { range } : {});
+    }
+    // 장비: 전부
+    for (const s of v.장비 ?? []) {
+      const n = baseName(s);
+      if (isDrop(n, s) || n.length < 2) continue;
+      const { name, count } = splitCount(s);
+      push(name, count, false);
+    }
+    // 소비: KEEP 만
+    for (const s of v.소비 ?? []) {
+      const n = baseName(s);
+      if (!isKeep(n) || isDrop(n, s)) continue;
+      const { name, count } = splitCount(s);
+      push(name, count, false);
     }
     // 큐브
     const cube = cubesOf(key, v.고정 ?? []);
@@ -283,15 +288,30 @@ for (const [key, spec] of Object.entries(CUBE_ONLY)) {
   out[boss][diff] = { rewards: [], cubes };
 }
 
+/**
+ * 아이콘 칸 크기. 아이콘 원본은 23x20 부터 40x41 까지 제각각인데 축소하면 계단현상이 난다.
+ * 그래서 크기는 건드리지 않고, 제일 큰 아이콘이 들어갈 만한 칸을 만들어 그 안에 가운데 정렬한다.
+ */
+const iconBox = { w: 0, h: 0 };
+for (const row of Object.values(out).flatMap((m) => Object.values(m))) {
+  for (const r of [...row.rewards, ...Object.values(row.cubes ?? {})]) {
+    if (r.w > iconBox.w) iconBox.w = r.w;
+    if (r.h > iconBox.h) iconBox.h = r.h;
+  }
+}
+
 const payload = {
   _meta: {
     updated: new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10),
     source: "나무위키 보스 문서의 난이도별 보상 섹션 (수집본: boss_rewards_raw.json)",
     cubePatchDate: PATCH_DATE,
+    iconBox,
     notes: [
       "표시 대상만 걸러 담았다. 훈장·물약·경험치·주문서 교환권 등 모든 보스 공통 소모품은 제외.",
       "강렬한 힘의 결정은 가격표(boss_crystal_prices.json)에 있으므로 여기서 제외.",
+      "rewards 의 fixed 는 잡으면 무조건 주는 확정 보상이라는 뜻이다. 없으면 확률 드롭. 큐브는 전부 확정이다.",
       "cubes 의 before/after 는 2026-09-17 패치 전/후 수량. 화면에서 기준일로 고른다.",
+      "iconBox 는 전체 아이콘 중 가장 큰 가로·세로. 아이콘은 원본 크기로 두고 이 칸에 가운데 정렬한다.",
       "검은 마법사(월간)는 보상 섹션을 긁지 않았고 큐브 수량만 담았다. 브론즈 에디셔널 24개는 사용자 실측 확인값.",
       "매그너스·피에르·반반·블러디퀸·파풀라투스는 문서에 보상 섹션이 없어 큐브 수량만 담았다. 출처는 나무위키 큐브 문서의 보스별 획득량 표.",
       "재생성: node scripts/build-boss-rewards.mjs",

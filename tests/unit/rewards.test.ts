@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import rawRewards from "@/data/boss_rewards.json";
-import { rewardsFor, hasRewardsFor, cubesChangeOn, REWARDS_META } from "@/lib/maple/rewards";
+import { rewardsFor, rewardRowsFor, hasRewardsFor, cubesChangeOn, REWARDS_META, ICON_BOX } from "@/lib/maple/rewards";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 
 interface Entry {
@@ -219,6 +219,65 @@ describe("메멘토 큐브 — 2026-09-17 패치 전/후", () => {
   it("수량이 0 인 큐브는 목록에 나오지 않는다", () => {
     expect(names("스우", "hard", AFTER).some((n) => n.includes("실버"))).toBe(false);
     expect(names("스우", "hard", BEFORE).some((n) => n.includes("실버"))).toBe(true);
+  });
+});
+
+describe("확정 보상 / 확률 드롭 구분", () => {
+  it("나무위키 '고정' 칸과 큐브는 확정, '장비'·'소비' 는 랜덤", () => {
+    const { fixed, random } = rewardRowsFor("유피테르", "hard", AFTER);
+    expect(fixed.map((r) => r.name)).toEqual(["솔 에르다의 기운", "뒤틀린 갈망의 편린", "에리온의 조각"]);
+    expect(random.map((r) => r.name)).toEqual(
+      expect.arrayContaining(["유피테르로이드", "오만의 원죄", "갈망의 에테르넬 방어구 상자"]),
+    );
+    // 장비가 확정으로 새지 않는다
+    expect(fixed.some((r) => r.name === "유피테르로이드")).toBe(false);
+  });
+
+  it("큐브는 확정 줄에 들어간다", () => {
+    const { fixed, random } = rewardRowsFor("벨룸", "chaos", AFTER);
+    expect(fixed.map((r) => r.name)).toEqual(["파멸의 조각", "메멘토 브론즈 에디셔널 큐브"]);
+    expect(random.map((r) => r.name)).toEqual(["벨룸의 헬름", "카오스 벨룸의 헬름", "기암괴석 의자"]);
+  });
+
+  it("큐브만 있는 구형 보스는 확정 줄만 나온다", () => {
+    const { fixed, random } = rewardRowsFor("매그너스", "hard", AFTER);
+    expect(fixed.map((r) => r.name)).toEqual(["메멘토 브론즈 에디셔널 큐브"]);
+    expect(random).toEqual([]);
+  });
+
+  it("두 줄을 합치면 전체 보상과 같다", () => {
+    for (const [boss, diff] of [["유피테르", "hard"], ["최초의 대적자", "extreme"], ["스우", "normal"]] as const) {
+      const { fixed, random } = rewardRowsFor(boss, diff, AFTER);
+      expect(fixed.length + random.length, `${boss} ${diff}`).toBe(rewardsFor(boss, diff, AFTER).length);
+    }
+  });
+});
+
+describe("아이콘 칸", () => {
+  it("가장 큰 아이콘 크기와 같다", () => {
+    let w = 0;
+    let h = 0;
+    for (const diffs of Object.values(file.bosses)) {
+      for (const row of Object.values(diffs)) {
+        for (const r of [...row.rewards, ...Object.values(row.cubes ?? {})]) {
+          if (r.w && r.w > w) w = r.w;
+          if (r.h && r.h > h) h = r.h;
+        }
+      }
+    }
+    expect(ICON_BOX).toEqual({ w, h });
+  });
+
+  it("칸보다 큰 아이콘은 없다 (원본 크기로 그리므로 넘치면 안 된다)", () => {
+    const over: string[] = [];
+    for (const [boss, diffs] of Object.entries(file.bosses)) {
+      for (const [diff, row] of Object.entries(diffs)) {
+        for (const r of [...row.rewards, ...Object.values(row.cubes ?? {})]) {
+          if ((r.w ?? 0) > ICON_BOX.w || (r.h ?? 0) > ICON_BOX.h) over.push(`${boss} ${diff} / ${r.name}`);
+        }
+      }
+    }
+    expect(over).toEqual([]);
   });
 });
 

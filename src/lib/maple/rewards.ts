@@ -17,6 +17,8 @@ export interface RewardEntry {
   count?: number;
   /** "5~10" 처럼 범위로 적힌 경우 원문 */
   range?: string;
+  /** 잡으면 무조건 주는 확정 보상. 없으면 확률 드롭이다. */
+  fixed?: boolean;
   /** 아이콘이 있으면 원본 크기와 함께 */
   icon?: string;
   w?: number;
@@ -36,12 +38,19 @@ interface CubeEntry {
 }
 
 interface RewardsFile {
-  _meta: { updated: string; source: string; cubePatchDate: string; notes: string[] };
+  _meta: { updated: string; source: string; cubePatchDate: string; iconBox: { w: number; h: number }; notes: string[] };
   bosses: Record<string, Record<string, { rewards: RewardEntry[]; cubes?: Record<string, CubeEntry> }>>;
 }
 
 const file = raw as unknown as RewardsFile;
 export const REWARDS_META = file._meta;
+
+/**
+ * 아이콘 칸 크기 = 전체 아이콘 중 가장 큰 가로·세로.
+ * 아이콘 원본이 23x20 부터 40x41 까지 제각각이라, 줄이면 계단현상이 난다.
+ * 크기는 그대로 두고 이 칸 안에 가운데 정렬해서 줄을 맞춘다.
+ */
+export const ICON_BOX = file._meta.iconBox;
 
 const encodeFile = (f: string) => f.split("/").map(encodeURIComponent).join("/");
 
@@ -66,9 +75,23 @@ export function rewardsFor(boss: string, diff: Difficulty | string, priceDate: s
   for (const c of Object.values(row.cubes ?? {})) {
     const count = after ? c.after : c.before;
     if (!count) continue;
-    out.push({ name: c.name, count, icon: c.icon ? encodeFile(c.icon) : undefined, w: c.w, h: c.h, short: c.short, set: null });
+    // 큐브는 잡으면 무조건 주는 확정 보상이다
+    out.push({ name: c.name, count, fixed: true, icon: c.icon ? encodeFile(c.icon) : undefined, w: c.w, h: c.h, short: c.short, set: null });
   }
   return out;
+}
+
+/**
+ * 확정 보상과 확률 드롭을 나눠서 준다. 화면에서 두 줄로 보여준다.
+ * 확정 안에서는 큐브가 뒤로 가도록 원래 순서를 유지한다 (수집본 순서 = 나무위키 표기 순서).
+ */
+export function rewardRowsFor(
+  boss: string,
+  diff: Difficulty | string,
+  priceDate: string,
+): { fixed: DisplayReward[]; random: DisplayReward[] } {
+  const all = rewardsFor(boss, diff, priceDate);
+  return { fixed: all.filter((r) => r.fixed), random: all.filter((r) => !r.fixed) };
 }
 
 export function hasRewardsFor(boss: string, diff: Difficulty | string, priceDate: string): boolean {

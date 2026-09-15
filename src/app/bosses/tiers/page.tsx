@@ -54,7 +54,8 @@ export default function TiersPage() {
           ))}
         </div>
         <p className="text-[11px] text-zinc-400">
-          보상은 나무위키 보스 문서의 난이도별 보상에서 가져왔습니다. 모든 보스가 공통으로 주는 소모품(훈장·물약·경험치·주문서)과 결정석은 뺐습니다. 아이콘에 마우스를 올리면 이름이 나옵니다.
+          보상은 나무위키 보스 문서의 난이도별 보상에서 가져왔습니다. <b>확정</b>은 잡으면 무조건 주는 것, <b>랜덤</b>은 확률로 떨어지는 것입니다.
+          모든 보스가 공통으로 주는 소모품(훈장·물약·경험치·주문서)과 결정석은 뺐습니다. 아이콘에 마우스를 올리면 이름이 나오고, 오른쪽 아래 숫자는 개수입니다.
           메멘토 큐브는 위 가격 기준일에 맞춰 {REWARDS_META.cubePatchDate} 패치 전후 수량이 바뀝니다. (기준 {REWARDS_META.updated})
         </p>
       </div>
@@ -78,7 +79,7 @@ export default function TiersPage() {
                       .map(({ k, ref, price, showDrops }) => (
                         <div
                           key={k}
-                          className={`flex items-center gap-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 p-1.5 ${showDrops ? "flex-1 min-w-[20rem]" : "min-w-[10rem]"}`}
+                          className={`flex items-center gap-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 p-1.5 ${showDrops ? "flex-1 min-w-[24rem]" : "min-w-[10rem]"}`}
                         >
                           <BossIcon boss={ref.boss} diff={ref.diff} size={72} showDiff={false} />
                           <div className="flex flex-col gap-1 min-w-0 flex-1">
