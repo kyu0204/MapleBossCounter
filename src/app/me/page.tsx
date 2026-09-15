@@ -16,11 +16,12 @@ import { RewardTotalChip } from "@/components/boss/RewardTotalChip";
 import { CharacterCard } from "@/components/character/CharacterCard";
 import { CharacterSettingsModal } from "@/components/character/CharacterSettingsModal";
 import { ResyncButton } from "@/components/character/ResyncButton";
+import { SchedulerAutoRefresh } from "@/components/character/SchedulerAutoRefresh";
+import { DASHBOARD_MIN_LEVEL } from "@/lib/dashboard";
 
 export const metadata = { title: "내 캐릭터" };
 
-/** 이 레벨 미만 캐릭터는 기본 숨김 (?all=1 로 전체 보기). 수동 숨김(hidden)과는 별개. */
-export const DASHBOARD_MIN_LEVEL = Number(process.env.DASHBOARD_MIN_LEVEL ?? 260);
+export { DASHBOARD_MIN_LEVEL } from "@/lib/dashboard";
 
 /**
  * 월 환산에 쓰는 주 수. 실제 한 달은 약 4.35주지만 곱셈이 눈에 보이도록 4주로 둔다.
@@ -145,6 +146,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
           )
         )}
         <div className="ml-auto flex items-center gap-2">
+          <SchedulerAutoRefresh />
           <CharacterSettingsModal
             characters={all.map((c) => ({ ocid: c.ocid, name: c.name, world: c.world, cls: c.cls, level: c.level, imageUrl: c.imageUrl, hidden: c.hidden }))}
             minLevel={DASHBOARD_MIN_LEVEL}
