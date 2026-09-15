@@ -9,8 +9,7 @@ import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
 import { DropList } from "@/components/boss/DropList";
-import { hasAnyDrops, DROP_SETS, DROP_SET_STYLE, DROPS_META, REWARD_ITEMS_META } from "@/lib/maple/drops";
-import { isWeeklyCrystal } from "@/lib/maple/prices";
+import { hasRewards, DROP_SETS, DROP_SET_STYLE, REWARD_ITEMS_META } from "@/lib/maple/drops";
 
 export const metadata: Metadata = {
   title: "보스 티어표",
@@ -54,8 +53,8 @@ export default function TiersPage() {
           ))}
         </div>
         <p className="text-[11px] text-zinc-400">
-          드롭은 난이도별로 확인된 세트 아이템을 우선 표시하고, 없으면 나무위키 보스 문서의 주요 보상을 보여줍니다. 주요 보상은 주간 보스만 수집했고 난이도 구분이 없습니다.
-          (세트 {DROPS_META.updated} · 주요 보상 {REWARD_ITEMS_META.updated} 기준)
+          보상은 나무위키 보스 문서의 &quot;주요 보상&quot;에서 가져왔습니다. 주간 보스만 수집했고, 난이도 전용 보상은 배지로 구분합니다(<code>+</code> 는 그 난이도 이상).
+          (기준 {REWARD_ITEMS_META.updated})
         </p>
       </div>
 
@@ -72,8 +71,7 @@ export default function TiersPage() {
                     {keys
                       .map((k) => {
                         const ref = parseBossKey(k)!;
-                        const weekly = isWeeklyCrystal(ref.boss, ref.diff);
-                        return { k, ref, price: crystalPrice(ref.boss, ref.diff, priceDate), showDrops: hasAnyDrops(ref.boss, ref.diff, weekly) };
+                        return { k, ref, price: crystalPrice(ref.boss, ref.diff, priceDate), showDrops: hasRewards(ref.boss, ref.diff) };
                       })
                       .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
                       .map(({ k, ref, price, showDrops }) => (

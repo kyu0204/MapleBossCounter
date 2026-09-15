@@ -1,64 +1,73 @@
 import type { Difficulty } from "@/lib/maple/bossKey";
-import { dropsOf, itemIconFor, rewardItemsOf, DROP_SET_STYLE, type BossDrop, type DropSet } from "@/lib/maple/drops";
-import { isWeeklyCrystal } from "@/lib/maple/prices";
+import { rewardGroupsOf, setOfItem, DROP_SET_STYLE, type RewardItem } from "@/lib/maple/drops";
+import { DIFF_LABEL, DIFF_SHORT, DIFF_SOLID } from "@/lib/maple/bossMeta";
 
-function ItemIcon({ src, size = 22 }: { src: string | null; size?: number }) {
-  if (!src) return null;
+/** 아이템 아이콘. 원본 크기 그대로 (축소·왜곡 없음). */
+export function ItemIcon({ item }: { item: RewardItem }) {
   return (
-    // 나무위키 아이템 아이콘(대략 30~45px). 확대하지 않으므로 기본 렌더링.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" className="object-contain shrink-0" style={{ width: size, height: size }} loading="lazy" decoding="async" />
+    <img
+      src={item.file}
+      alt=""
+      width={item.w}
+      height={item.h}
+      className="object-contain shrink-0"
+      style={{ width: item.w, height: item.h }}
+      loading="lazy"
+      decoding="async"
+    />
   );
 }
 
-/** 드롭 아이템 칩 하나. 아이템명이 이미 세트명으로 시작하면 세트 라벨을 겹쳐 쓰지 않는다. */
-export function DropChip({ drop, boss, showSet = true, iconSize = 22 }: { drop: BossDrop; boss?: string; showSet?: boolean; iconSize?: number }) {
-  const redundant = drop.name.startsWith(drop.set);
-  const icon = itemIconFor(drop.name, boss);
+/** 보상 아이템 칩. 세트(여명·칠흑·에테르넬)를 알면 그 색으로. */
+export function RewardChip({ item }: { item: RewardItem }) {
+  const set = setOfItem(item.name);
+  const tone = set ? DROP_SET_STYLE[set] : DROP_SET_STYLE.기타;
   return (
-    <span className={`inline-flex items-center gap-1 rounded border pl-0.5 pr-1.5 py-0.5 text-[11px] leading-tight ${DROP_SET_STYLE[drop.set] ?? DROP_SET_STYLE.기타}`} title={`${drop.set} · ${drop.slot}`}>
-      <ItemIcon src={icon} size={iconSize} />
-      {showSet && drop.set !== "기타" && !redundant && <span className="font-bold opacity-70">{drop.set}</span>}
-      <span className="font-medium">{drop.name}</span>
+    <span className={`inline-flex items-center gap-1.5 rounded border pl-1 pr-2 py-0.5 text-xs leading-tight ${tone}`} title={set ? `${set} · ${item.name}` : item.name}>
+      <ItemIcon item={item} />
+      <span className="font-medium">{item.name}</span>
     </span>
   );
 }
 
-/** 나무위키 '주요 보상' 아이템 칩 (난이도 구분 없음) */
-export function RewardChip({ name, file, iconSize = 22 }: { name: string; file: string; iconSize?: number }) {
+/** 카테고리 라벨. 난이도 카테고리는 난이도 배지 색으로 */
+function CategoryLabel({ label, difficultyScoped }: { label: string; difficultyScoped: boolean }) {
+  if (!difficultyScoped) {
+    return <span className="text-[11px] font-bold text-zinc-500 shrink-0 w-9 text-right">{label}</span>;
+  }
+  const atLeast = label.endsWith("+");
+  const ko = atLeast ? label.slice(0, -1) : label;
+  const diff = ({ 이지: "easy", 노멀: "normal", 노말: "normal", 하드: "hard", 카오스: "chaos", 익스트림: "extreme" } as Record<string, Difficulty>)[ko];
   return (
-    <span className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-zinc-50 pl-0.5 pr-1.5 py-0.5 text-[11px] leading-tight text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300" title={name}>
-      <ItemIcon src={file} size={iconSize} />
-      <span className="font-medium">{name}</span>
+    <span className="shrink-0 w-9 text-right" title={`${DIFF_LABEL[diff] ?? ko}${atLeast ? " 이상" : ""} 전용`}>
+      <span className={`inline-flex items-center justify-center rounded px-1 py-px text-[10px] font-bold ${DIFF_SOLID[diff] ?? DIFF_SOLID.normal}`}>
+        {DIFF_SHORT[diff] ?? ko}
+        {atLeast && "+"}
+      </span>
     </span>
   );
 }
 
 /**
- * 보스+난이도의 드롭.
- * 난이도별로 확인된 세트 아이템(boss_drops.json)이 있으면 그걸, 없으면 나무위키 '주요 보상'을 보여준다.
+ * 보스+난이도의 보상. 공통 카테고리(장비/소비/개인…)를 먼저, 난이도 전용을 뒤에.
+ * 출처: 나무위키 보스 문서 '주요 보상'.
  */
-const norm = (s: string) => s.replace(/\s+/g, "");
-
-export function DropList({ boss, diff, iconSize = 22, className = "" }: { boss: string; diff: Difficulty | string; iconSize?: number; className?: string }) {
-  // 1) 난이도별로 확인된 세트 아이템 (세트 색 표시)
-  const drops = dropsOf(boss, diff);
-  // 2) 나무위키 '주요 보상' — 주간 결정 보스만 수집했으므로 일간·월간 행에는 붙이지 않는다.
-  //    세트 칩과 이름이 겹치는 것은 빼서 같은 아이템이 두 번 나오지 않게 한다.
-  const rewards = (isWeeklyCrystal(boss, diff) ? rewardItemsOf(boss) : []).filter(
-    (r) => !drops.some((d) => norm(r.name).includes(norm(d.name)) || norm(d.name).includes(norm(r.name))),
-  );
-  if (!drops.length && !rewards.length) return null;
+export function DropList({ boss, diff, className = "" }: { boss: string; diff: Difficulty | string; className?: string }) {
+  const groups = rewardGroupsOf(boss, diff);
+  if (!groups.length) return null;
   return (
-    <span className={`flex flex-wrap gap-1 ${className}`}>
-      {drops.map((d) => (
-        <DropChip key={d.name} drop={d} boss={boss} iconSize={iconSize} />
-      ))}
-      {rewards.map((r) => (
-        <RewardChip key={r.name} name={r.name} file={r.file} iconSize={iconSize} />
+    <span className={`flex flex-col gap-1 ${className}`}>
+      {groups.map((g) => (
+        <span key={g.label} className="flex items-start gap-1.5">
+          <CategoryLabel label={g.label} difficultyScoped={g.difficultyScoped} />
+          <span className="flex flex-wrap gap-1">
+            {g.items.map((it) => (
+              <RewardChip key={it.name} item={it} />
+            ))}
+          </span>
+        </span>
       ))}
     </span>
   );
 }
-
-export type { DropSet };

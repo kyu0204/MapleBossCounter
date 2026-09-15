@@ -1,100 +1,139 @@
 /**
- * 보스 드롭 아이템 (src/data/boss_drops.json).
- * 확인된 세트 장신구·방어구만 담는다. 공통 보상(소울·훈장·의지의 결정)과 출처 미확인 보스는 비어 있다.
+ * 보스 드롭/보상.
+ *
+ * 내용의 출처는 나무위키 각 보스 문서 본문 상세표의 "주요 보상" 칸이다 (src/data/boss_reward_items.json).
+ * 카테고리는 두 종류:
+ *   공통 계열 — 장비 / 소비 / 개인 / 기타 / 공용 / 공통 : 난이도와 무관
+ *   난이도 계열 — 이지 / 노멀 / 하드 / 카오스 / 익스트림, 뒤에 "+" 가 붙으면 "그 난이도 이상"
+ *
+ * 세트 색(여명·칠흑·에테르넬)은 표시용으로만 boss_drops.json 의 이름 목록에서 유추한다.
  */
-import raw from "@/data/boss_drops.json";
+import rawSets from "@/data/boss_drops.json";
 import rawItems from "@/data/boss_reward_items.json";
-import { bossKey, type Difficulty } from "./bossKey";
+import { type Difficulty } from "./bossKey";
+import { tierOf } from "./tiers";
 
 export type DropSet = "여명" | "칠흑" | "에테르넬" | "기타";
 
-export interface BossDrop {
+export interface RewardItem {
   name: string;
-  slot: string;
-  set: DropSet;
+  file: string;
+  w?: number;
+  h?: number;
 }
 
-interface DropFile {
+export interface RewardGroup {
+  /** 화면에 그대로 쓰는 라벨 (장비, 개인, 하드, 노멀+ …) */
+  label: string;
+  /** 난이도 전용 보상인지 */
+  difficultyScoped: boolean;
+  items: RewardItem[];
+}
+
+interface ItemFile {
+  _meta: { updated: string; source: string; difficultyMap: Record<string, Difficulty>; commonCategories: string[]; notes: string[] };
+  items: Record<string, Record<string, RewardItem[]>>;
+}
+
+const itemFile = rawItems as unknown as ItemFile;
+export const REWARD_ITEMS_META = itemFile._meta;
+
+const COMMON = new Set(itemFile._meta.commonCategories ?? ["장비", "소비", "개인", "기타", "공용", "공통"]);
+const DIFF_KO = itemFile._meta.difficultyMap ?? {};
+
+const encodeFile = (f: string) => f.split("/").map(encodeURIComponent).join("/");
+const norm = (s: string) => s.replace(/\s+/g, "");
+
+// ---------- 세트 색 (표시 전용) ----------
+
+interface SetFile {
   _meta: { updated: string; sources: string[]; notes: string[]; sets: Record<string, { label: string; tone: string }> };
-  drops: Record<string, BossDrop[]>;
+  drops: Record<string, { name: string; slot: string; set: DropSet }[]>;
+}
+const setFile = rawSets as unknown as SetFile;
+export const DROPS_META = setFile._meta;
+
+/** 아이템 이름 → 세트. boss_drops.json 의 이름 목록으로 유추한다(표기 차이 허용). */
+const SET_BY_NAME: { key: string; set: DropSet }[] = (() => {
+  const out: { key: string; set: DropSet }[] = [];
+  const seen = new Set<string>();
+  for (const list of Object.values(setFile.drops)) {
+    for (const d of list) {
+      const k = norm(d.name);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push({ key: k, set: d.set });
+    }
+  }
+  return out;
+})();
+
+export function setOfItem(name: string): DropSet | null {
+  const t = norm(name);
+  if (t.includes("에테르넬")) return "에테르넬";
+  for (const { key, set } of SET_BY_NAME) if (key === t) return set;
+  for (const { key, set } of SET_BY_NAME) if (key.includes(t) || t.includes(key)) return set;
+  return null;
 }
 
-const file = raw as unknown as DropFile;
-
-export const DROPS_META = file._meta;
-
-export function dropsOf(boss: string, diff: Difficulty | string): BossDrop[] {
-  return file.drops[bossKey(boss, String(diff))] ?? [];
-}
-
-export function hasDrops(boss: string, diff: Difficulty | string): boolean {
-  return dropsOf(boss, diff).length > 0;
-}
-
-/** 세트별 칩 색. Tailwind 가 스캔할 수 있게 리터럴 문자열로 둔다. */
 export const DROP_SET_STYLE: Record<DropSet, string> = {
   여명: "bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900",
   칠흑: "bg-violet-50 text-violet-900 border-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:border-violet-900",
   에테르넬: "bg-yellow-50 text-yellow-900 border-yellow-300 dark:bg-yellow-950/40 dark:text-yellow-100 dark:border-yellow-800",
   기타: "bg-zinc-50 text-zinc-700 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800",
 };
-
 export const DROP_SETS: DropSet[] = ["여명", "칠흑", "에테르넬"];
 
-// ---------- 나무위키 '주요 보상' 아이템 + 아이콘 ----------
-// scripts/fetch-namu-item-icons.mjs 가 만든다. 주간 결정 보스만. 난이도 구분은 없다.
+// ---------- 보상 조회 ----------
 
-export interface RewardItem {
-  name: string;
-  file: string;
-  bytes?: number;
+/** 라벨이 이 (보스, 난이도) 에 해당하는가 */
+function labelApplies(boss: string, diff: Difficulty | string, label: string): boolean {
+  if (COMMON.has(label)) return true;
+  const atLeast = label.endsWith("+");
+  const ko = atLeast ? label.slice(0, -1) : label;
+  const target = DIFF_KO[ko];
+  if (!target) return false;
+  if (target === diff) return true;
+  if (!atLeast) return false;
+  // "노멀 이상" → 같은 보스 안에서 티어가 그 난이도 이상이면 포함
+  const here = tierOf(boss, diff)?.rank;
+  const base = tierOf(boss, target)?.rank;
+  return here != null && base != null && here >= base;
 }
 
-interface ItemFile {
-  _meta: { updated: string; source: string; notes: string[] };
-  items: Record<string, RewardItem[]>;
+/** 보스+난이도에 해당하는 보상을 카테고리 그룹으로 */
+export function rewardGroupsOf(boss: string, diff: Difficulty | string): RewardGroup[] {
+  const cats = itemFile.items[boss];
+  if (!cats) return [];
+  const out: RewardGroup[] = [];
+  for (const [label, items] of Object.entries(cats)) {
+    if (!labelApplies(boss, diff, label)) continue;
+    out.push({
+      label,
+      difficultyScoped: !COMMON.has(label),
+      items: items.map((i) => ({ ...i, file: encodeFile(i.file) })),
+    });
+  }
+  // 공통 먼저, 난이도 전용 나중
+  return out.sort((a, b) => Number(a.difficultyScoped) - Number(b.difficultyScoped));
 }
 
-const itemFile = rawItems as unknown as ItemFile;
-export const REWARD_ITEMS_META = itemFile._meta;
-
-/** URL 에 쓸 수 있게 인코딩 (한글 파일명) */
-const encodeFile = (f: string) => f.split("/").map(encodeURIComponent).join("/");
-
-/** 보스의 '주요 보상' 아이템 (난이도 무관). 주간 결정 보스만 수집돼 있다. */
-export function rewardItemsOf(boss: string): RewardItem[] {
-  return (itemFile.items[boss] ?? []).map((i) => ({ ...i, file: encodeFile(i.file) }));
+/** 보스의 모든 보상 (난이도 무관) */
+export function allRewardsOf(boss: string): RewardItem[] {
+  return Object.values(itemFile.items[boss] ?? {})
+    .flat()
+    .map((i) => ({ ...i, file: encodeFile(i.file) }));
 }
 
-/**
- * 화면에 보여줄 게 있는지. 주간 결정 행만 '주요 보상'으로 폴백한다
- * (일간·월간 난이도 행에 보스 전체 보상을 붙이면 잘못된 인상을 준다).
- */
-export function hasAnyDrops(boss: string, diff: Difficulty | string, weekly: boolean): boolean {
-  return dropsOf(boss, diff).length > 0 || (weekly && rewardItemsOf(boss).length > 0);
+export function hasRewards(boss: string, diff: Difficulty | string): boolean {
+  return rewardGroupsOf(boss, diff).length > 0;
 }
 
-const norm = (s: string) => s.replace(/\s+/g, "");
-
-/**
- * 아이템 이름으로 아이콘 파일을 찾는다.
- * boss_drops.json 과 나무위키 표기가 조금씩 달라(컴플리트 언더 컨트롤 / 컴플리트 언더컨트롤,
- * 미트라의 분노 / 미트라의 분노 선택 상자) 공백 제거 후 부분 일치까지 허용한다.
- */
+/** 이름으로 아이콘 찾기 (표기 차이 허용) */
 export function itemIconFor(name: string, boss?: string): string | null {
   const target = norm(name);
-  const pools = boss ? [itemFile.items[boss] ?? [], ...Object.values(itemFile.items)] : Object.values(itemFile.items);
-  for (const pool of pools) {
-    for (const it of pool) {
-      const n = norm(it.name);
-      if (n === target) return encodeFile(it.file);
-    }
-  }
-  for (const pool of pools) {
-    for (const it of pool) {
-      const n = norm(it.name);
-      if (n.includes(target) || target.includes(n)) return encodeFile(it.file);
-    }
-  }
+  const pools = boss ? [allRewardsOf(boss), ...Object.keys(itemFile.items).map(allRewardsOf)] : Object.keys(itemFile.items).map(allRewardsOf);
+  for (const pool of pools) for (const it of pool) if (norm(it.name) === target) return it.file;
+  for (const pool of pools) for (const it of pool) if (norm(it.name).includes(target) || target.includes(norm(it.name))) return it.file;
   return null;
 }
