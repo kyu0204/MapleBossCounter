@@ -8,7 +8,9 @@ import { loadPlanConfig } from "@/services/planInput";
 import { partyPicksByCharacter } from "@/services/partyLink";
 import { normalizeBossList, bossKey } from "@/lib/maple/bossKey";
 import { mergePicks, toPickList, splitByCleared, picksTotals } from "@/lib/maple/bossPicks";
+import { aggregateFixedRewards } from "@/lib/maple/rewards";
 import { fmtPower } from "@/lib/maple/format";
+import { RewardTotalChip } from "@/components/boss/RewardTotalChip";
 import { CharacterCard } from "@/components/character/CharacterCard";
 import { CharacterSettingsModal } from "@/components/character/CharacterSettingsModal";
 import { ResyncButton } from "@/components/character/ResyncButton";
@@ -65,7 +67,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
     // 지금까지 번 것은 맨 위 합계와 캐릭터 상세에 있다.
     const rev = picks.length ? picksTotals(picks, priceDate).value : null;
     const earned = picks.length ? picksTotals(done, priceDate).value : 0;
-    return { c, snap, rev, earned, remainingCount: remaining.length };
+    return { c, snap, rev, earned, remainingCount: remaining.length, picks };
   });
 
   // 표시 중인 캐릭터 전체 합계
@@ -73,6 +75,8 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
     (s, x) => ({ total: s.total + (x.rev ?? 0), earned: s.earned + x.earned, remaining: s.remaining + x.remainingCount }),
     { total: 0, earned: 0, remaining: 0 },
   );
+  // 확정 보상도 캐릭터를 가로질러 합친다. 조각·큐브는 보스마다 인원으로 나눈 뒤 더해진다.
+  const grandRewards = aggregateFixedRewards(cards.flatMap((x) => x.picks), priceDate);
 
   const byWorld = new Map<string, typeof cards>();
   for (const x of cards) {
@@ -109,21 +113,34 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
         </div>
       </div>
       {grand.total > 0 && (
-        <div className="card flex flex-wrap items-baseline gap-x-6 gap-y-2">
-          <span className="flex items-baseline gap-2">
-            <span className="text-xs text-zinc-500">이번 주 총 수익</span>
-            <b className="text-2xl tabular-nums text-orange-600 dark:text-orange-400">{fmtPower(grand.total)}</b>
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span className="text-xs text-zinc-500">지금까지</span>
-            <span className="text-lg tabular-nums">{fmtPower(grand.earned)}</span>
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span className="text-xs text-zinc-500">남은 것</span>
-            <span className="text-lg tabular-nums">{fmtPower(grand.total - grand.earned)}</span>
-            {grand.remaining > 0 && <span className="text-xs text-zinc-500">보스 {grand.remaining}개</span>}
-          </span>
-          <span className="text-[11px] text-zinc-400 ml-auto">표시 중인 캐릭터 기준 · 고른 보스와 설정한 인원으로 계산</span>
+        <div className="card space-y-3">
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+            <span className="flex items-baseline gap-2">
+              <span className="text-xs text-zinc-500">이번 주 총 수익</span>
+              <b className="text-2xl tabular-nums text-orange-600 dark:text-orange-400">{fmtPower(grand.total)}</b>
+            </span>
+            <span className="flex items-baseline gap-2">
+              <span className="text-xs text-zinc-500">지금까지</span>
+              <span className="text-lg tabular-nums">{fmtPower(grand.earned)}</span>
+            </span>
+            <span className="flex items-baseline gap-2">
+              <span className="text-xs text-zinc-500">남은 것</span>
+              <span className="text-lg tabular-nums">{fmtPower(grand.total - grand.earned)}</span>
+              {grand.remaining > 0 && <span className="text-xs text-zinc-500">보스 {grand.remaining}개</span>}
+            </span>
+            <span className="text-[11px] text-zinc-400 ml-auto">표시 중인 캐릭터 기준 · 고른 보스와 설정한 인원으로 계산</span>
+          </div>
+          {grandRewards.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">
+              <span className="text-xs text-zinc-500 shrink-0">확정 보상</span>
+              <span className="flex flex-wrap items-center gap-1">
+                {grandRewards.map((it) => (
+                  <RewardTotalChip key={it.name} item={it} />
+                ))}
+              </span>
+              <span className="text-[11px] text-zinc-400">조각·큐브는 인원으로 나눈 뒤 합한 값</span>
+            </div>
+          )}
         </div>
       )}
 
