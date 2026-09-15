@@ -1,6 +1,7 @@
 import type { BossClearRow } from "@/lib/maple/scheduler";
 import { crystalPrice } from "@/lib/maple/prices";
-import { tierLabel } from "@/lib/maple/tiers";
+import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
+import { TierStars } from "@/components/boss/TierStars";
 import { fmtPower } from "@/lib/maple/format";
 import { BossIcon } from "@/components/boss/BossIcon";
 
@@ -28,17 +29,20 @@ export function BossClearTable({ bosses, priceDate, partyOf, weekly }: { bosses:
                   const value = price == null ? null : Math.floor(price / party);
                   return (
                     <tr key={`${b.boss}|${b.diff}`} className={`border-t border-zinc-100 dark:border-zinc-800 ${b.completed ? "" : "text-zinc-400"} ${!b.registered && !b.completed ? "hidden sm:table-row" : ""}`}>
-                      <td className="py-1 w-6">{b.completed ? "✅" : "⬜"}</td>
-                      <td className="py-1">
-                        <span className="inline-flex items-center gap-1.5">
-                          <BossIcon boss={b.boss} diff={b.diff} size={22} className={b.completed ? "" : "opacity-60 grayscale"} />
-                          <span>
-                            {b.boss} <span className="text-xs">{b.diff}</span>
-                            {!b.registered && <span className="ml-1 text-[10px] text-zinc-400">미등록</span>}
+                      <td className="py-1.5 w-6">{b.completed ? "✅" : "⬜"}</td>
+                      <td className="py-1.5">
+                        <span className="inline-flex items-center gap-2">
+                          <BossIcon boss={b.boss} diff={b.diff} size={34} showDiff={false} className={b.completed ? "" : "opacity-60 grayscale"} />
+                          <span className="inline-flex items-center gap-1.5">
+                            <DifficultyBadge diff={b.diff} size="xs" solid />
+                            {b.boss}
+                            {!b.registered && <span className="text-[10px] text-zinc-400">미등록</span>}
                           </span>
                         </span>
                       </td>
-                      <td className="py-1 text-xs text-zinc-500 whitespace-nowrap">{tierLabel(b.tier)}</td>
+                      <td className="py-1.5 whitespace-nowrap">
+                        <TierStars tier={b.tier} size={11} />
+                      </td>
                       <td className="py-1 text-right whitespace-nowrap">
                         {price == null ? <span className="text-xs text-zinc-400">가격 미등록</span> : (
                           <>

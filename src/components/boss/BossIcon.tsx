@@ -1,6 +1,6 @@
 import iconMap from "@/data/boss_icons.json";
 import type { Difficulty } from "@/lib/maple/bossKey";
-import { bossFullLabel, bossShort, DIFF_SHORT, DIFF_STYLE } from "@/lib/maple/bossMeta";
+import { bossFullLabel, bossShort, DIFF_SHORT, DIFF_SOLID, DIFF_STYLE } from "@/lib/maple/bossMeta";
 
 /** scripts/fetch-namu-boss-icons.mjs 가 만든다. 파일은 public/bosses 에 자체 호스팅. */
 type IconEntry = { source: string; doc: string; src: string; file: string; bytes?: number };
@@ -13,17 +13,31 @@ export function bossIconFile(boss: string): string | null {
 }
 
 /**
- * 보스 아이콘. public/bosses 에 받아둔 몹 아이콘이 있으면 그걸, 없으면 약칭 첫 글자 배지로 폴백.
- * 난이도는 테두리 색 + 우하단 글자(이/노/하/카/익)로 표시한다.
+ * 보스 아이콘. public/bosses 에 받아둔 아이콘이 있으면 그걸, 없으면 약칭 배지로 폴백.
+ * 난이도는 테두리 색 + 우하단 난이도 배지로 표시한다.
  */
-export function BossIcon({ boss, diff, size = 36, className = "" }: { boss: string; diff: Difficulty | string; size?: number; className?: string }) {
-  const style = DIFF_STYLE[diff as Difficulty] ?? DIFF_STYLE.normal;
+export function BossIcon({
+  boss,
+  diff,
+  size = 48,
+  showDiff = true,
+  className = "",
+}: {
+  boss: string;
+  diff: Difficulty | string;
+  size?: number;
+  /** 우하단 난이도 배지 표시 */
+  showDiff?: boolean;
+  className?: string;
+}) {
+  const d = diff as Difficulty;
+  const style = DIFF_STYLE[d] ?? DIFF_STYLE.normal;
   const file = bossIconFile(boss);
   const short = bossShort(boss);
-  const d = DIFF_SHORT[diff as Difficulty] ?? "";
+  const letter = DIFF_SHORT[d] ?? "";
   return (
     <span
-      className={`relative inline-flex items-center justify-center rounded-md border-2 overflow-hidden shrink-0 ${style.chip} ${className}`}
+      className={`relative inline-flex items-center justify-center rounded-lg border-2 overflow-hidden shrink-0 ${style.chip} ${className}`}
       style={{ width: size, height: size }}
       title={bossFullLabel(boss, diff)}
     >
@@ -31,16 +45,16 @@ export function BossIcon({ boss, diff, size = 36, className = "" }: { boss: stri
         // eslint-disable-next-line @next/next/no-img-element
         <img src={file} alt="" className="w-full h-full object-contain [image-rendering:pixelated]" loading="lazy" />
       ) : (
-        <span className="font-bold leading-none" style={{ fontSize: Math.max(10, size * 0.42) }}>
+        <span className="font-bold leading-none" style={{ fontSize: Math.max(10, size * 0.4) }}>
           {short.slice(0, 2)}
         </span>
       )}
-      {d && (
+      {showDiff && letter && (
         <span
-          className={`absolute right-0 bottom-0 ${style.dot} text-white font-bold leading-none rounded-tl px-[3px] py-[1px]`}
-          style={{ fontSize: Math.max(8, size * 0.28) }}
+          className={`absolute right-0 bottom-0 rounded-tl-md rounded-br-md font-bold leading-none flex items-center justify-center ${DIFF_SOLID[d] ?? DIFF_SOLID.normal}`}
+          style={{ fontSize: Math.max(9, size * 0.3), minWidth: Math.max(13, size * 0.38), height: Math.max(13, size * 0.36) }}
         >
-          {d}
+          {letter}
         </span>
       )}
     </span>

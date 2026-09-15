@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from "react";
 import { createPost, updatePost, type PostInput } from "@/actions/board";
 import { PRICE_TABLE, crystalPrice } from "@/lib/maple/prices";
 import { tierLabel, tierOf } from "@/lib/maple/tiers";
+import { DIFF_LABEL } from "@/lib/maple/bossMeta";
+import type { Difficulty } from "@/lib/maple/bossKey";
 import { fmtPower } from "@/lib/maple/format";
 
 export interface PartyOption {
@@ -113,7 +115,7 @@ export function PostForm({ initial, parties, worlds, today }: { initial?: PostFo
           <select className="input" value={diff} disabled={!!party} onChange={(e) => setDiff(e.target.value)}>
             {diffsForBoss.map((o) => (
               <option key={o.diff} value={o.diff}>
-                {o.diff} · {tierLabel(tierOf(o.boss, o.diff))} · {fmtPower(o.price)}
+                {DIFF_LABEL[o.diff as Difficulty] ?? o.diff} · {tierLabel(tierOf(o.boss, o.diff))} · {fmtPower(o.price)}
               </option>
             ))}
           </select>

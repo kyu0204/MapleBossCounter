@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { crystalPrice, crystalCycle, isWeeklyCrystal, priceChangeDates, weeklyCandidates } from "@/lib/maple/prices";
-import { tierOf, tierLabel, TIER_MAP } from "@/lib/maple/tiers";
+import { tierOf, tierLabel, TIER_MAP, GRADE_COLOR } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
 import { parseBossKey, normalizeBossList } from "@/lib/maple/bossKey";
 import { kstDateStr, weekStartOf, lastWednesdayKst, addDays } from "@/lib/maple/kst";
@@ -47,10 +47,21 @@ describe("tiers", () => {
     expect(tierOf("찬란한 흉성", "normal")!.rank).toBeLessThan(tierOf("카링", "normal")!.rank);
     expect(tierOf("스우", "extreme")!.rank).toBe(tierOf("찬란한 흉성", "normal")!.rank);
   });
-  it("라벨 / 없음", () => {
-    expect(tierLabel(tierOf("듄켈", "hard"))).toBe("은★5");
+  it("텍스트 라벨에 등급 이름이 없고 별 개수로만 표시된다", () => {
+    // 등급은 이름 대신 색(UI) / 원형 이모지(텍스트)로만 구분한다
+    expect(tierLabel(tierOf("듄켈", "hard"))).toBe("⚪★★★★★");
+    expect(tierLabel(tierOf("카링", "extreme"))).toBe("🟡" + "★".repeat(9));
+    expect(tierLabel(tierOf("자쿰", "easy"))).toBe("⚫★");
+    expect(tierLabel(null)).toBe("티어없음");
+    for (const t of Object.values(TIER_MAP)) expect(tierLabel(t)).not.toMatch(/금|은|동|납/);
     expect(tierOf("없는보스", "hard")).toBeNull();
     expect(Object.keys(TIER_MAP).length).toBeGreaterThanOrEqual(80);
+  });
+  it("등급마다 색이 다르다", () => {
+    const colors = new Set(Object.values(GRADE_COLOR));
+    expect(colors.size).toBe(4);
+    expect(GRADE_COLOR[tierOf("카링", "extreme")!.grade]).toBe(GRADE_COLOR["금"]);
+    expect(GRADE_COLOR[tierOf("듄켈", "hard")!.grade]).toBe(GRADE_COLOR["은"]);
   });
 });
 

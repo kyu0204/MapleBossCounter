@@ -74,6 +74,20 @@ export const DIFF_STYLE: Record<Difficulty, { chip: string; dot: string; ring: s
   },
 };
 
+/** 난이도 배지 색 (배경이 채워진 솔리드 배지용) */
+export const DIFF_SOLID: Record<Difficulty, string> = {
+  easy: "bg-emerald-500 text-white",
+  normal: "bg-sky-500 text-white",
+  hard: "bg-amber-500 text-white",
+  chaos: "bg-rose-500 text-white",
+  extreme: "bg-violet-500 text-white",
+};
+
+// ---------- 티어 등급 색 ----------
+// 등급 이름(금·은·동·납) 대신 별 색으로만 구분한다. 라이트/다크 양쪽에서 읽히는 금속색.
+
+export { GRADE_COLOR, GRADE_MARK, type Grade } from "./tiers";
+
 /** "하세렌", "카더스크", "익스우" */
 export function bossTag(boss: string, diff: Difficulty | string): string {
   const d = DIFF_SHORT[diff as Difficulty] ?? "";

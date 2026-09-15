@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import type { PriceTable } from "@/lib/maple/prices";
-import { tierOf, tierLabel } from "@/lib/maple/tiers";
+import { tierOf, type Tier } from "@/lib/maple/tiers";
+import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
+import { TierStars } from "@/components/boss/TierStars";
 import { fmtPower } from "@/lib/maple/format";
 import { BossIcon } from "@/components/boss/BossIcon";
 
@@ -27,13 +29,13 @@ export function CrystalTable({ table, changeDates, today }: { table: Prices; cha
   const [q, setQ] = useState("");
 
   const rows = useMemo(() => {
-    const out: { boss: string; diff: string; price: number; tier: string; rank: number }[] = [];
+    const out: { boss: string; diff: string; price: number; tier: Tier | null; rank: number }[] = [];
     for (const [boss, diffs] of Object.entries(table)) {
       for (const [diff, entry] of Object.entries(diffs)) {
         const price = priceAt(entry, date);
         if (price == null) continue;
         const t = tierOf(boss, diff);
-        out.push({ boss, diff, price, tier: tierLabel(t), rank: t?.rank ?? 0 });
+        out.push({ boss, diff, price, tier: t, rank: t?.rank ?? 0 });
       }
     }
     return out.filter((r) => !q || r.boss.includes(q)).sort((a, b) => b.price - a.price);
@@ -75,14 +77,18 @@ export function CrystalTable({ table, changeDates, today }: { table: Prices; cha
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.boss}|${r.diff}`} className="border-t border-zinc-100 dark:border-zinc-800">
-                <td className="py-1">
+                <td className="py-1.5">
                   <span className="inline-flex items-center gap-2">
-                    <BossIcon boss={r.boss} diff={r.diff} size={28} />
+                    <BossIcon boss={r.boss} diff={r.diff} size={40} showDiff={false} />
                     {r.boss}
                   </span>
                 </td>
-                <td className="py-1 text-zinc-500">{r.diff}</td>
-                <td className="py-1 text-xs text-zinc-500">{r.tier}</td>
+                <td className="py-1.5">
+                  <DifficultyBadge diff={r.diff} full size="xs" solid />
+                </td>
+                <td className="py-1.5">
+                  <TierStars tier={r.tier} size={12} />
+                </td>
                 <td className="py-1 text-right">{fmtPower(r.price)}</td>
                 {party > 1 && <td className="py-1 text-right">{fmtPower(Math.floor(r.price / party))}</td>}
               </tr>

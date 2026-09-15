@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import type { PlannerWorldInput, PlannerCharacter } from "@/services/planInput";
 import { allocatePlan, buildProfile, initCharConfigFromRegistration, type CharPlanConfig, type PlanConfig, type PlanProfile } from "@/lib/maple/planner";
 import { weeklyCandidates } from "@/lib/maple/prices";
-import { tierKeysByRank, tierLabel, tierOf } from "@/lib/maple/tiers";
+import { tierKeysByRank } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
 import { savePlanConfig } from "@/actions/planner";
 import { CharacterPlanRow } from "./CharacterPlanRow";
@@ -147,7 +147,7 @@ export function PlannerBoard({ worlds, today, changeDates }: { worlds: PlannerWo
         ))}
       </div>
       <p className="text-[11px] text-zinc-400">
-        티어 기준: {tierLabel(tierOf("찬란한 흉성", "normal"))} 같은 표기는 나무위키 보스 티어. 상한 티어 이하 보스만 자동 배분됩니다. 고정 픽(📌)은 상한과 무관하게 항상 포함.
+        별 색·개수는 나무위키 보스 티어입니다. 상한 티어 이하 보스만 자동 배분되고, 고정 픽(📌)은 상한과 무관하게 항상 포함됩니다.
       </p>
     </div>
   );

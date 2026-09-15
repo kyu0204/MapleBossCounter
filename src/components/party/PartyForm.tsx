@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from "react";
 import { createParty, updateParty, resolveNickname, type PartyInput } from "@/actions/parties";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 import { tierLabel, tierOf } from "@/lib/maple/tiers";
+import { DIFF_LABEL } from "@/lib/maple/bossMeta";
+import type { Difficulty } from "@/lib/maple/bossKey";
 import { fmtPower } from "@/lib/maple/format";
 import { crystalPrice } from "@/lib/maple/prices";
 
@@ -88,7 +90,7 @@ export function PartyForm({ initial, myCharacters, today }: { initial?: PartyFor
           <select className="input" value={diff} onChange={(e) => setDiff(e.target.value)}>
             {diffsForBoss.map((o) => (
               <option key={o.diff} value={o.diff}>
-                {o.diff} · {tierLabel(tierOf(o.boss, o.diff))} · {fmtPower(o.price)}
+                {DIFF_LABEL[o.diff as Difficulty] ?? o.diff} · {tierLabel(tierOf(o.boss, o.diff))} · {fmtPower(o.price)}
               </option>
             ))}
           </select>

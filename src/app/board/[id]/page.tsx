@@ -5,7 +5,10 @@ import { auth } from "@/auth";
 import { getPost } from "@/lib/db/queries/board";
 import { listOwnedCharacters } from "@/services/characterSync";
 import { crystalPrice } from "@/lib/maple/prices";
-import { tierLabel, tierOf } from "@/lib/maple/tiers";
+import { tierOf } from "@/lib/maple/tiers";
+import { BossIcon } from "@/components/boss/BossIcon";
+import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
+import { TierStars } from "@/components/boss/TierStars";
 import { fmtPower } from "@/lib/maple/format";
 import { kstDateStr } from "@/lib/maple/kst";
 import { ApplyForm } from "@/components/board/ApplyForm";
@@ -52,10 +55,12 @@ export default async function PostPage({ params }: PageProps<"/board/[id]">) {
         </div>
         <h1 className="text-2xl font-bold">{post.title}</h1>
         <div className="text-sm text-zinc-600 dark:text-zinc-400 flex flex-wrap gap-x-3 gap-y-1">
-          <span className="font-medium text-zinc-800 dark:text-zinc-200">
-            {post.boss} {post.difficulty}
+          <span className="inline-flex items-center gap-1.5 font-medium text-zinc-800 dark:text-zinc-200">
+            <BossIcon boss={post.boss} diff={post.difficulty} size={32} showDiff={false} />
+            <DifficultyBadge diff={post.difficulty} size="xs" solid />
+            {post.boss}
           </span>
-          <span>{tierLabel(tierOf(post.boss, post.difficulty))}</span>
+          <TierStars tier={tierOf(post.boss, post.difficulty)} size={11} className="self-center" />
           <span>결정 {fmtPower(price)}</span>
           {expected != null && <span>{expected}인격 예상 → 1인 {fmtPower(price == null ? null : Math.floor(price / expected))}</span>}
           <span>모집 {post.slots}명 · 수락 {post.accepted}</span>

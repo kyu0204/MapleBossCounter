@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateBossSelection, buildProfile, allocatePlan } from "@/lib/maple/planner";
 import { weeklyCandidates } from "@/lib/maple/prices";
-import { bossTag, bossShort, DIFF_SHORT } from "@/lib/maple/bossMeta";
+import { bossTag, bossShort, DIFF_SHORT, DIFF_LABEL, DIFF_SOLID } from "@/lib/maple/bossMeta";
 import { bossIconFile } from "@/components/boss/BossIcon";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 import { isWeeklyCrystal } from "@/lib/maple/prices";
@@ -58,6 +58,15 @@ describe("보스 표기·아이콘", () => {
     expect(bossTag("가디언 엔젤 슬라임", "chaos")).toBe("카가엔슬");
     expect(bossShort("림보")).toBe("림보");
     expect(DIFF_SHORT.easy).toBe("이");
+  });
+  it("난이도 표기는 배지 한 벌로 통일 (한 글자 / 전체 / 색)", () => {
+    for (const d of ["easy", "normal", "hard", "chaos", "extreme"] as const) {
+      expect(DIFF_SHORT[d]).toHaveLength(1);
+      expect(DIFF_LABEL[d].length).toBeGreaterThan(1);
+      expect(DIFF_SOLID[d]).toContain("bg-");
+    }
+    // 난이도마다 색이 달라야 구분된다
+    expect(new Set(Object.values(DIFF_SOLID)).size).toBe(5);
   });
   it("주간 보스는 전부 아이콘 파일이 있고 URL 인코딩된다", () => {
     const missing: string[] = [];

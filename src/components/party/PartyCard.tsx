@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { PartyWithMembers } from "@/lib/db/queries/parties";
 import { crystalPrice } from "@/lib/maple/prices";
-import { tierLabel, tierOf } from "@/lib/maple/tiers";
+import { tierOf } from "@/lib/maple/tiers";
+import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
+import { TierStars } from "@/components/boss/TierStars";
 import { fmtPower } from "@/lib/maple/format";
 import { kstDateStr } from "@/lib/maple/kst";
 import { BossIcon } from "@/components/boss/BossIcon";
@@ -12,11 +14,14 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
   return (
     <Link href={`/parties/${p.id}`} className="card block hover:border-orange-300 transition text-sm space-y-2">
       <div className="flex items-center gap-2">
-        <BossIcon boss={p.boss} diff={p.difficulty} size={32} />
-        <span className="font-semibold">
-          {p.boss} <span className="text-xs text-zinc-500">{p.difficulty}</span>
+        <BossIcon boss={p.boss} diff={p.difficulty} size={44} showDiff={false} />
+        <span className="flex flex-col gap-0.5 leading-tight min-w-0">
+          <span className="flex items-center gap-1.5">
+            <DifficultyBadge diff={p.difficulty} size="xs" solid />
+            <span className="font-semibold truncate">{p.boss}</span>
+          </span>
+          <TierStars tier={tierOf(p.boss, p.difficulty)} size={10} />
         </span>
-        <span className="text-xs text-zinc-500">{tierLabel(tierOf(p.boss, p.difficulty))}</span>
         <span className="ml-auto badge bg-zinc-100 dark:bg-zinc-800">{p.size}인격</span>
       </div>
       {p.name && <div className="text-zinc-600 dark:text-zinc-400">{p.name}</div>}

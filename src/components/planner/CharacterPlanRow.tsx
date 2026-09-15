@@ -7,8 +7,10 @@ import { normalizeBossList, parseBossKey } from "@/lib/maple/bossKey";
 import { crystalPrice, isWeeklyCrystal, PRICE_TABLE } from "@/lib/maple/prices";
 import { tierLabel, tierOf, type Tier } from "@/lib/maple/tiers";
 import { fmtPower } from "@/lib/maple/format";
-import { bossTag } from "@/lib/maple/bossMeta";
+import { bossTag, bossFullLabel } from "@/lib/maple/bossMeta";
 import { BossIcon } from "@/components/boss/BossIcon";
+import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
+import { TierStars } from "@/components/boss/TierStars";
 
 export function CharacterPlanRow({
   character: c,
@@ -57,8 +59,12 @@ export function CharacterPlanRow({
           {c.cls} Lv.{c.level}
         </span>
         {profile?.ceiling ? (
-          <span className="text-xs">
-            상한 {profile.ceiling.boss} {profile.ceiling.diff} <span className="text-zinc-500">({tierLabel(profile.ceiling.tier)} · {profile.ceilingSource === "manual" ? "수동" : `실측 ${profile.clearedCount}클`})</span>
+          <span className="inline-flex items-center gap-1 text-xs">
+            상한
+            <DifficultyBadge diff={profile.ceiling.diff} size="xs" solid />
+            {profile.ceiling.boss}
+            <TierStars tier={profile.ceiling.tier} size={10} />
+            <span className="text-zinc-500">({profile.ceilingSource === "manual" ? "수동" : `실측 ${profile.clearedCount}클`})</span>
           </span>
         ) : (
           !skip && <span className="text-xs text-amber-700">상한 미파악 — 아래에서 지정</span>
@@ -74,8 +80,8 @@ export function CharacterPlanRow({
       {row && !open && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {row.picks.map((p) => (
-            <span key={`${p.boss}|${p.diff}`} className="inline-flex items-center gap-1" title={`${fmtPower(p.price)}${p.party > 1 ? ` ÷${p.party}` : ""} · ${tierLabel(p.tier)}${p.source === "party" ? " · 파티" : ""}`}>
-              <BossIcon boss={p.boss} diff={p.diff} size={26} />
+            <span key={`${p.boss}|${p.diff}`} className="inline-flex items-center gap-1.5" title={`${fmtPower(p.price)}${p.party > 1 ? ` ÷${p.party}` : ""} · ${tierLabel(p.tier)}${p.source === "party" ? " · 파티" : ""}`}>
+              <BossIcon boss={p.boss} diff={p.diff} size={36} />
               <span className={`text-xs ${p.fixed ? "font-semibold" : ""}`}>
                 {p.fixed && "📌"}
                 {bossTag(p.boss, p.diff)}
@@ -117,8 +123,11 @@ export function CharacterPlanRow({
               <ul className="space-y-1">
                 {Object.entries(bosses).map(([k, n]) => (
                   <li key={k} className="flex items-center gap-2">
-                    <span className="flex-1">
-                      📌 {k} <span className="text-xs text-zinc-500">{tierLabel(tierOf(parseBossKey(k)!.boss, parseBossKey(k)!.diff))}</span>
+                    <span className="flex-1 inline-flex items-center gap-1.5 min-w-0">
+                      📌
+                      <DifficultyBadge diff={parseBossKey(k)!.diff} size="xs" solid />
+                      <span className="truncate">{parseBossKey(k)!.boss}</span>
+                      <TierStars tier={tierOf(parseBossKey(k)!.boss, parseBossKey(k)!.diff)} size={10} />
                     </span>
                     <input type="number" className="input w-16 py-0.5" min={1} max={6} value={n} onChange={(e) => setBosses({ ...bosses, [k]: Math.min(6, Math.max(1, Number(e.target.value) || 1)) })} />
                     <button className="btn-ghost py-0.5" onClick={() => { const next = { ...bosses }; delete next[k]; setBosses(next); }}>
@@ -128,7 +137,11 @@ export function CharacterPlanRow({
                 ))}
                 {Object.entries(c.partyPicks).filter(([k]) => !(k in bosses)).map(([k, n]) => (
                   <li key={k} className="flex items-center gap-2 text-zinc-500">
-                    <span className="flex-1">🔒 {k}</span>
+                    <span className="flex-1 inline-flex items-center gap-1.5 min-w-0">
+                      🔒
+                      <DifficultyBadge diff={parseBossKey(k)?.diff ?? "normal"} size="xs" />
+                      <span className="truncate">{parseBossKey(k)?.boss ?? k}</span>
+                    </span>
                     <span className="text-xs">{n}인 (파티)</span>
                   </li>
                 ))}
@@ -137,7 +150,7 @@ export function CharacterPlanRow({
                 <option value="">+ 보스 추가</option>
                 {bossKeys.map((k) => (
                   <option key={k} value={k}>
-                    {k} · {tierLabel(tierOf(parseBossKey(k)!.boss, parseBossKey(k)!.diff))} · {fmtPower(crystalPrice(parseBossKey(k)!.boss, parseBossKey(k)!.diff, priceDate))}
+                    {bossFullLabel(parseBossKey(k)!.boss, parseBossKey(k)!.diff)} · {tierLabel(tierOf(parseBossKey(k)!.boss, parseBossKey(k)!.diff))} · {fmtPower(crystalPrice(parseBossKey(k)!.boss, parseBossKey(k)!.diff, priceDate))}
                   </option>
                 ))}
               </select>
@@ -154,13 +167,16 @@ export function CharacterPlanRow({
                   {row.picks.map((p) => (
                     <tr key={`${p.boss}|${p.diff}`} className="border-t border-zinc-100 dark:border-zinc-800">
                       <td className="py-0.5 w-5">{p.fixed ? "📌" : ""}</td>
-                      <td className="py-0.5">
+                      <td className="py-1">
                         <span className="inline-flex items-center gap-1.5">
-                          <BossIcon boss={p.boss} diff={p.diff} size={24} />
-                          {p.boss} <span className="text-xs text-zinc-500">{p.diff}</span>
+                          <BossIcon boss={p.boss} diff={p.diff} size={32} showDiff={false} />
+                          <DifficultyBadge diff={p.diff} size="xs" solid />
+                          {p.boss}
                         </span>
                       </td>
-                      <td className="py-0.5 text-xs text-zinc-500">{tierLabel(p.tier)}</td>
+                      <td className="py-1">
+                        <TierStars tier={p.tier} size={10} />
+                      </td>
                       <td className="py-0.5 text-right whitespace-nowrap">
                         {fmtPower(p.price)}
                         {p.party > 1 && <span className="text-xs text-zinc-500"> ÷{p.party} = {fmtPower(p.value)}</span>}

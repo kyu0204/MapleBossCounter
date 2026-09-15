@@ -62,7 +62,11 @@ node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 
 - `src/services/` — DB + API 조합 (캐릭터 동기화/갱신/조회, 스냅샷, 파티 연결, 플래너 입력, 공개 조회).
 - `src/jobs/` — node-cron 잡. `CRON_ENABLED=1` 일 때 `instrumentation.ts` 에서 시작.
 - `src/data/` — `boss_crystal_prices.json`(패치별 가격), `boss_tiers.json`(나무위키 티어), `boss_icons.json`(아이콘 매핑).
-- `src/components/boss/` — `BossIcon`(아이콘 + 난이도 색/글자), `BossChip`(아이콘 + 약칭 + 실수령).
+- `src/components/boss/` — 보스 표시 공통 부품. 난이도·티어 표기는 **전부 여기를 거친다**.
+  - `DifficultyBadge` / `DifficultyButton` — 난이도 배지(이·노·하·카·익, 색 고정). 선택 UI도 같은 배지를 버튼으로 쓴다.
+  - `TierStars` — 티어를 **등급 이름 없이 색 있는 별**로만 표시 (금 `#F0B429` / 은 `#94A3B8` / 동 `#C2703D` / 납 `#6B7280`).
+    색을 못 쓰는 `<option>`·`title` 에는 `tierLabel()` 이 `🟡★★★★★` 형태 텍스트를 준다.
+  - `BossIcon` / `BossChip` — 보스 아이콘, 아이콘 + 난이도 배지 + 약칭 + 실수령.
 - `deploy/` — EC2 셋업·배포·nginx·DB 백업 스크립트. `ecosystem.config.js` — pm2.
 
 ### 갈 보스 설정

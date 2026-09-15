@@ -4,11 +4,13 @@ import { useMemo, useState, useTransition } from "react";
 import { setCharacterBosses } from "@/actions/planner";
 import { bossKey, parseBossKey, type Difficulty } from "@/lib/maple/bossKey";
 import { crystalPrice, isWeeklyCrystal, PRICE_TABLE } from "@/lib/maple/prices";
-import { tierLabel, tierOf } from "@/lib/maple/tiers";
-import { bossShort, DIFF_SHORT, DIFF_STYLE } from "@/lib/maple/bossMeta";
+import { tierOf } from "@/lib/maple/tiers";
+import { bossShort, DIFF_LABEL } from "@/lib/maple/bossMeta";
 import { fmtPower } from "@/lib/maple/format";
 import { BossChip } from "@/components/boss/BossChip";
 import { BossIcon } from "@/components/boss/BossIcon";
+import { DifficultyButton } from "@/components/boss/DifficultyBadge";
+import { TierStars } from "@/components/boss/TierStars";
 
 export interface BossPlanEditorProps {
   ocid: string;
@@ -227,29 +229,24 @@ export function BossPlanEditor({ ocid, cap, defaultParty, initial, partyPicks, r
                   key={row.boss}
                   className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${selectedDiff ? "border-orange-300 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20" : "border-zinc-200 dark:border-zinc-800"}`}
                 >
-                  <BossIcon boss={row.boss} diff={selectedDiff ?? row.diffs[row.diffs.length - 1].diff} size={30} />
-                  <span className="text-xs font-medium truncate flex-1 min-w-0" title={`${row.boss} · ${tierLabel(tierOf(row.boss, row.diffs[row.diffs.length - 1].diff))}`}>
-                    {bossShort(row.boss)}
+                  <BossIcon boss={row.boss} diff={selectedDiff ?? row.diffs[row.diffs.length - 1].diff} size={44} showDiff={false} />
+                  <span className="flex flex-col gap-0.5 flex-1 min-w-0 leading-tight">
+                    <span className="text-sm font-medium truncate" title={row.boss}>
+                      {bossShort(row.boss)}
+                    </span>
+                    <TierStars tier={tierOf(row.boss, row.diffs[row.diffs.length - 1].diff)} size={10} />
                   </span>
-                  <span className="flex gap-0.5">
-                    {row.diffs.map(({ diff, price }) => {
-                      const on = selectedDiff === diff;
-                      const style = DIFF_STYLE[diff];
-                      return (
-                        <button
-                          key={diff}
-                          type="button"
-                          disabled={fromParty}
-                          onClick={() => toggle(row.boss, diff)}
-                          title={`${row.boss} ${diff} · ${fmtPower(price)}${fromParty ? " (파티 등록 항목)" : ""}`}
-                          className={`w-6 h-6 rounded text-xs font-bold border transition disabled:opacity-40 disabled:cursor-not-allowed ${
-                            on ? `${style.chip} ring-2 ${style.ring}` : "border-zinc-200 text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                          }`}
-                        >
-                          {DIFF_SHORT[diff]}
-                        </button>
-                      );
-                    })}
+                  <span className="flex gap-1">
+                    {row.diffs.map(({ diff, price }) => (
+                      <DifficultyButton
+                        key={diff}
+                        diff={diff}
+                        active={selectedDiff === diff}
+                        disabled={fromParty}
+                        onClick={() => toggle(row.boss, diff)}
+                        title={`${row.boss} ${DIFF_LABEL[diff]} · ${fmtPower(price)}${fromParty ? " (파티 등록 항목)" : ""}`}
+                      />
+                    ))}
                   </span>
                 </div>
               );

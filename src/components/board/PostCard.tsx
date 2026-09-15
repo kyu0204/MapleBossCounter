@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { PostListItem } from "@/lib/db/queries/board";
 import { crystalPrice } from "@/lib/maple/prices";
-import { tierLabel, tierOf } from "@/lib/maple/tiers";
+import { tierOf } from "@/lib/maple/tiers";
+import { BossIcon } from "@/components/boss/BossIcon";
+import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
+import { TierStars } from "@/components/boss/TierStars";
 import { fmtPower } from "@/lib/maple/format";
 import { kstDateStr } from "@/lib/maple/kst";
 
@@ -15,11 +18,15 @@ export function PostCard({ post: p }: { post: PostListItem }) {
   const remain = remainingSlots(p);
   return (
     <Link href={`/board/${p.id}`} className={`card block hover:border-orange-300 transition text-sm space-y-2 ${p.status === "closed" ? "opacity-60" : ""}`}>
-      <div className="flex items-baseline gap-2">
-        <span className="font-semibold">
-          {p.boss} <span className="text-xs text-zinc-500">{p.difficulty}</span>
+      <div className="flex items-center gap-2">
+        <BossIcon boss={p.boss} diff={p.difficulty} size={40} showDiff={false} />
+        <span className="flex flex-col gap-0.5 leading-tight min-w-0">
+          <span className="flex items-center gap-1.5">
+            <DifficultyBadge diff={p.difficulty} size="xs" solid />
+            <span className="font-semibold truncate">{p.boss}</span>
+          </span>
+          <TierStars tier={tierOf(p.boss, p.difficulty)} size={10} />
         </span>
-        <span className="text-xs text-zinc-500">{tierLabel(tierOf(p.boss, p.difficulty))}</span>
         {p.world && <span className="badge bg-zinc-100 dark:bg-zinc-800">{p.world}</span>}
         <span className={`ml-auto badge ${p.status === "closed" ? "bg-zinc-200 text-zinc-600 dark:bg-zinc-800" : remain === 0 ? "bg-amber-100 text-amber-800" : "bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-200"}`}>
           {p.status === "closed" ? "마감" : `${remain}자리`}
