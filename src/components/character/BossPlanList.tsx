@@ -1,29 +1,35 @@
 import { crystalPrice } from "@/lib/maple/prices";
 import { fmtPower } from "@/lib/maple/format";
-import { tierOf } from "@/lib/maple/tiers";
 import { bossName } from "@/lib/maple/bossMeta";
 import { picksTotals, splitByCleared, type MergedPick } from "@/lib/maple/bossPicks";
 import { rewardRowsFor, aggregateFixedRewards, ICON_BOX, type RewardTotal } from "@/lib/maple/rewards";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
-import { TierStars } from "@/components/boss/TierStars";
 import { RewardChip } from "@/components/boss/DropList";
 import { BossPartyInput } from "./BossPartyInput";
 import { BossSettingsModal, type BossSettingsModalProps } from "./BossSettingsModal";
 
 /**
  * 보스 한 줄. 클리어 여부·출처와 무관하게 생김새가 같다.
- * 아이콘 / 난이도·이름·티어 / 인원 / 확정 보상·실수령.
+ *
+ *   [아이콘]  난이도 보스이름            인원
+ *             확정 보상 칩들            실수령
+ *
+ * 티어 별은 뺐다 — 이 화면은 내가 이미 고른 보스만 보여주므로 등급을 견줄 일이 없다.
+ * 확정 보상은 이름 바로 밑에 둔다. 칩 크기는 티어표와 같은 규격 그대로다.
  */
-function BossRow({ pick, ocid, done, priceDate }: { pick: MergedPick; ocid: string; done: boolean; priceDate: string }) {
+function BossRow({ pick, ocid, done, priceDate, bordered = false }: { pick: MergedPick; ocid: string; done: boolean; priceDate: string; bordered?: boolean }) {
   const price = crystalPrice(pick.boss, pick.diff, priceDate);
   const value = price == null ? null : Math.floor(price / Math.max(1, pick.party));
   const fixed = rewardRowsFor(pick.boss, pick.diff, priceDate).fixed;
   return (
     // 클리어 여부는 흐림 처리로 드러나므로 따로 표시를 붙이지 않는다
-    <li className={`flex items-center gap-3 py-2 ${done ? "opacity-50" : ""}`} title={done ? "이번 주 클리어 완료" : undefined}>
-      <BossIcon boss={pick.boss} diff={pick.diff} size={64} showDiff={false} className={done ? "grayscale" : ""} />
-      <span className="flex flex-col gap-0.5 min-w-0 w-40 sm:w-48 shrink-0 leading-tight">
+    <li
+      className={`flex items-start gap-3 py-2 ${bordered ? "border-b border-zinc-100 dark:border-zinc-800" : ""} ${done ? "opacity-50" : ""}`}
+      title={done ? "이번 주 클리어 완료" : undefined}
+    >
+      <BossIcon boss={pick.boss} diff={pick.diff} size={88} showDiff={false} className={done ? "grayscale" : ""} />
+      <span className="flex flex-col gap-1.5 flex-1 min-w-0">
         <span className="flex items-center gap-1.5 min-w-0">
           <DifficultyBadge diff={pick.diff} size="xs" solid />
           <span className="font-medium truncate" title={bossName(pick.boss)}>
@@ -34,31 +40,30 @@ function BossRow({ pick, ocid, done, priceDate }: { pick: MergedPick; ocid: stri
               🔒
             </span>
           )}
+          <span className="ml-auto shrink-0">
+            <BossPartyInput ocid={ocid} bossKey={pick.key} party={pick.party} fromParty={pick.source === "party"} />
+          </span>
         </span>
-        <TierStars tier={tierOf(pick.boss, pick.diff)} size={11} />
-      </span>
-      <BossPartyInput ocid={ocid} bossKey={pick.key} party={pick.party} fromParty={pick.source === "party"} />
-      <span className="flex flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-1 min-w-0">
-        {fixed.length > 0 && (
-          <span className="flex flex-wrap items-center gap-1 justify-end" title="잡으면 무조건 주는 보상 (조각·큐브는 인원수로 나눈 값)">
+        <span className="flex items-end gap-2 min-w-0">
+          <span className="flex flex-wrap items-center gap-1 flex-1 min-w-0" title="잡으면 무조건 주는 보상 (조각·큐브는 인원수로 나눈 값)">
             {fixed.map((r) => (
               <RewardChip key={r.name} reward={r} party={pick.party} />
             ))}
           </span>
-        )}
-        <span className="text-right whitespace-nowrap w-28 shrink-0">
-          {value == null ? (
-            <span className="text-xs text-zinc-400">가격 미등록</span>
-          ) : (
-            <>
-              <b className="tabular-nums">{fmtPower(value)}</b>
-              {pick.party > 1 && price != null && (
-                <span className="block text-[11px] text-zinc-500 tabular-nums">
-                  {fmtPower(price)} ÷ {pick.party}
-                </span>
-              )}
-            </>
-          )}
+          <span className="text-right whitespace-nowrap shrink-0 leading-tight">
+            {value == null ? (
+              <span className="text-xs text-zinc-400">가격 미등록</span>
+            ) : (
+              <>
+                <b className="tabular-nums">{fmtPower(value)}</b>
+                {pick.party > 1 && price != null && (
+                  <span className="block text-[11px] text-zinc-500 tabular-nums">
+                    {fmtPower(price)} ÷ {pick.party}
+                  </span>
+                )}
+              </>
+            )}
+          </span>
         </span>
       </span>
     </li>
@@ -218,9 +223,10 @@ export function RemainingBossList({
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_15rem] items-start">
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800 min-w-0">
+          {/* 2열. grid 라 divide-y 가 안 먹으므로 줄마다 아래 테두리를 준다. */}
+          <ul className="grid gap-x-5 xl:grid-cols-2 min-w-0">
             {remaining.map((p) => (
-              <BossRow key={p.key} pick={p} ocid={ocid} done={false} priceDate={priceDate} />
+              <BossRow key={p.key} pick={p} ocid={ocid} done={false} priceDate={priceDate} bordered />
             ))}
           </ul>
           <RemainingTotals picks={remaining} priceDate={priceDate} meso={left.value} />

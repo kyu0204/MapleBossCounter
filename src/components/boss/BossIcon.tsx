@@ -19,6 +19,12 @@ export function bossIconFile(boss: string): string | null {
  * 보스 아이콘. public/bosses 에 받아둔 아이콘이 있으면 그걸, 없으면 약칭 배지로 폴백.
  * 난이도는 테두리 색 + 우하단 난이도 배지로 표시한다.
  */
+/**
+ * 원본 아트워크는 160×153 이다. 그보다 크게 그리면 흐려지기만 하므로 짧은 변에 맞춰 막는다.
+ * (정사각 칸에 object-contain 이라 153 을 넘으면 원본보다 확대된다.)
+ */
+const MAX_SIZE = 153;
+
 export function BossIcon({
   boss,
   diff,
@@ -28,11 +34,13 @@ export function BossIcon({
 }: {
   boss: string;
   diff: Difficulty | string;
+  /** 원본(160×153)보다 크게는 못 그린다 — 153 으로 잘린다 */
   size?: number;
   /** 우하단 난이도 배지 표시 */
   showDiff?: boolean;
   className?: string;
 }) {
+  size = Math.min(size, MAX_SIZE);
   const d = diff as Difficulty;
   const style = DIFF_STYLE[d] ?? DIFF_STYLE.normal;
   const file = bossIconFile(boss);
