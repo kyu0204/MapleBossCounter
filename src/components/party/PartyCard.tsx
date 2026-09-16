@@ -21,7 +21,7 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
         티어 별은 뺐다 — 이미 고른 파티라 등급을 견줄 일이 없다.
       */}
       <div className="flex items-center gap-2 min-w-0">
-        <BossIcon boss={p.boss} diff={p.difficulty} size={56} showDiff={false} />
+        <BossIcon boss={p.boss} diff={p.difficulty} size={72} showDiff={false} />
         <DifficultyBadge diff={p.difficulty} size="xs" solid />
         <span className="font-semibold whitespace-nowrap">{p.boss}</span>
         <span className="text-zinc-500 dark:text-zinc-400 truncate flex-1 min-w-0">{p.name}</span>
@@ -41,7 +41,7 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
       <div className="flex flex-wrap gap-2">
         {p.members.map((m) => (
           <span key={m.id} className="flex flex-col items-center gap-0.5 w-14" title={m.characterId ? `${m.linkedWorld ?? ""} Lv.${m.linkedLevel ?? "?"}` : "미확인 닉네임"}>
-            <CharacterAvatar src={m.linkedImage} alt="" size={48} className={m.characterId ? "" : "opacity-50"} />
+            <CharacterAvatar src={m.linkedImage} alt="" size={48} crop="face" className={m.characterId ? "" : "opacity-50"} />
             <span className="text-[10px] truncate max-w-full leading-tight">{m.nickname}</span>
           </span>
         ))}

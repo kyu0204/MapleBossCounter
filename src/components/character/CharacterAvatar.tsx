@@ -1,34 +1,51 @@
 /**
- * 넥슨 캐릭터 이미지(300×300 PNG, 투명 배경)에서 얼굴 쪽을 크게 잘라 보여준다.
+ * 넥슨 캐릭터 이미지(300×300 PNG, 투명 배경)를 잘라 보여준다.
  *
  * 실측 (캐릭터 6개의 불투명 픽셀):
  *   전신   x 85~194, y 125~210
  *   머리   x 108~178, y 125~175  (가로 최대 70, 세로 약 46)
- * 전신을 다 담으면 얼굴이 박스의 3분의 1밖에 안 된다. 목록에서 누가 누구인지
- * 알아보려면 얼굴이 커야 하므로, 다리 쪽을 잘라 내고 얼굴을 채운다.
+ * 나머지는 전부 투명 여백이라 원본을 그대로 두면 캐릭터가 구석에 작게 박힌다.
+ *
+ * 두 가지로 자른다.
+ *   full — 전신이 다 들어온다. 내 캐릭터 목록·상세처럼 캐릭터를 통째로 보는 곳.
+ *   face — 얼굴을 채운다. 파티처럼 작은 칸에 여럿을 늘어놓고 누군지 가려내는 곳.
  */
 
-/** 머리 중심 (실측 평균) */
-const FACE_CENTER = { x: 145, y: 149 };
+export type AvatarCrop = "full" | "face";
 
 /**
- * 박스를 가득 채울 원본 폭. 이 값이 배율을 정한다.
- *
- * 크기와 무관하게 원본의 x 107~183, y 111~187 이 보이므로 머리(x 108~178,
- * y 125~175)는 어느 크기에서도 잘리지 않는다. 대신 y 187 아래(다리)는 잘린다.
- * 작게 잡을수록 얼굴이 커지고 몸이 더 잘린다.
- *
- * 머리 왼쪽 끝이 x 108 이라 이보다 더 좁히면 머리카락이 잘리기 시작한다.
+ * 잘라내기 기준. center 는 박스 한가운데에 놓을 원본 좌표,
+ * box 는 박스를 가득 채울 원본 폭(= 배율을 정하는 값)이다.
  */
-const CONTENT_BOX = 76;
+const CROP: Record<AvatarCrop, { center: { x: number; y: number }; box: number }> = {
+  // 전신 중심(135, 168), 폭 118 이면 98px 짜리 캐릭터가 어느 크기에서도 안 잘린다.
+  full: { center: { x: 135, y: 168 }, box: 118 },
+  // 머리 중심(145, 149), 폭 76. 원본 x 107~183 · y 111~187 이 보이므로 머리는
+  // 다 들어오고 다리 쪽만 잘린다. 더 좁히면 머리카락이 잘리기 시작한다.
+  face: { center: { x: 145, y: 149 }, box: 76 },
+};
 
-export function CharacterAvatar({ src, alt = "", size = 112, className = "" }: { src: string | null | undefined; alt?: string; size?: number; className?: string }) {
+export function CharacterAvatar({
+  src,
+  alt = "",
+  size = 112,
+  crop = "full",
+  className = "",
+}: {
+  src: string | null | undefined;
+  alt?: string;
+  size?: number;
+  /** 기본은 전신. 작은 칸에서 얼굴을 알아봐야 하면 "face" */
+  crop?: AvatarCrop;
+  className?: string;
+}) {
   const box = { width: size, height: size };
   if (!src) return <div className={`rounded-lg bg-zinc-100 dark:bg-zinc-800 shrink-0 ${className}`} style={box} />;
 
-  const scale = size / CONTENT_BOX;
-  const ox = size / 2 - FACE_CENTER.x * scale;
-  const oy = size / 2 - FACE_CENTER.y * scale;
+  const { center, box: content } = CROP[crop];
+  const scale = size / content;
+  const ox = size / 2 - center.x * scale;
+  const oy = size / 2 - center.y * scale;
   return (
     <div className={`relative overflow-hidden rounded-lg bg-zinc-50 dark:bg-zinc-800/60 shrink-0 ${className}`} style={box}>
       {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -246,7 +246,7 @@ export function PartyForm({
               >
                 ×
               </button>
-              <CharacterAvatar src={m.imageUrl} alt={m.nick} size={72} />
+              <CharacterAvatar src={m.imageUrl} alt={m.nick} size={72} crop="face" />
               <span className="text-xs truncate max-w-full">{m.nick}</span>
               <span className="text-[10px] text-zinc-500 text-center leading-tight">
                 {m.status === "checking" ? "확인 중…" : m.status === "fail" ? "확인 안 됨" : (m.info ?? "")}
