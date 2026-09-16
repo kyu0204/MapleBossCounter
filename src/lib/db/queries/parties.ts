@@ -12,6 +12,10 @@ export interface PartyWithMembers extends Party {
     linkedLevel: number | null;
     linkedImage: string | null;
     ownerUserId: string | null;
+    /** 대표 전투력 (없으면 현재 전투력) */
+    linkedPower: number | null;
+    linkedArcane: number | null;
+    linkedAuthentic: number | null;
     /** 이번 주 이 파티 보스를 잡았는지. 스케줄러 기록이 없으면 null (모름) */
     cleared: boolean | null;
   })[];
@@ -60,6 +64,10 @@ function attachMembers(rows: Party[], userId: string): PartyWithMembers[] {
       linkedLevel: characters.level,
       linkedImage: characters.imageUrl,
       ownerUserId: characters.ownerUserId,
+      bestPower: characters.bestPower,
+      curPower: characters.curPower,
+      arcaneForce: characters.arcaneForce,
+      authenticForce: characters.authenticForce,
     })
     .from(partyMembers)
     .leftJoin(characters, eq(partyMembers.characterId, characters.id))
@@ -77,6 +85,9 @@ function attachMembers(rows: Party[], userId: string): PartyWithMembers[] {
         linkedLevel: x.linkedLevel,
         linkedImage: x.linkedImage,
         ownerUserId: x.ownerUserId,
+        linkedPower: x.bestPower ?? x.curPower,
+        linkedArcane: x.arcaneForce,
+        linkedAuthentic: x.authenticForce,
         cleared: x.m.characterId != null && seen.has(x.m.characterId) ? cleared.has(`${x.m.characterId}|${p.boss}|${p.difficulty}`) : null,
       }));
     return { ...p, members: ms, size: ms.length, isOwner: p.ownerUserId === userId, expired: isPartyExpired(p) };

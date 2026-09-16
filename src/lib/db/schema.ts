@@ -84,6 +84,10 @@ export const characters = sqliteTable(
     bestPower: integer("best_power"),
     bestPowerAt: text("best_power_at"),
     bestSetupHash: text("best_setup_hash"),
+    // 심볼 포스. 보스마다 보는 쪽이 다르다 (아케인리버 / 그란디스)
+    arcaneForce: integer("arcane_force"),
+    authenticForce: integer("authentic_force"),
+    forceFetchedAt: text("force_fetched_at"),
     supersededBy: integer("superseded_by"),
     basicFetchedAt: text("basic_fetched_at"),
     createdAt: text("created_at").notNull().default(nowIso),

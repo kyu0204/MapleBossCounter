@@ -2,7 +2,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { characters, powerLog, type Character } from "@/lib/db/schema";
-import { getBasic, getCombatPower, getEquipment } from "@/lib/nexon/endpoints";
+import { getBasic, getCombatPower, getEquipment, getForces } from "@/lib/nexon/endpoints";
 import type { NexonCredential } from "@/lib/nexon/credentials";
 import { setupHashes, updateBest, type BestUpdateNote } from "@/lib/maple/power";
 
@@ -17,14 +17,22 @@ export interface RefreshResult {
 }
 
 /**
- * basic + stat + equip 조회 → 대표 전투력 갱신(updateBest) → characters/power_log 저장.
+ * basic + stat + equip + symbol 조회 → 대표 전투력 갱신(updateBest) → characters/power_log 저장.
  * force=false 면 쿨다운 내 재요청은 스킵하고 DB 값 그대로 반환.
+ *
+ * 심볼(포스)은 파티에서 보는 값이라 같이 받는다. 캐릭터당 호출이 4회에서 5회로 늘지만
+ * 전부 1시간 캐시라 화면을 다시 열 때마다 나가지는 않는다.
  */
 export async function refreshCharacter(ch: Character, cred: NexonCredential, force = false): Promise<RefreshResult> {
   if (!force && ch.curPowerAt && Date.now() - Date.parse(ch.curPowerAt) < REFRESH_COOLDOWN_MS) {
     return { character: ch, power: ch.curPower, note: null, wearingBest: ch.curSetupHashes?.equipped === ch.bestSetupHash, skipped: "cooldown" };
   }
-  const [basic, power, equip] = await Promise.all([getBasic(cred, ch.ocid, force), getCombatPower(cred, ch.ocid, force), getEquipment(cred, ch.ocid, force)]);
+  const [basic, power, equip, forces] = await Promise.all([
+    getBasic(cred, ch.ocid, force),
+    getCombatPower(cred, ch.ocid, force),
+    getEquipment(cred, ch.ocid, force),
+    getForces(cred, ch.ocid, force),
+  ]);
   const hashes = setupHashes(equip);
   const now = new Date().toISOString();
 
@@ -49,6 +57,10 @@ export async function refreshCharacter(ch: Character, cred: NexonCredential, for
     bestPower: best?.power ?? null,
     bestPowerAt: best?.ts ?? null,
     bestSetupHash: best?.setupHash ?? null,
+    // 심볼 조회만 실패하면(null) 이전 값을 지킨다. 0 으로 덮으면 포스가 없는 것처럼 보인다.
+    arcaneForce: forces ? forces.arcane : ch.arcaneForce,
+    authenticForce: forces ? forces.authentic : ch.authenticForce,
+    forceFetchedAt: forces ? now : ch.forceFetchedAt,
     basicFetchedAt: now,
     updatedAt: now,
   };

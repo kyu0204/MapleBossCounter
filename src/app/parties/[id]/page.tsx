@@ -7,6 +7,7 @@ import { bossName } from "@/lib/maple/bossMeta";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { PartyForm } from "@/components/party/PartyForm";
 import { PartyCard } from "@/components/party/PartyCard";
+import { PartyMemberGrid } from "@/components/party/PartyMemberGrid";
 import { LeavePartyButton } from "@/components/party/LeavePartyButton";
 import { MultiResultButton } from "@/components/party/MultiResultButton";
 import { deleteParty } from "@/actions/parties";
@@ -29,6 +30,7 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
         {bossName(party.boss)}
       </h1>
       <PartyCard party={party} />
+      <PartyMemberGrid party={party} />
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <MultiResultButton names={party.members.map((m) => m.linkedName ?? m.nickname)} />
       </div>
