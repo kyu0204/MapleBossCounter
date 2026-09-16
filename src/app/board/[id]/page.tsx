@@ -90,7 +90,6 @@ export default async function PostPage({ params }: PageProps<"/board/[id]">) {
           <div className="flex flex-wrap gap-1">
             {post.party.members.map((m) => (
               <span key={m.id} className="badge bg-zinc-100 dark:bg-zinc-800">
-                {m.isLeader && "👑 "}
                 {m.nickname}
               </span>
             ))}

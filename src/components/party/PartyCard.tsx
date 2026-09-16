@@ -42,10 +42,7 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
         {p.members.map((m) => (
           <span key={m.id} className="flex flex-col items-center gap-0.5 w-14" title={m.characterId ? `${m.linkedWorld ?? ""} Lv.${m.linkedLevel ?? "?"}` : "미확인 닉네임"}>
             <CharacterAvatar src={m.linkedImage} alt="" size={48} className={m.characterId ? "" : "opacity-50"} />
-            <span className="text-[10px] truncate max-w-full leading-tight">
-              {m.isLeader && "👑"}
-              {m.nickname}
-            </span>
+            <span className="text-[10px] truncate max-w-full leading-tight">{m.nickname}</span>
           </span>
         ))}
       </div>

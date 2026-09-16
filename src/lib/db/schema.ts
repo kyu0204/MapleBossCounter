@@ -179,6 +179,7 @@ export const partyMembers = sqliteTable(
     partyId: integer("party_id").notNull().references(() => parties.id, { onDelete: "cascade" }),
     nickname: text("nickname").notNull(),
     characterId: integer("character_id").references(() => characters.id, { onDelete: "set null" }),
+    /** 파티장 표시는 화면에서 뺐다. 컬럼은 예전 데이터 때문에 남겨 두고 늘 기본값이다. */
     isLeader: integer("is_leader", { mode: "boolean" }).notNull().default(false),
     sortOrder: integer("sort_order").notNull().default(0),
   },

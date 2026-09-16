@@ -91,7 +91,7 @@ export interface ApplicantView extends Application {
 
 export interface PostDetail extends PostListItem {
   isAuthor: boolean;
-  party: { id: number; name: string | null; members: { id: number; nickname: string; characterId: number | null; isLeader: boolean }[] } | null;
+  party: { id: number; name: string | null; members: { id: number; nickname: string; characterId: number | null }[] } | null;
   /** 작성자: 전체. 그 외: 본인 지원만 */
   applicants: ApplicantView[];
   /** 로그인 유저 본인의 지원 (캐릭터 여러 개 가능) */
@@ -108,7 +108,7 @@ export function getPost(id: number, viewerUserId: string | null): PostDetail | n
     const p = db.select({ id: parties.id, name: parties.name }).from(parties).where(eq(parties.id, base.partyId)).get();
     if (p) {
       const members = db
-        .select({ id: partyMembers.id, nickname: partyMembers.nickname, characterId: partyMembers.characterId, isLeader: partyMembers.isLeader })
+        .select({ id: partyMembers.id, nickname: partyMembers.nickname, characterId: partyMembers.characterId })
         .from(partyMembers)
         .where(eq(partyMembers.partyId, p.id))
         .orderBy(partyMembers.sortOrder, partyMembers.id)

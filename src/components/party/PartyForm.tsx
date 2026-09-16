@@ -60,7 +60,6 @@ export function PartyForm({
         : { nick: n, status: "idle" as const, info: hit?.info ?? undefined };
     });
   });
-  const [leader, setLeader] = useState(initial?.leader ?? initial?.members?.[0] ?? "");
   const [draft, setDraft] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -80,7 +79,6 @@ export function PartyForm({
     const n = nick.trim();
     if (!n || members.some((m) => m.nick === n) || members.length >= 6) return;
     setMembers((ms) => [...ms, { nick: n, status: "checking" }]);
-    if (!leader) setLeader(n);
     setDraft("");
     start(async () => {
       const r = await resolveNickname(n);
@@ -113,7 +111,6 @@ export function PartyForm({
       repeats,
       memo,
       members: members.map((m) => m.nick),
-      leader,
     };
     start(async () => {
       const r = initial?.id ? await updateParty(initial.id, payload) : await createParty(payload);
@@ -250,10 +247,7 @@ export function PartyForm({
                 ×
               </button>
               <CharacterAvatar src={m.imageUrl} alt={m.nick} size={72} />
-              <button type="button" onClick={() => setLeader(m.nick)} title="리더로 지정" className={`text-xs truncate max-w-full ${leader === m.nick ? "font-semibold" : ""}`}>
-                {leader === m.nick && "👑 "}
-                {m.nick}
-              </button>
+              <span className="text-xs truncate max-w-full">{m.nick}</span>
               <span className="text-[10px] text-zinc-500 text-center leading-tight">
                 {m.status === "checking" ? "확인 중…" : m.status === "fail" ? "확인 안 됨" : (m.info ?? "")}
               </span>

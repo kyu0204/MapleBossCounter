@@ -27,7 +27,6 @@ const PartySchema = z.object({
   repeats: z.boolean().optional(),
   memo: z.string().trim().max(500).optional().or(z.literal("")),
   members: z.array(z.string().trim().min(1).max(20)).min(1).max(6),
-  leader: z.string().trim().optional().or(z.literal("")),
 });
 export type PartyInput = z.infer<typeof PartySchema>;
 
@@ -44,7 +43,8 @@ export async function resolveNickname(
   return { ok: true, message: "확인", data: { name: c.name, world: c.world, level: c.level, cls: c.cls, imageUrl: c.imageUrl, linked: c.ownerUserId != null } };
 }
 
-async function writeMembers(partyId: number, userId: string, members: string[], leader: string | undefined) {
+/** 파티장 개념은 화면에서 뺐다. is_leader 컬럼은 남겨 두되 늘 기본값(false)이다. */
+async function writeMembers(partyId: number, userId: string, members: string[]) {
   db.delete(partyMembers).where(eq(partyMembers.partyId, partyId)).run();
   const seen = new Set<string>();
   let order = 0;
@@ -52,7 +52,7 @@ async function writeMembers(partyId: number, userId: string, members: string[], 
     if (seen.has(nick)) continue;
     seen.add(nick);
     const ch = await ensureCharacterByName(userId, nick);
-    db.insert(partyMembers).values({ partyId, nickname: ch ? (db.select({ n: characters.name }).from(characters).where(eq(characters.id, ch.id)).get()?.n ?? nick) : nick, characterId: ch?.id ?? null, isLeader: leader === nick, sortOrder: order++ }).run();
+    db.insert(partyMembers).values({ partyId, nickname: ch ? (db.select({ n: characters.name }).from(characters).where(eq(characters.id, ch.id)).get()?.n ?? nick) : nick, characterId: ch?.id ?? null, sortOrder: order++ }).run();
   }
 }
 
@@ -79,7 +79,7 @@ export async function createParty(input: PartyInput): Promise<ActionResult<{ id:
     })
     .returning({ id: parties.id })
     .get();
-  await writeMembers(row.id, userId, p.data.members, p.data.leader || undefined);
+  await writeMembers(row.id, userId, p.data.members);
   revalidatePath("/parties");
   revalidatePath("/planner");
   redirect(`/parties/${row.id}`);
@@ -107,7 +107,7 @@ export async function updateParty(id: number, input: PartyInput): Promise<Action
     })
     .where(eq(parties.id, id))
     .run();
-  await writeMembers(id, userId, p.data.members, p.data.leader || undefined);
+  await writeMembers(id, userId, p.data.members);
   revalidatePath("/parties");
   revalidatePath(`/parties/${id}`);
   revalidatePath("/planner");

@@ -146,7 +146,7 @@ export async function decideApplication(appId: number, decision: "accepted" | "r
       const count = tx.select({ n: partyMembers.id }).from(partyMembers).where(eq(partyMembers.partyId, row.p.partyId)).all().length;
       if (count < 6) {
         tx.insert(partyMembers)
-          .values({ partyId: row.p.partyId, nickname: row.characterName, characterId: row.a.characterId, isLeader: false, sortOrder: count })
+          .values({ partyId: row.p.partyId, nickname: row.characterName, characterId: row.a.characterId, sortOrder: count })
           .onConflictDoNothing()
           .run();
       }

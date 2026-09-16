@@ -72,7 +72,6 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
               repeats: party.repeats,
               memo: party.memo ?? "",
               members: party.members.map((m) => m.nickname),
-              leader: party.members.find((m) => m.isLeader)?.nickname ?? "",
             }}
           />
           <form
