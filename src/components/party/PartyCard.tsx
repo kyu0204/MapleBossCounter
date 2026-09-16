@@ -14,20 +14,23 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
   const schedule = scheduleLabel(p) ?? p.scheduleNote;
   return (
     <Link href={`/parties/${p.id}`} className={`card block hover:border-orange-300 transition text-sm space-y-2`}>
-      {/* 보스 왼쪽, 오른쪽에 제목·일정·반복. 티어 별은 뺐다 — 이미 고른 파티라 등급을 견줄 일이 없다. */}
-      <div className="flex items-start gap-2.5">
+      {/*
+        왼쪽은 보스(아이콘·난이도·이름·인원), 오른쪽은 파티 정보(제목·일정·반복).
+        티어 별은 뺐다 — 이미 고른 파티라 등급을 견줄 일이 없다.
+      */}
+      <div className="flex items-center gap-3">
         <BossIcon boss={p.boss} diff={p.difficulty} size={56} showDiff={false} />
-        <span className="flex flex-col gap-1 leading-tight min-w-0 flex-1">
+        <span className="flex flex-col gap-1 leading-tight min-w-0 shrink-0">
           <span className="flex items-center gap-1.5 min-w-0">
             <DifficultyBadge diff={p.difficulty} size="xs" solid />
             <span className="font-semibold truncate">{p.boss}</span>
-            <span className="ml-auto badge bg-zinc-100 dark:bg-zinc-800 shrink-0">{p.size}인격</span>
           </span>
-          {p.name && <span className="text-zinc-600 dark:text-zinc-400 truncate">{p.name}</span>}
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-            {schedule ? <span className="text-zinc-600 dark:text-zinc-300">{schedule}</span> : <span className="text-zinc-400">시간 미정</span>}
-            <span className={p.repeats ? "text-zinc-500" : "text-amber-600"}>{p.repeats ? "매주 반복" : "이번 주만"}</span>
-          </span>
+          <span className="badge w-fit bg-zinc-100 dark:bg-zinc-800">{p.size}인격</span>
+        </span>
+        <span className="ml-auto flex flex-col items-end gap-1 leading-tight min-w-0 text-right">
+          {p.name && <span className="text-zinc-600 dark:text-zinc-400 truncate max-w-full">{p.name}</span>}
+          {schedule ? <span className="text-xs text-zinc-600 dark:text-zinc-300">{schedule}</span> : <span className="text-xs text-zinc-400">시간 미정</span>}
+          <span className={`text-xs ${p.repeats ? "text-zinc-500" : "text-amber-600"}`}>{p.repeats ? "매주 반복" : "이번 주만"}</span>
         </span>
       </div>
       <div className="flex flex-wrap gap-2">
