@@ -57,32 +57,40 @@ export function forceKindOf(boss: string): ForceKind | null {
  * 출처: 나무위키 아케인포스·어센틱포스 문서의 "보스 요구 포스" 표 (2026-09 확인).
  * 포스가 이 값에 못 미치면 주는 데미지가 깎인다. 문서에는 110·125·130·150% 칸도
  * 있지만 파티에서 보는 기준은 "깎이지 않는 최소치" 라 100% 칸만 옮긴다.
- *
  * 여러 페이즈가 적힌 보스는 마지막 페이즈 값을 쓴다 — 1페이즈만 넘겨도 잡지는 못한다.
- * 난이도로 요구치가 갈리는 보스만 byDiff 로 따로 적는다.
  *
- * 표에 없는 보스(스우·데미안·더스크·듄켈·가디언 엔젤 슬라임·벨로나·찬란한 흉성)는
- * 여기에 넣지 않는다. 짐작해서 넣으면 멀쩡한 사람이 포스 부족으로 뜬다.
+ * 난이도를 다루는 방법이 둘이다.
+ *   byDiff — 출처가 난이도를 콕 집어 적은 경우. 적힌 난이도에만 값이 붙고
+ *            나머지 난이도는 "모름" 이 된다. 난이도마다 값이 다른 보스가 여기 해당한다.
+ *   base   — 출처가 난이도를 가르지 않은 경우(페이즈만 적힌 세렌처럼). 전 난이도 공통.
+ * 둘 다 있으면 byDiff 가 이긴다.
+ *
+ * 이지 윌에 하드 윌의 760 을 물려 쓰면 멀쩡한 사람이 포스 부족으로 뜬다. 그래서
+ * 출처가 하드만 적은 보스는 하드에만 넣고 낮은 난이도는 비운다. 표에 아예 없는 보스
+ * (스우·데미안·더스크·듄켈·가디언 엔젤 슬라임·벨로나·찬란한 흉성)도 같은 이유로 뺐다.
+ * 요구치를 모르면 화면에서 요구치와 부족 경고를 아예 내지 않는다.
  */
-const FORCE_REQ: Record<string, { base: number; byDiff?: Record<string, number> }> = {
-  루시드: { base: 360 },
-  윌: { base: 760 },
-  "진 힐라": { base: 900 },
-  "검은 마법사": { base: 1320 },
-  "선택받은 세렌": { base: 200 },
-  "감시자 칼로스": { base: 300, byDiff: { extreme: 440 } },
-  "최초의 대적자": { base: 320, byDiff: { extreme: 460 } },
-  카링: { base: 330, byDiff: { extreme: 480 } },
-  림보: { base: 500 },
-  발드릭스: { base: 700 },
-  유피테르: { base: 810 },
+const FORCE_REQ: Record<string, { base?: number; byDiff?: Record<string, number> }> = {
+  // 아케인리버 — 출처가 난이도를 집어 적었다
+  루시드: { byDiff: { normal: 360, hard: 360 } },
+  윌: { byDiff: { hard: 760 } },
+  "진 힐라": { byDiff: { hard: 900 } },
+  "검은 마법사": { byDiff: { hard: 1320, extreme: 1320 } },
+  // 그란디스
+  "선택받은 세렌": { base: 200 }, // 난이도가 아니라 페이즈로만 갈린다
+  "감시자 칼로스": { byDiff: { normal: 300, extreme: 440 } },
+  "최초의 대적자": { byDiff: { normal: 320, extreme: 460 } },
+  카링: { byDiff: { normal: 330, extreme: 480 } },
+  림보: { byDiff: { normal: 500, hard: 500 } },
+  발드릭스: { byDiff: { normal: 700, hard: 700 } },
+  유피테르: { byDiff: { normal: 810, hard: 810 } },
 };
 
 /** 이 보스·난이도에서 데미지가 깎이지 않는 최소 포스. 자료가 없으면 null. */
 export function requiredForce(boss: string, diff: string): number | null {
   const r = FORCE_REQ[boss];
   if (!r) return null;
-  return r.byDiff?.[diff] ?? r.base;
+  return r.byDiff?.[diff] ?? r.base ?? null;
 }
 
 export interface SymbolRow {

@@ -47,17 +47,37 @@ describe("심볼 포스 합산", () => {
 });
 
 describe("보스별 요구 포스", () => {
-  it("난이도와 무관한 보스는 한 값을 쓴다", () => {
-    expect(requiredForce("윌", "hard")).toBe(760);
-    expect(requiredForce("유피테르", "normal")).toBe(810);
-    expect(requiredForce("유피테르", "hard")).toBe(810);
-  });
-
-  it("익스트림만 요구치가 다른 보스는 난이도로 갈린다", () => {
+  it("난이도마다 값이 다르면 난이도별로 갈라 낸다", () => {
     expect(requiredForce("카링", "normal")).toBe(330);
     expect(requiredForce("카링", "extreme")).toBe(480);
-    expect(requiredForce("감시자 칼로스", "chaos")).toBe(300);
+    expect(requiredForce("감시자 칼로스", "normal")).toBe(300);
     expect(requiredForce("감시자 칼로스", "extreme")).toBe(440);
+  });
+
+  it("출처가 적지 않은 난이도는 다른 난이도 값을 물려 쓰지 않는다", () => {
+    // 하드 윌만 760 이다. 이지·노말 윌에 760 을 물리면 멀쩡한 사람이 부족으로 뜬다
+    expect(requiredForce("윌", "hard")).toBe(760);
+    expect(requiredForce("윌", "normal")).toBeNull();
+    expect(requiredForce("윌", "easy")).toBeNull();
+    expect(requiredForce("진 힐라", "hard")).toBe(900);
+    expect(requiredForce("진 힐라", "normal")).toBeNull();
+    // 칼로스 이지·카오스도 출처에 없다
+    expect(requiredForce("감시자 칼로스", "chaos")).toBeNull();
+    expect(requiredForce("최초의 대적자", "hard")).toBeNull();
+  });
+
+  it("난이도를 가르지 않는 보스는 전 난이도 공통값", () => {
+    // 세렌은 난이도가 아니라 페이즈로만 갈린다
+    expect(requiredForce("선택받은 세렌", "normal")).toBe(200);
+    expect(requiredForce("선택받은 세렌", "hard")).toBe(200);
+    expect(requiredForce("선택받은 세렌", "extreme")).toBe(200);
+  });
+
+  it("같은 값이라도 있는 난이도에만 붙는다", () => {
+    expect(requiredForce("유피테르", "normal")).toBe(810);
+    expect(requiredForce("유피테르", "hard")).toBe(810);
+    expect(requiredForce("루시드", "hard")).toBe(360);
+    expect(requiredForce("루시드", "easy")).toBeNull();
   });
 
   it("자료가 없는 보스는 null 이다 (짐작해서 채우지 않는다)", () => {
