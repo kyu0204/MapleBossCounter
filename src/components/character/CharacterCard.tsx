@@ -38,10 +38,10 @@ export function CharacterCard({
         <div>
           <span className="text-zinc-500">대표 전투력 </span>
           <span className="font-semibold text-base">{fmtPower(c.bestPower)}</span>
-          {c.curPower != null && c.curPower !== c.bestPower && (
-            <span className="text-xs text-zinc-500 ml-1">
-              (현재 {fmtPower(c.curPower)}
-              {!wearingBest && " · 다른 세팅"})
+          {/* 현재 전투력은 빼고 대표 전투력만 낸다. 세팅이 다르다는 것만 짧게 알린다. */}
+          {!wearingBest && c.curPower != null && (
+            <span className="text-xs text-zinc-500 ml-1" title="대표 전투력을 낸 세팅과 다른 장비를 착용 중입니다">
+              다른 세팅 착용 중
             </span>
           )}
         </div>
