@@ -19,28 +19,32 @@ export const MULTI_MIN = 2;
 export const MULTI_MAX = 6;
 
 export function MultiResultButton({ names, className = "btn-ghost" }: { names: string[]; className?: string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "ok" | "fail">("idle");
   const joined = names.slice(0, MULTI_MAX).join(",");
   if (names.length < MULTI_MIN) return null;
 
   async function go() {
     try {
       await navigator.clipboard.writeText(joined);
-      setCopied(true);
+      setState("ok");
     } catch {
       // 권한이 없거나 http 환경이면 복사가 막힌다. 그래도 창은 열어 준다.
-      setCopied(false);
+      setState("fail");
     }
     window.open(URL, "_blank", "noopener,noreferrer");
   }
 
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      <button type="button" className={className} onClick={go} title="닉네임을 복사하고 maplescouter 파티 보스컷을 엽니다 (붙여넣기 필요)">
+      <button type="button" className={className} onClick={go} title={`닉네임(${joined})을 복사하고 maplescouter 파티 보스컷을 엽니다`}>
         환산 주스탯 한 번에 보기
       </button>
-      <span className="text-[11px] text-zinc-400">
-        {copied ? "닉네임을 복사했습니다. 입력칸에 붙여넣으세요." : "그 사이트는 주소로 닉네임을 못 받습니다. 눌러서 복사 후 붙여넣기."}
+      <span className={`text-[11px] ${state === "fail" ? "text-amber-600" : "text-zinc-400"}`}>
+        {state === "ok"
+          ? "닉네임을 복사했습니다. 입력칸에 붙여넣으세요."
+          : state === "fail"
+            ? `복사가 막혔습니다. 직접 입력하세요 — ${joined}`
+            : "누르면 닉네임을 쉼표로 이어 복사하고 새 창을 엽니다."}
       </span>
     </span>
   );

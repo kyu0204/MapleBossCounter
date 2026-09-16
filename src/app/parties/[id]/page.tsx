@@ -3,8 +3,8 @@ import { requireUserId } from "@/auth";
 import { getParty } from "@/lib/db/queries/parties";
 import { listOwnedCharacters } from "@/services/characterSync";
 import { kstDateStr } from "@/lib/maple/kst";
-import { crystalPrice } from "@/lib/maple/prices";
-import { fmtPower } from "@/lib/maple/format";
+import { bossName } from "@/lib/maple/bossMeta";
+import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { PartyForm } from "@/components/party/PartyForm";
 import { PartyCard } from "@/components/party/PartyCard";
 import { LeavePartyButton } from "@/components/party/LeavePartyButton";
@@ -20,19 +20,16 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
   const mine = listOwnedCharacters(userId).map((c) => c.name);
   // 탈퇴 대상: 이 파티 구성원 중 내가 소유한 캐릭터로 연결된 것
   const myMembers = party.members.filter((m) => m.ownerUserId === userId).map((m) => m.linkedName ?? m.nickname);
-  const price = crystalPrice(party.boss, party.difficulty, kstDateStr());
-  const perPerson = price == null ? null : Math.floor(price / Math.max(1, party.size));
 
   return (
     <div className="max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold">
-        {party.boss} {party.difficulty} · {party.size}인격
+      {/* 난이도는 목록·티어표와 같은 배지로. 인원과 1인 실수령은 바로 아래 카드에 이미 있다. */}
+      <h1 className="flex items-center gap-2 text-xl font-bold">
+        <DifficultyBadge diff={party.difficulty} size="lg" solid />
+        {bossName(party.boss)}
       </h1>
       <PartyCard party={party} />
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-zinc-500">
-          1인 실수령 <b className="text-zinc-900 dark:text-zinc-100">{fmtPower(perPerson)}</b>
-        </span>
         <MultiResultButton names={party.members.map((m) => m.linkedName ?? m.nickname)} />
       </div>
       {!party.repeats && (
@@ -75,10 +72,7 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
           </form>
         </>
       ) : (
-        <div className="space-y-3">
-          <div className="text-sm text-zinc-500">다른 유저가 만든 파티입니다. 내 캐릭터가 구성원으로 포함되어 있어 표시됩니다.</div>
-          {myMembers.length > 0 && <LeavePartyButton partyId={party.id} names={myMembers} />}
-        </div>
+        myMembers.length > 0 && <LeavePartyButton partyId={party.id} names={myMembers} />
       )}
     </div>
   );
