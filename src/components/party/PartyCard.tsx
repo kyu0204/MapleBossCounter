@@ -6,31 +6,36 @@ import { fmtPower } from "@/lib/maple/format";
 import { kstDateStr } from "@/lib/maple/kst";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
-import { scheduleLabel } from "@/lib/maple/partySchedule";
+import { dayLabel, timeLabel } from "@/lib/maple/partySchedule";
 
 export function PartyCard({ party: p }: { party: PartyWithMembers }) {
   const price = crystalPrice(p.boss, p.difficulty, kstDateStr());
   const per = price == null ? null : Math.floor(price / Math.max(1, p.size));
-  const schedule = scheduleLabel(p) ?? p.scheduleNote;
+  const day = dayLabel(p.dayOfWeek);
+  const time = timeLabel(p.hour, p.minute);
   return (
     <Link href={`/parties/${p.id}`} className={`card block hover:border-orange-300 transition text-sm space-y-2`}>
       {/*
-        왼쪽은 보스(아이콘·난이도·이름·인원), 오른쪽은 파티 정보(제목·일정·반복).
+        한 줄: 보스 · 제목 · 요일 · 시간 · 반복 · 인원.
+        제목만 남는 자리를 먹고 나머지는 오른쪽에 붙어, 카드를 여럿 훑을 때 같은 자리에서 읽힌다.
         티어 별은 뺐다 — 이미 고른 파티라 등급을 견줄 일이 없다.
       */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 min-w-0">
         <BossIcon boss={p.boss} diff={p.difficulty} size={56} showDiff={false} />
-        <span className="flex flex-col gap-1 leading-tight min-w-0 shrink-0">
-          <span className="flex items-center gap-1.5 min-w-0">
-            <DifficultyBadge diff={p.difficulty} size="xs" solid />
-            <span className="font-semibold truncate">{p.boss}</span>
+        <DifficultyBadge diff={p.difficulty} size="xs" solid />
+        <span className="font-semibold whitespace-nowrap">{p.boss}</span>
+        <span className="text-zinc-500 dark:text-zinc-400 truncate flex-1 min-w-0">{p.name}</span>
+        <span className="flex items-center gap-1.5 shrink-0">
+          {day ? (
+            <span className="badge bg-sky-50 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200">{day}</span>
+          ) : (
+            <span className="badge bg-zinc-100 text-zinc-400 dark:bg-zinc-800">요일 미정</span>
+          )}
+          {time && <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-300">{time}</span>}
+          <span className={`badge ${p.repeats ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300" : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"}`}>
+            {p.repeats ? "매주" : "이번 주만"}
           </span>
-          <span className="badge w-fit bg-zinc-100 dark:bg-zinc-800">{p.size}인격</span>
-        </span>
-        <span className="ml-auto flex flex-col items-end gap-1 leading-tight min-w-0 text-right">
-          {p.name && <span className="text-zinc-600 dark:text-zinc-400 truncate max-w-full">{p.name}</span>}
-          {schedule ? <span className="text-xs text-zinc-600 dark:text-zinc-300">{schedule}</span> : <span className="text-xs text-zinc-400">시간 미정</span>}
-          <span className={`text-xs ${p.repeats ? "text-zinc-500" : "text-amber-600"}`}>{p.repeats ? "매주 반복" : "이번 주만"}</span>
+          <span className="badge bg-zinc-100 dark:bg-zinc-800">{p.size}인격</span>
         </span>
       </div>
       <div className="flex flex-wrap gap-2">

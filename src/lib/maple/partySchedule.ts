@@ -22,6 +22,16 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * "목 21:00" / "목요일" / "21:00" / null.
  * 분만 정하고 시를 안 정한 경우는 시각이 없는 것으로 본다 — 분 단독은 뜻이 없다.
  */
+/** "목" — 안 정했으면 null */
+export function dayLabel(dayOfWeek: number | null | undefined): string | null {
+  return dayOfWeek == null ? null : (DAY_LABEL[dayOfWeek] ?? null);
+}
+
+/** "21:00" — 시를 안 정했으면 null (분 단독은 뜻이 없다) */
+export function timeLabel(hour: number | null | undefined, minute: number | null | undefined): string | null {
+  return hour == null ? null : `${pad(hour)}:${pad(minute ?? 0)}`;
+}
+
 export function scheduleLabel({ dayOfWeek, hour, minute }: PartySchedule): string | null {
   const day = dayOfWeek != null ? DAY_LABEL[dayOfWeek] : null;
   const time = hour != null ? `${pad(hour)}:${pad(minute ?? 0)}` : null;

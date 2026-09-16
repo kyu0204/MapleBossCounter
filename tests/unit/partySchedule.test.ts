@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scheduleLabel, isPartyExpired, DAY_LABEL, DAY_ORDER } from "@/lib/maple/partySchedule";
+import { scheduleLabel, dayLabel, timeLabel, isPartyExpired, DAY_LABEL, DAY_ORDER } from "@/lib/maple/partySchedule";
 
 describe("파티 일정 표기", () => {
   it("요일과 시각을 따로 비워도 된다", () => {
@@ -18,6 +18,17 @@ describe("파티 일정 표기", () => {
 
   it("분을 비우면 정각으로 본다", () => {
     expect(scheduleLabel({ dayOfWeek: null, hour: 22, minute: null })).toBe("22:00");
+  });
+
+  it("카드용 요일·시간은 따로 낸다 (뱃지와 글자로 나뉘므로)", () => {
+    expect(dayLabel(4)).toBe("목");
+    expect(dayLabel(0)).toBe("일");
+    expect(dayLabel(null)).toBeNull();
+    expect(timeLabel(21, 0)).toBe("21:00");
+    expect(timeLabel(1, 1)).toBe("01:01");
+    // 분을 비우면 정각, 시를 비우면 시각 자체가 없다
+    expect(timeLabel(22, null)).toBe("22:00");
+    expect(timeLabel(null, 30)).toBeNull();
   });
 
   it("요일 버튼은 주간 리셋(목)부터 늘어놓는다", () => {
