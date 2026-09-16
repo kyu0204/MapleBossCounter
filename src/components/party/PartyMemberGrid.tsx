@@ -2,6 +2,7 @@ import type { PartyWithMembers } from "@/lib/db/queries/parties";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
 import { fmtPower } from "@/lib/maple/format";
 import { forceKindOf, requiredForce, FORCE_LABEL } from "@/lib/maple/force";
+import { MemberStatsAutoRefresh } from "./MemberStatsAutoRefresh";
 
 /**
  * 파티 상세의 구성원 칸. 한 사람이 한 상자, 2열.
@@ -21,6 +22,7 @@ export function PartyMemberGrid({ party: p }: { party: PartyWithMembers }) {
     <div className="space-y-2">
       <div className="flex flex-wrap items-baseline gap-x-2">
         <h2 className="text-sm font-semibold">구성원 {p.size}명</h2>
+        <MemberStatsAutoRefresh partyId={p.id} />
         {kind && need != null && (
           <span className="text-xs text-zinc-500" title="이 값보다 낮으면 주는 데미지가 깎입니다 (데미지 100% 기준)">
             요구 {FORCE_LABEL[kind]} <b className="tabular-nums text-zinc-700 dark:text-zinc-200">{need.toLocaleString("ko-KR")}</b>
@@ -78,7 +80,9 @@ export function PartyMemberGrid({ party: p }: { party: PartyWithMembers }) {
         })}
       </ul>
       {p.members.some((m) => m.characterId && m.linkedPower == null) && (
-        <p className="text-[11px] text-zinc-400">전투력·포스가 &apos;—&apos; 인 캐릭터는 아직 조회된 적이 없습니다. 그 캐릭터 주인이 새로고침하면 채워집니다.</p>
+        <p className="text-[11px] text-zinc-400">
+          전투력·포스가 &apos;—&apos; 인 캐릭터는 조회에 실패했습니다. 닉네임이 바뀌었거나 삭제된 캐릭터일 수 있습니다.
+        </p>
       )}
     </div>
   );

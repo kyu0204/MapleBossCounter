@@ -10,8 +10,9 @@ import { characters, parties, partyMembers } from "@/lib/db/schema";
 import { DIFFICULTIES } from "@/lib/maple/bossKey";
 import { crystalPrice } from "@/lib/maple/prices";
 import { kstDateStr, thisWeekStartKst } from "@/lib/maple/kst";
-import { getOwnedParty } from "@/lib/db/queries/parties";
+import { getOwnedParty, getParty } from "@/lib/db/queries/parties";
 import { ensureCharacterByName } from "@/services/characterLookup";
+import { fillPublicStats } from "@/services/memberStats";
 import type { ActionResult } from "./nexon-key";
 
 const PartySchema = z.object({
@@ -131,6 +132,24 @@ export async function deleteParty(id: number): Promise<void> {
   db.delete(parties).where(and(eq(parties.id, id), eq(parties.ownerUserId, userId))).run();
   revalidateParty(id);
   redirect("/parties");
+}
+
+/**
+ * 파티 구성원의 전투력·포스를 공개 API 로 채운다.
+ *
+ * 남의 캐릭터도 ocid 만 있으면 stat·심볼은 조회된다. 파티를 볼 때 한 번 채우고,
+ * 이미 최근에 받은 값이면 아무 요청도 나가지 않는다 (fillPublicStats 가 판정한다).
+ * 이 파티를 볼 수 있는 사람만 부를 수 있다.
+ */
+export async function refreshPartyMemberStats(partyId: number): Promise<ActionResult<{ filled: number }>> {
+  const userId = await requireUserId();
+  const party = getParty(partyId, userId);
+  if (!party) return { ok: false, message: "파티를 찾을 수 없습니다" };
+  const ids = party.members.map((m) => m.characterId).filter((id): id is number => id != null);
+  const filled = await fillPublicStats(userId, ids);
+  // 채운 게 없으면 다시 그릴 이유도 없다
+  if (filled > 0) revalidatePath(`/parties/${partyId}`);
+  return { ok: true, message: filled ? `${filled}명 갱신` : "최신", data: { filled } };
 }
 
 /**
