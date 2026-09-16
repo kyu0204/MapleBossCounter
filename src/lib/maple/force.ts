@@ -51,6 +51,40 @@ export function forceKindOf(boss: string): ForceKind | null {
   return BOSS_FORCE[boss] ?? null;
 }
 
+/**
+ * 보스별 요구 포스 — 데미지 100% 기준.
+ *
+ * 출처: 나무위키 아케인포스·어센틱포스 문서의 "보스 요구 포스" 표 (2026-09 확인).
+ * 포스가 이 값에 못 미치면 주는 데미지가 깎인다. 문서에는 110·125·130·150% 칸도
+ * 있지만 파티에서 보는 기준은 "깎이지 않는 최소치" 라 100% 칸만 옮긴다.
+ *
+ * 여러 페이즈가 적힌 보스는 마지막 페이즈 값을 쓴다 — 1페이즈만 넘겨도 잡지는 못한다.
+ * 난이도로 요구치가 갈리는 보스만 byDiff 로 따로 적는다.
+ *
+ * 표에 없는 보스(스우·데미안·더스크·듄켈·가디언 엔젤 슬라임·벨로나·찬란한 흉성)는
+ * 여기에 넣지 않는다. 짐작해서 넣으면 멀쩡한 사람이 포스 부족으로 뜬다.
+ */
+const FORCE_REQ: Record<string, { base: number; byDiff?: Record<string, number> }> = {
+  루시드: { base: 360 },
+  윌: { base: 760 },
+  "진 힐라": { base: 900 },
+  "검은 마법사": { base: 1320 },
+  "선택받은 세렌": { base: 200 },
+  "감시자 칼로스": { base: 300, byDiff: { extreme: 440 } },
+  "최초의 대적자": { base: 320, byDiff: { extreme: 460 } },
+  카링: { base: 330, byDiff: { extreme: 480 } },
+  림보: { base: 500 },
+  발드릭스: { base: 700 },
+  유피테르: { base: 810 },
+};
+
+/** 이 보스·난이도에서 데미지가 깎이지 않는 최소 포스. 자료가 없으면 null. */
+export function requiredForce(boss: string, diff: string): number | null {
+  const r = FORCE_REQ[boss];
+  if (!r) return null;
+  return r.byDiff?.[diff] ?? r.base;
+}
+
 export interface SymbolRow {
   symbol_name: string;
   symbol_force: string | number;

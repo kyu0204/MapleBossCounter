@@ -1,7 +1,7 @@
 import type { PartyWithMembers } from "@/lib/db/queries/parties";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
 import { fmtPower } from "@/lib/maple/format";
-import { forceKindOf, FORCE_LABEL } from "@/lib/maple/force";
+import { forceKindOf, requiredForce, FORCE_LABEL } from "@/lib/maple/force";
 
 /**
  * 파티 상세의 구성원 칸. 한 사람이 한 상자, 2열.
@@ -15,13 +15,22 @@ import { forceKindOf, FORCE_LABEL } from "@/lib/maple/force";
  */
 export function PartyMemberGrid({ party: p }: { party: PartyWithMembers }) {
   const kind = forceKindOf(p.boss);
+  const need = requiredForce(p.boss, p.difficulty);
 
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-semibold">구성원 {p.size}명</h2>
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <h2 className="text-sm font-semibold">구성원 {p.size}명</h2>
+        {kind && need != null && (
+          <span className="text-xs text-zinc-500" title="이 값보다 낮으면 주는 데미지가 깎입니다 (데미지 100% 기준)">
+            요구 {FORCE_LABEL[kind]} <b className="tabular-nums text-zinc-700 dark:text-zinc-200">{need.toLocaleString("ko-KR")}</b>
+          </span>
+        )}
+      </div>
       <ul className="grid gap-2 sm:grid-cols-2">
         {p.members.map((m) => {
           const force = kind == null ? null : kind === "arcane" ? m.linkedArcane : m.linkedAuthentic;
+          const short = need != null && force != null && force < need;
           return (
             <li
               key={m.id}
@@ -50,9 +59,12 @@ export function PartyMemberGrid({ party: p }: { party: PartyWithMembers }) {
                         <b className="tabular-nums">{m.linkedPower == null ? "—" : fmtPower(m.linkedPower)}</b>
                       </span>
                       {kind && (
-                        <span title={`${FORCE_LABEL[kind]} — ${p.boss}에서 보는 포스`}>
+                        <span title={need == null ? `${FORCE_LABEL[kind]} — ${p.boss}에서 보는 포스` : `${FORCE_LABEL[kind]} — 요구 ${need.toLocaleString("ko-KR")}`}>
                           <span className="text-zinc-500">{FORCE_LABEL[kind]} </span>
-                          <b className="tabular-nums">{force == null ? "—" : force.toLocaleString("ko-KR")}</b>
+                          {/* 요구치를 아는 보스에서만 모자람을 알린다. 짐작으로 빨갛게 하면 안 된다. */}
+                          <b className={`tabular-nums ${short ? "text-red-600 dark:text-red-400" : ""}`}>{force == null ? "—" : force.toLocaleString("ko-KR")}</b>
+                          {need != null && <span className="text-zinc-400">/{need.toLocaleString("ko-KR")}</span>}
+                          {short && <span className="ml-1 text-red-600 dark:text-red-400">{(need! - force!).toLocaleString("ko-KR")} 부족</span>}
                         </span>
                       )}
                     </div>
