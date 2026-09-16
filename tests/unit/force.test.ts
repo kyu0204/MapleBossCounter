@@ -3,7 +3,7 @@ import { forceFor, forceKindOf, FORCE_REQ, requiredForce, sumForces } from "@/li
 import { PRICE_TABLE } from "@/lib/maple/prices";
 
 /** 포스를 보지만 요구치는 없는 보스. 포스 값만 나오고 부족 경고는 없다. */
-const NO_REQ = new Set(["스우", "데미안", "가디언 엔젤 슬라임"]);
+const NO_REQ = new Set(["스우", "데미안"]);
 
 describe("보스별로 보는 포스", () => {
   it("아케인리버 보스는 아케인포스", () => {
@@ -23,6 +23,8 @@ describe("보스별로 보는 포스", () => {
     expect(forceKindOf("자쿰")).toBeNull();
     expect(forceKindOf("매그너스")).toBeNull();
     expect(forceKindOf("시즌 보스 메이린")).toBeNull();
+    // 아케인리버 지역이지만 포스를 보지 않는다
+    expect(forceKindOf("가디언 엔젤 슬라임")).toBeNull();
   });
 });
 
@@ -120,14 +122,13 @@ describe("보스별 요구 포스", () => {
   it("요구 포스가 없는 보스는 null 이다", () => {
     expect(requiredForce("스우", "hard")).toBeNull();
     expect(requiredForce("데미안", "hard")).toBeNull();
-    expect(requiredForce("가디언 엔젤 슬라임", "chaos")).toBeNull();
     expect(requiredForce("자쿰", "chaos")).toBeNull();
   });
 
-  it("요구치가 없어도 아케인리버 보스면 포스 값 자체는 본다", () => {
-    // 요구치가 없는 것과 포스와 무관한 것은 다르다
-    expect(forceKindOf("가디언 엔젤 슬라임")).toBe("arcane");
+  it("요구치가 없어도 포스 값 자체는 보는 보스가 있다", () => {
+    // 요구치가 없는 것(스우)과 포스와 무관한 것(자쿰)은 다르다
     expect(forceKindOf("스우")).toBe("arcane");
+    expect(requiredForce("스우", "hard")).toBeNull();
     expect(forceKindOf("자쿰")).toBeNull();
   });
 });
