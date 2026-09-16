@@ -52,45 +52,49 @@ export function forceKindOf(boss: string): ForceKind | null {
 }
 
 /**
- * 보스별 요구 포스 — 데미지 100% 기준.
+ * 보스·난이도별 요구 포스 — 데미지 100% 기준.
  *
- * 출처: 나무위키 아케인포스·어센틱포스 문서의 "보스 요구 포스" 표 (2026-09 확인).
- * 포스가 이 값에 못 미치면 주는 데미지가 깎인다. 문서에는 110·125·130·150% 칸도
- * 있지만 파티에서 보는 기준은 "깎이지 않는 최소치" 라 100% 칸만 옮긴다.
- * 여러 페이즈가 적힌 보스는 마지막 페이즈 값을 쓴다 — 1페이즈만 넘겨도 잡지는 못한다.
+ * 포스가 이 값에 못 미치면 주는 데미지가 깎인다. 요구치는 난이도마다 다르다고 보고
+ * 난이도 하나가 칸 하나다. 스우·데미안은 요구 포스가 없어 표에 넣지 않는다.
  *
- * 난이도를 다루는 방법이 둘이다.
- *   byDiff — 출처가 난이도를 콕 집어 적은 경우. 적힌 난이도에만 값이 붙고
- *            나머지 난이도는 "모름" 이 된다. 난이도마다 값이 다른 보스가 여기 해당한다.
- *   base   — 출처가 난이도를 가르지 않은 경우(페이즈만 적힌 세렌처럼). 전 난이도 공통.
- * 둘 다 있으면 byDiff 가 이긴다.
+ * **값 채우는 법** — 아는 숫자를 그 자리에 적고, 모르는 자리는 null 로 둔다.
+ * null 인 칸은 화면에서 요구치와 부족 경고를 아예 내지 않는다 (포스 값만 나온다).
+ * 옆 난이도 값을 옮겨 적지 말 것. 이지 윌에 하드 윌의 760 을 적으면 멀쩡한 사람이
+ * 포스 부족으로 뜬다. 모르면 null 이 맞다.
  *
- * 이지 윌에 하드 윌의 760 을 물려 쓰면 멀쩡한 사람이 포스 부족으로 뜬다. 그래서
- * 출처가 하드만 적은 보스는 하드에만 넣고 낮은 난이도는 비운다. 표에 아예 없는 보스
- * (스우·데미안·더스크·듄켈·가디언 엔젤 슬라임·벨로나·찬란한 흉성)도 같은 이유로 뺐다.
- * 요구치를 모르면 화면에서 요구치와 부족 경고를 아예 내지 않는다.
+ * 지금 들어 있는 숫자의 출처는 나무위키 아케인포스·어센틱포스 문서의 "보스 요구 포스"
+ * 표다 (2026-09 확인). 그 표는 110·125·130·150% 칸도 주지만 파티에서 보는 기준은
+ * "깎이지 않는 최소치" 라 100% 칸만 옮겼다. 페이즈가 나뉜 보스는 마지막 페이즈 값이다 —
+ * 1페이즈만 넘겨도 잡지는 못한다. 난이도를 안 가르고 적힌 값(세렌 200)은 그 보스의
+ * 모든 난이도에 같이 넣었다.
+ *
+ * 난이도 칸은 결정 가격표(boss_crystal_prices.json)에 있는 난이도와 같게 맞춘다.
  */
-const FORCE_REQ: Record<string, { base?: number; byDiff?: Record<string, number> }> = {
-  // 아케인리버 — 출처가 난이도를 집어 적었다
-  루시드: { byDiff: { normal: 360, hard: 360 } },
-  윌: { byDiff: { hard: 760 } },
-  "진 힐라": { byDiff: { hard: 900 } },
-  "검은 마법사": { byDiff: { hard: 1320, extreme: 1320 } },
-  // 그란디스
-  "선택받은 세렌": { base: 200 }, // 난이도가 아니라 페이즈로만 갈린다
-  "감시자 칼로스": { byDiff: { normal: 300, extreme: 440 } },
-  "최초의 대적자": { byDiff: { normal: 320, extreme: 460 } },
-  카링: { byDiff: { normal: 330, extreme: 480 } },
-  림보: { byDiff: { normal: 500, hard: 500 } },
-  발드릭스: { byDiff: { normal: 700, hard: 700 } },
-  유피테르: { byDiff: { normal: 810, hard: 810 } },
+export const FORCE_REQ: Record<string, Record<string, number | null>> = {
+  // ---------- 아케인리버 (아케인포스) ----------
+  "가디언 엔젤 슬라임": { normal: null, chaos: null },
+  루시드: { easy: null, normal: 360, hard: 360 },
+  윌: { easy: null, normal: null, hard: 760 },
+  더스크: { normal: null, chaos: null },
+  듄켈: { normal: null, hard: null },
+  "진 힐라": { normal: null, hard: 900 },
+  "검은 마법사": { hard: 1320, extreme: 1320 },
+
+  // ---------- 그란디스 (어센틱포스) ----------
+  "선택받은 세렌": { normal: 200, hard: 200, extreme: 200 },
+  "감시자 칼로스": { easy: null, normal: 300, chaos: null, extreme: 440 },
+  "최초의 대적자": { easy: null, normal: 320, hard: null, extreme: 460 },
+  카링: { easy: null, normal: 330, hard: null, extreme: 480 },
+  벨로나: { easy: null, normal: null, hard: null },
+  "찬란한 흉성": { normal: null, hard: null },
+  림보: { normal: 500, hard: 500 },
+  발드릭스: { normal: 700, hard: 700 },
+  유피테르: { normal: 810, hard: 810 },
 };
 
 /** 이 보스·난이도에서 데미지가 깎이지 않는 최소 포스. 자료가 없으면 null. */
 export function requiredForce(boss: string, diff: string): number | null {
-  const r = FORCE_REQ[boss];
-  if (!r) return null;
-  return r.byDiff?.[diff] ?? r.base ?? null;
+  return FORCE_REQ[boss]?.[diff] ?? null;
 }
 
 export interface SymbolRow {

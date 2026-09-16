@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { forceFor, forceKindOf, requiredForce, sumForces } from "@/lib/maple/force";
+import { forceFor, forceKindOf, FORCE_REQ, requiredForce, sumForces } from "@/lib/maple/force";
+import { PRICE_TABLE } from "@/lib/maple/prices";
+
+/** 포스를 보는 보스 중 요구치 표가 있어야 하는 것 — 스우·데미안은 요구 포스가 없다 */
+const NO_REQ = new Set(["스우", "데미안"]);
 
 describe("보스별로 보는 포스", () => {
   it("아케인리버 보스는 아케인포스", () => {
@@ -46,6 +50,30 @@ describe("심볼 포스 합산", () => {
   });
 });
 
+describe("요구 포스 표의 난이도 칸", () => {
+  const bosses = Object.keys(PRICE_TABLE.prices).filter((b) => forceKindOf(b) && !NO_REQ.has(b));
+
+  it("포스를 보는 보스는 스우·데미안만 빼고 모두 표에 있다", () => {
+    expect(bosses.filter((b) => !FORCE_REQ[b])).toEqual([]);
+  });
+
+  it("보스마다 가격표에 있는 난이도가 빠짐없이 들어 있다", () => {
+    // 칸이 없으면 그 난이도는 조용히 "모름" 이 된다. 채워 넣을 자리를 눈에 보이게 둔다.
+    const missing = bosses.flatMap((b) => Object.keys(PRICE_TABLE.prices[b]).filter((d) => !(d in FORCE_REQ[b])).map((d) => `${b} ${d}`));
+    expect(missing).toEqual([]);
+  });
+
+  it("가격표에 없는 난이도를 적어 두지 않는다", () => {
+    const extra = bosses.flatMap((b) => Object.keys(FORCE_REQ[b]).filter((d) => !(d in PRICE_TABLE.prices[b])).map((d) => `${b} ${d}`));
+    expect(extra).toEqual([]);
+  });
+
+  it("스우·데미안은 표에 없다", () => {
+    expect(FORCE_REQ["스우"]).toBeUndefined();
+    expect(FORCE_REQ["데미안"]).toBeUndefined();
+  });
+});
+
 describe("보스별 요구 포스", () => {
   it("난이도마다 값이 다르면 난이도별로 갈라 낸다", () => {
     expect(requiredForce("카링", "normal")).toBe(330);
@@ -54,36 +82,26 @@ describe("보스별 요구 포스", () => {
     expect(requiredForce("감시자 칼로스", "extreme")).toBe(440);
   });
 
-  it("출처가 적지 않은 난이도는 다른 난이도 값을 물려 쓰지 않는다", () => {
+  it("아직 안 채운 난이도는 옆 난이도 값을 물려 쓰지 않는다", () => {
     // 하드 윌만 760 이다. 이지·노말 윌에 760 을 물리면 멀쩡한 사람이 부족으로 뜬다
     expect(requiredForce("윌", "hard")).toBe(760);
     expect(requiredForce("윌", "normal")).toBeNull();
     expect(requiredForce("윌", "easy")).toBeNull();
     expect(requiredForce("진 힐라", "hard")).toBe(900);
     expect(requiredForce("진 힐라", "normal")).toBeNull();
-    // 칼로스 이지·카오스도 출처에 없다
     expect(requiredForce("감시자 칼로스", "chaos")).toBeNull();
     expect(requiredForce("최초의 대적자", "hard")).toBeNull();
   });
 
-  it("난이도를 가르지 않는 보스는 전 난이도 공통값", () => {
-    // 세렌은 난이도가 아니라 페이즈로만 갈린다
+  it("세렌은 난이도가 아니라 페이즈로 갈려서 세 난이도가 같다", () => {
     expect(requiredForce("선택받은 세렌", "normal")).toBe(200);
     expect(requiredForce("선택받은 세렌", "hard")).toBe(200);
     expect(requiredForce("선택받은 세렌", "extreme")).toBe(200);
   });
 
-  it("같은 값이라도 있는 난이도에만 붙는다", () => {
-    expect(requiredForce("유피테르", "normal")).toBe(810);
-    expect(requiredForce("유피테르", "hard")).toBe(810);
-    expect(requiredForce("루시드", "hard")).toBe(360);
-    expect(requiredForce("루시드", "easy")).toBeNull();
-  });
-
-  it("자료가 없는 보스는 null 이다 (짐작해서 채우지 않는다)", () => {
+  it("요구 포스가 없는 보스는 null 이다", () => {
     expect(requiredForce("스우", "hard")).toBeNull();
-    expect(requiredForce("듄켈", "hard")).toBeNull();
-    expect(requiredForce("찬란한 흉성", "normal")).toBeNull();
+    expect(requiredForce("데미안", "hard")).toBeNull();
     expect(requiredForce("자쿰", "chaos")).toBeNull();
   });
 });
