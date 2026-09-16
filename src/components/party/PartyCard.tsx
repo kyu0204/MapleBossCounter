@@ -1,9 +1,7 @@
 import Link from "next/link";
 import type { PartyWithMembers } from "@/lib/db/queries/parties";
 import { crystalPrice } from "@/lib/maple/prices";
-import { tierOf } from "@/lib/maple/tiers";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
-import { TierStars } from "@/components/boss/TierStars";
 import { fmtPower } from "@/lib/maple/format";
 import { kstDateStr } from "@/lib/maple/kst";
 import { BossIcon } from "@/components/boss/BossIcon";
@@ -16,18 +14,22 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
   const schedule = scheduleLabel(p) ?? p.scheduleNote;
   return (
     <Link href={`/parties/${p.id}`} className={`card block hover:border-orange-300 transition text-sm space-y-2`}>
-      <div className="flex items-center gap-2">
-        <BossIcon boss={p.boss} diff={p.difficulty} size={44} showDiff={false} />
-        <span className="flex flex-col gap-0.5 leading-tight min-w-0">
-          <span className="flex items-center gap-1.5">
+      {/* 보스 왼쪽, 오른쪽에 제목·일정·반복. 티어 별은 뺐다 — 이미 고른 파티라 등급을 견줄 일이 없다. */}
+      <div className="flex items-start gap-2.5">
+        <BossIcon boss={p.boss} diff={p.difficulty} size={56} showDiff={false} />
+        <span className="flex flex-col gap-1 leading-tight min-w-0 flex-1">
+          <span className="flex items-center gap-1.5 min-w-0">
             <DifficultyBadge diff={p.difficulty} size="xs" solid />
             <span className="font-semibold truncate">{p.boss}</span>
+            <span className="ml-auto badge bg-zinc-100 dark:bg-zinc-800 shrink-0">{p.size}인격</span>
           </span>
-          <TierStars tier={tierOf(p.boss, p.difficulty)} size={10} />
+          {p.name && <span className="text-zinc-600 dark:text-zinc-400 truncate">{p.name}</span>}
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+            {schedule ? <span className="text-zinc-600 dark:text-zinc-300">{schedule}</span> : <span className="text-zinc-400">시간 미정</span>}
+            <span className={p.repeats ? "text-zinc-500" : "text-amber-600"}>{p.repeats ? "매주 반복" : "이번 주만"}</span>
+          </span>
         </span>
-        <span className="ml-auto badge bg-zinc-100 dark:bg-zinc-800">{p.size}인격</span>
       </div>
-      {p.name && <div className="text-zinc-600 dark:text-zinc-400">{p.name}</div>}
       <div className="flex flex-wrap gap-2">
         {p.members.map((m) => (
           <span key={m.id} className="flex flex-col items-center gap-0.5 w-14" title={m.characterId ? `${m.linkedWorld ?? ""} Lv.${m.linkedLevel ?? "?"}` : "미확인 닉네임"}>
@@ -41,8 +43,6 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
       </div>
       <div className="text-xs text-zinc-500">
         결정 {fmtPower(price)} → 1인 {fmtPower(per)}
-        {schedule && <span className="ml-2">· {schedule}</span>}
-        {!p.repeats && <span className="ml-2 text-amber-600">· 이번 주만</span>}
         {!p.isOwner && <span className="ml-2">· 참여 중</span>}
       </div>
     </Link>
