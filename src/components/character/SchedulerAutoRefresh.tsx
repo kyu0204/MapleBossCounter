@@ -9,7 +9,7 @@ import { refreshVisibleSchedulers } from "@/actions/characters";
  * 서버 컴포넌트 안에서 부르면 갱신이 끝날 때까지 첫 화면이 안 뜬다. 그래서 화면을
  * 먼저 그리고 마운트 뒤에 부른다. 끝나면 서버가 /me 를 재검증해 목록이 갱신된다.
  *
- * 무엇을 몇 개나 갱신할지는 서버가 정한다 (5분 넘은 것만, 최대 12개).
+ * 무엇을 몇 개나 갱신할지는 서버가 정한다 (한 시간 넘은 것만, 최대 12개).
  * 갱신할 것이 없으면 서버가 재검증도 하지 않으므로 다시 그리지 않는다.
  */
 export function SchedulerAutoRefresh() {

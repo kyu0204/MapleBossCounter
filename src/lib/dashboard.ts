@@ -7,12 +7,13 @@
 export const DASHBOARD_MIN_LEVEL = Number(process.env.DASHBOARD_MIN_LEVEL ?? 260);
 
 /**
- * 스케줄러 자동 갱신 기준.
+ * 스케줄러 자동 갱신 기준. 화면에 들어올 때 한 번 보고, 마지막 갱신이 이보다
+ * 오래된 캐릭터만 받아 온다. 타이머는 없다 — 열어 둔 채로는 돌지 않는다.
  *
- * 스케줄러 응답 캐시가 5분이라 그보다 자주 시도해도 어차피 캐시가 답한다.
- * 같은 값으로 맞춰 두면 화면을 다시 열어도 헛된 왕복이 없다.
+ * 넥슨 스케줄러 응답 캐시는 5분이라 그보다 짧게 잡으면 캐시가 답할 뿐이고,
+ * 길게 잡으면 그만큼 호출이 준다. 보스 클리어는 하루에도 몇 번 안 바뀌는 값이다.
  */
-export const SCHEDULER_AUTO_STALE_MS = 5 * 60e3;
+export const SCHEDULER_AUTO_STALE_MS = 60 * 60e3;
 
 /**
  * 한 번에 자동 갱신할 캐릭터 수 상한.
