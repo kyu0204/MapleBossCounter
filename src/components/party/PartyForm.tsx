@@ -13,12 +13,35 @@ export interface PartyFormInitial extends PartyInput {
   id?: number;
 }
 
+/**
+ * 수정 화면에서 넘겨받는 구성원 정보.
+ *
+ * initial.members 는 닉네임 문자열뿐이라 그것만으로 폼을 채우면 초상화가 비어 있다.
+ * 이미 DB 에 연결된 캐릭터가 있으므로 다시 조회하지 말고 그대로 받아 쓴다.
+ */
+export interface PartyFormMember {
+  nick: string;
+  imageUrl: string | null;
+  info: string | null;
+}
+
 type MemberState = { nick: string; status: "idle" | "checking" | "ok" | "fail"; info?: string; imageUrl?: string | null; linked?: boolean };
 
 /** 다중 조회는 이름을 쉼표로 이어 붙인다 (maplescouter 가 스스로 그렇게 링크한다) */
 const multiResultUrl = (names: string[]) => `https://maplescouter.com/ko/multi-result?name=${encodeURIComponent(names.join(","))}`;
 
-export function PartyForm({ initial, myCharacters, today }: { initial?: PartyFormInitial; myCharacters: string[]; today: string }) {
+export function PartyForm({
+  initial,
+  initialMembers,
+  myCharacters,
+  today,
+}: {
+  initial?: PartyFormInitial;
+  /** 수정 화면에서 넘기는 구성원 초상화·정보. 없으면 닉네임만으로 시작한다. */
+  initialMembers?: PartyFormMember[];
+  myCharacters: string[];
+  today: string;
+}) {
   const [boss, setBoss] = useState(initial?.boss ?? "");
   const [diff, setDiff] = useState<string>(initial?.difficulty ?? "");
   const [name, setName] = useState(initial?.name ?? "");
@@ -27,7 +50,16 @@ export function PartyForm({ initial, myCharacters, today }: { initial?: PartyFor
   const [minute, setMinute] = useState<number | null>(initial?.minute ?? null);
   const [repeats, setRepeats] = useState(initial?.repeats ?? true);
   const [memo, setMemo] = useState(initial?.memo ?? "");
-  const [members, setMembers] = useState<MemberState[]>((initial?.members ?? []).map((n) => ({ nick: n, status: "idle" })));
+  const [members, setMembers] = useState<MemberState[]>(() => {
+    const byNick = new Map((initialMembers ?? []).map((m) => [m.nick, m]));
+    return (initial?.members ?? []).map((n) => {
+      const hit = byNick.get(n);
+      // 이미 연결된 캐릭터는 확인된 상태로 시작한다 (초상화·정보가 이미 있다)
+      return hit?.imageUrl
+        ? { nick: n, status: "ok" as const, info: hit.info ?? undefined, imageUrl: hit.imageUrl, linked: true }
+        : { nick: n, status: "idle" as const, info: hit?.info ?? undefined };
+    });
+  });
   const [leader, setLeader] = useState(initial?.leader ?? initial?.members?.[0] ?? "");
   const [draft, setDraft] = useState("");
   const [msg, setMsg] = useState<string | null>(null);

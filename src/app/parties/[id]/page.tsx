@@ -54,6 +54,12 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
           <PartyForm
             myCharacters={mine}
             today={kstDateStr()}
+            // 닉네임만 넘기면 초상화가 비어 보인다. 이미 연결된 캐릭터 정보를 같이 준다.
+            initialMembers={party.members.map((m) => ({
+              nick: m.nickname,
+              imageUrl: m.linkedImage,
+              info: m.characterId ? `${m.linkedWorld ?? ""} · Lv.${m.linkedLevel ?? "?"}` : null,
+            }))}
             initial={{
               id: party.id,
               name: party.name ?? "",
