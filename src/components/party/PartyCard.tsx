@@ -13,6 +13,9 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
   const per = price == null ? null : Math.floor(price / Math.max(1, p.size));
   const day = dayLabel(p.dayOfWeek);
   const time = timeLabel(p.hour, p.minute);
+  // 클리어 집계는 기록이 있는 사람만 분모로 센다. 모르는 사람을 "안 감"으로 묶으면 숫자가 거짓이 된다.
+  const known = p.members.filter((m) => m.cleared != null).length;
+  const doneCount = p.members.filter((m) => m.cleared).length;
   return (
     <Link href={`/parties/${p.id}`} className={`card block hover:border-orange-300 transition text-sm space-y-2`}>
       {/*
@@ -40,14 +43,34 @@ export function PartyCard({ party: p }: { party: PartyWithMembers }) {
       </div>
       <div className="flex flex-wrap gap-2">
         {p.members.map((m) => (
-          <span key={m.id} className="flex flex-col items-center gap-0.5 w-16" title={m.characterId ? `${m.linkedWorld ?? ""} Lv.${m.linkedLevel ?? "?"}` : "미확인 닉네임"}>
-            <CharacterAvatar src={m.linkedImage} alt="" size={64} crop="face" className={m.characterId ? "" : "opacity-50"} />
+          <span
+            key={m.id}
+            className="flex flex-col items-center gap-0.5 w-16"
+            title={
+              (m.characterId ? `${m.linkedWorld ?? ""} Lv.${m.linkedLevel ?? "?"}` : "미확인 닉네임") +
+              (m.cleared == null ? " · 클리어 여부 모름 (스케줄러 기록 없음)" : m.cleared ? " · 이번 주 클리어" : " · 아직 안 감")
+            }
+          >
+            {/* 클리어한 사람은 초록 테두리. 모름은 표시하지 않는다 — 안 간 것처럼 보이면 안 된다. */}
+            <CharacterAvatar
+              src={m.linkedImage}
+              alt=""
+              size={64}
+              crop="face"
+              className={`${m.characterId ? "" : "opacity-50"} ${m.cleared ? "ring-2 ring-emerald-500 ring-offset-1 ring-offset-white dark:ring-offset-zinc-900" : ""}`}
+            />
             <span className="text-[11px] truncate max-w-full leading-tight">{m.nickname}</span>
           </span>
         ))}
       </div>
       <div className="text-xs text-zinc-500">
         결정 {fmtPower(price)} → 1인 {fmtPower(per)}
+        {known > 0 && (
+          <span className="ml-2">
+            · 클리어 <b className="text-emerald-600 dark:text-emerald-400">{doneCount}</b>/{known}
+            {known < p.size && <span className="text-zinc-400"> ({p.size - known}명 기록 없음)</span>}
+          </span>
+        )}
         {!p.isOwner && <span className="ml-2">· 참여 중</span>}
       </div>
     </Link>
