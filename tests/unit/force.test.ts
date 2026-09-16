@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { forceFor, forceKindOf, FORCE_REQ, requiredForce, sumForces } from "@/lib/maple/force";
 import { PRICE_TABLE } from "@/lib/maple/prices";
 
-/** 포스를 보는 보스 중 요구치 표가 있어야 하는 것 — 스우·데미안은 요구 포스가 없다 */
-const NO_REQ = new Set(["스우", "데미안"]);
+/** 포스를 보지만 요구치는 없는 보스. 포스 값만 나오고 부족 경고는 없다. */
+const NO_REQ = new Set(["스우", "데미안", "가디언 엔젤 슬라임"]);
 
 describe("보스별로 보는 포스", () => {
   it("아케인리버 보스는 아케인포스", () => {
@@ -53,8 +53,19 @@ describe("심볼 포스 합산", () => {
 describe("요구 포스 표의 난이도 칸", () => {
   const bosses = Object.keys(PRICE_TABLE.prices).filter((b) => forceKindOf(b) && !NO_REQ.has(b));
 
-  it("포스를 보는 보스는 스우·데미안만 빼고 모두 표에 있다", () => {
+  it("요구 포스가 있는 보스는 모두 표에 있다", () => {
     expect(bosses.filter((b) => !FORCE_REQ[b])).toEqual([]);
+  });
+
+  it("빈 칸(null)이 남아 있지 않다", () => {
+    // 모르는 칸을 null 로 두는 건 허용하지만, 지금은 전부 채운 상태다.
+    // 새 보스·난이도가 들어와 비어 있으면 여기서 잡힌다.
+    const blank = Object.entries(FORCE_REQ).flatMap(([b, diffs]) =>
+      Object.entries(diffs)
+        .filter(([, v]) => v == null)
+        .map(([d]) => `${b} ${d}`),
+    );
+    expect(blank).toEqual([]);
   });
 
   it("보스마다 가격표에 있는 난이도가 빠짐없이 들어 있다", () => {
@@ -82,15 +93,22 @@ describe("보스별 요구 포스", () => {
     expect(requiredForce("감시자 칼로스", "extreme")).toBe(440);
   });
 
-  it("아직 안 채운 난이도는 옆 난이도 값을 물려 쓰지 않는다", () => {
-    // 하드 윌만 760 이다. 이지·노말 윌에 760 을 물리면 멀쩡한 사람이 부족으로 뜬다
+  it("낮은 난이도는 낮은 요구치를 쓴다", () => {
+    // 이지 윌에 하드 윌 값을 물려 쓰면 멀쩡한 사람이 부족으로 뜬다
+    expect(requiredForce("윌", "easy")).toBe(560);
     expect(requiredForce("윌", "hard")).toBe(760);
-    expect(requiredForce("윌", "normal")).toBeNull();
-    expect(requiredForce("윌", "easy")).toBeNull();
+    expect(requiredForce("진 힐라", "normal")).toBe(820);
     expect(requiredForce("진 힐라", "hard")).toBe(900);
-    expect(requiredForce("진 힐라", "normal")).toBeNull();
-    expect(requiredForce("감시자 칼로스", "chaos")).toBeNull();
-    expect(requiredForce("최초의 대적자", "hard")).toBeNull();
+    expect(requiredForce("감시자 칼로스", "easy")).toBe(200);
+    expect(requiredForce("감시자 칼로스", "chaos")).toBe(330);
+  });
+
+  it("난이도가 올라가면 요구치도 내려가지 않는다", () => {
+    const order = ["easy", "normal", "hard", "chaos", "extreme"];
+    for (const [boss, diffs] of Object.entries(FORCE_REQ)) {
+      const vals = order.filter((d) => diffs[d] != null).map((d) => diffs[d]!);
+      for (let i = 1; i < vals.length; i++) expect(vals[i], `${boss} ${order[i]}`).toBeGreaterThanOrEqual(vals[i - 1]);
+    }
   });
 
   it("세렌은 난이도가 아니라 페이즈로 갈려서 세 난이도가 같다", () => {
@@ -102,7 +120,15 @@ describe("보스별 요구 포스", () => {
   it("요구 포스가 없는 보스는 null 이다", () => {
     expect(requiredForce("스우", "hard")).toBeNull();
     expect(requiredForce("데미안", "hard")).toBeNull();
+    expect(requiredForce("가디언 엔젤 슬라임", "chaos")).toBeNull();
     expect(requiredForce("자쿰", "chaos")).toBeNull();
+  });
+
+  it("요구치가 없어도 아케인리버 보스면 포스 값 자체는 본다", () => {
+    // 요구치가 없는 것과 포스와 무관한 것은 다르다
+    expect(forceKindOf("가디언 엔젤 슬라임")).toBe("arcane");
+    expect(forceKindOf("스우")).toBe("arcane");
+    expect(forceKindOf("자쿰")).toBeNull();
   });
 });
 

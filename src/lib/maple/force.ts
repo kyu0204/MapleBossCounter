@@ -55,7 +55,8 @@ export function forceKindOf(boss: string): ForceKind | null {
  * 보스·난이도별 요구 포스 — 데미지 100% 기준.
  *
  * 포스가 이 값에 못 미치면 주는 데미지가 깎인다. 요구치는 난이도마다 다르다고 보고
- * 난이도 하나가 칸 하나다. 스우·데미안은 요구 포스가 없어 표에 넣지 않는다.
+ * 난이도 하나가 칸 하나다. 스우·데미안·가디언 엔젤 슬라임은 요구 포스가 없어 표에
+ * 넣지 않는다 — 아케인리버 보스라 포스 값은 보여 주되 요구치와 부족 경고는 없다.
  *
  * **값 채우는 법** — 아는 숫자를 그 자리에 적고, 모르는 자리는 null 로 둔다.
  * null 인 칸은 화면에서 요구치와 부족 경고를 아예 내지 않는다 (포스 값만 나온다).
@@ -72,21 +73,20 @@ export function forceKindOf(boss: string): ForceKind | null {
  */
 export const FORCE_REQ: Record<string, Record<string, number | null>> = {
   // ---------- 아케인리버 (아케인포스) ----------
-  "가디언 엔젤 슬라임": { normal: null, chaos: null },
-  루시드: { easy: null, normal: 360, hard: 360 },
-  윌: { easy: null, normal: null, hard: 760 },
-  더스크: { normal: null, chaos: null },
-  듄켈: { normal: null, hard: null },
-  "진 힐라": { normal: null, hard: 900 },
+  루시드: { easy: 360, normal: 360, hard: 360 },
+  윌: { easy: 560, normal: 760, hard: 760 },
+  더스크: { normal: 730, chaos: 730 },
+  듄켈: { normal: 850, hard: 850 },
+  "진 힐라": { normal: 820, hard: 900 },
   "검은 마법사": { hard: 1320, extreme: 1320 },
 
   // ---------- 그란디스 (어센틱포스) ----------
   "선택받은 세렌": { normal: 200, hard: 200, extreme: 200 },
-  "감시자 칼로스": { easy: null, normal: 300, chaos: null, extreme: 440 },
-  "최초의 대적자": { easy: null, normal: 320, hard: null, extreme: 460 },
-  카링: { easy: null, normal: 330, hard: null, extreme: 480 },
-  벨로나: { easy: null, normal: null, hard: null },
-  "찬란한 흉성": { normal: null, hard: null },
+  "감시자 칼로스": { easy: 200, normal: 300, chaos: 330, extreme: 440 },
+  "최초의 대적자": { easy: 200, normal: 320, hard: 340, extreme: 460 },
+  카링: { easy: 230, normal: 330, hard: 350, extreme: 480 },
+  벨로나: { easy: 400, normal: 450, hard: 550 },
+  "찬란한 흉성": { normal: 400, hard: 550 },
   림보: { normal: 500, hard: 500 },
   발드릭스: { normal: 700, hard: 700 },
   유피테르: { normal: 810, hard: 810 },
