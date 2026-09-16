@@ -21,7 +21,6 @@ export function CharacterCard({
   /** 고른 보스를 다 돌았을 때의 실수령 합. 고른 보스가 없으면 null */
   revenue: number | null;
 }) {
-  const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
   return (
     <Link
       href={`/me/characters/${c.ocid}`}
@@ -35,15 +34,10 @@ export function CharacterCard({
             {c.cls} · Lv.{c.level}
           </span>
         </div>
+        {/* 대표 전투력 하나만. 현재 전투력과 세팅 경고는 캐릭터 상세에 있다. */}
         <div>
           <span className="text-zinc-500">대표 전투력 </span>
           <span className="font-semibold text-base">{fmtPower(c.bestPower)}</span>
-          {/* 현재 전투력은 빼고 대표 전투력만 낸다. 세팅이 다르다는 것만 짧게 알린다. */}
-          {!wearingBest && c.curPower != null && (
-            <span className="text-xs text-zinc-500 ml-1" title="대표 전투력을 낸 세팅과 다른 장비를 착용 중입니다">
-              다른 세팅 착용 중
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-3 text-xs text-zinc-600 dark:text-zinc-400">
           <span>주간 보스 {snapshot ? `${snapshot.weeklyClearCount}/${snapshot.weeklyLimit}` : "-"}</span>
