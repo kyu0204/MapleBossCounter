@@ -8,6 +8,7 @@ import { fmtPower } from "@/lib/maple/format";
 import { DAY_LABEL, DAY_ORDER } from "@/lib/maple/partySchedule";
 import { CharacterAvatar } from "@/components/character/CharacterAvatar";
 import { BossPickerModal } from "./BossPickerModal";
+import { MultiResultButton } from "./MultiResultButton";
 
 export interface PartyFormInitial extends PartyInput {
   id?: number;
@@ -26,9 +27,6 @@ export interface PartyFormMember {
 }
 
 type MemberState = { nick: string; status: "idle" | "checking" | "ok" | "fail"; info?: string; imageUrl?: string | null; linked?: boolean };
-
-/** 다중 조회는 이름을 쉼표로 이어 붙인다 (maplescouter 가 스스로 그렇게 링크한다) */
-const multiResultUrl = (names: string[]) => `https://maplescouter.com/ko/multi-result?name=${encodeURIComponent(names.join(","))}`;
 
 export function PartyForm({
   initial,
@@ -293,11 +291,7 @@ export function PartyForm({
         <button className="btn-primary" disabled={pending || !ready} onClick={submit}>
           {pending ? "저장 중…" : initial?.id ? "수정 저장" : "파티 등록"}
         </button>
-        {members.length >= 2 && (
-          <a className="btn-ghost" href={multiResultUrl(members.map((m) => m.nick))} target="_blank" rel="noreferrer" title="maplescouter 에서 구성원 환산 주스탯 한 번에 보기 (새 창)">
-            환산 주스탯 한 번에 보기
-          </a>
-        )}
+        <MultiResultButton names={members.map((m) => m.nick)} />
         {!ready && <span className="text-xs text-zinc-500">보스·난이도와 구성원 1명 이상이 필요합니다.</span>}
         {msg && <span className="text-zinc-600 dark:text-zinc-400">{msg}</span>}
       </div>

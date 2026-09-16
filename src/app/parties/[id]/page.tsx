@@ -8,6 +8,7 @@ import { fmtPower } from "@/lib/maple/format";
 import { PartyForm } from "@/components/party/PartyForm";
 import { PartyCard } from "@/components/party/PartyCard";
 import { LeavePartyButton } from "@/components/party/LeavePartyButton";
+import { MultiResultButton } from "@/components/party/MultiResultButton";
 import { deleteParty } from "@/actions/parties";
 import type { Difficulty } from "@/lib/maple/bossKey";
 
@@ -32,17 +33,7 @@ export default async function PartyPage({ params }: PageProps<"/parties/[id]">) 
         <span className="text-zinc-500">
           1인 실수령 <b className="text-zinc-900 dark:text-zinc-100">{fmtPower(perPerson)}</b>
         </span>
-        {party.members.length >= 2 && (
-          <a
-            className="btn-ghost"
-            href={`https://maplescouter.com/ko/multi-result?name=${encodeURIComponent(party.members.map((m) => m.linkedName ?? m.nickname).join(","))}`}
-            target="_blank"
-            rel="noreferrer"
-            title="maplescouter 에서 구성원 환산 주스탯 한 번에 보기 (새 창)"
-          >
-            환산 주스탯 한 번에 보기
-          </a>
-        )}
+        <MultiResultButton names={party.members.map((m) => m.linkedName ?? m.nickname)} />
       </div>
       {!party.repeats && (
         <div className="card text-sm text-amber-700 dark:text-amber-400">
