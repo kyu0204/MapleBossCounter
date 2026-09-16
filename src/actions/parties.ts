@@ -43,6 +43,21 @@ export async function resolveNickname(
   return { ok: true, message: "확인", data: { name: c.name, world: c.world, level: c.level, cls: c.cls, imageUrl: c.imageUrl, linked: c.ownerUserId != null } };
 }
 
+/**
+ * 파티가 바뀌면 다시 그려야 하는 화면들.
+ *
+ * 구성원 수는 캐릭터의 보스 인원으로 연동되므로(mergePicks 의 linkedSize) 파티 화면만
+ * 다시 그리면 내 캐릭터 목록·상세가 옛 인원과 옛 실수령을 그대로 보여 준다.
+ * 상세는 동적 경로라 경로 틀로 한 번에 지운다.
+ */
+function revalidateParty(id?: number) {
+  revalidatePath("/parties");
+  if (id != null) revalidatePath(`/parties/${id}`);
+  revalidatePath("/planner");
+  revalidatePath("/me");
+  revalidatePath("/me/characters/[ocid]", "page");
+}
+
 /** 파티장 개념은 화면에서 뺐다. is_leader 컬럼은 남겨 두되 늘 기본값(false)이다. */
 async function writeMembers(partyId: number, userId: string, members: string[]) {
   db.delete(partyMembers).where(eq(partyMembers.partyId, partyId)).run();
@@ -80,8 +95,7 @@ export async function createParty(input: PartyInput): Promise<ActionResult<{ id:
     .returning({ id: parties.id })
     .get();
   await writeMembers(row.id, userId, p.data.members);
-  revalidatePath("/parties");
-  revalidatePath("/planner");
+  revalidateParty(row.id);
   redirect(`/parties/${row.id}`);
 }
 
@@ -108,17 +122,14 @@ export async function updateParty(id: number, input: PartyInput): Promise<Action
     .where(eq(parties.id, id))
     .run();
   await writeMembers(id, userId, p.data.members);
-  revalidatePath("/parties");
-  revalidatePath(`/parties/${id}`);
-  revalidatePath("/planner");
+  revalidateParty(id);
   return { ok: true, message: "저장됨" };
 }
 
 export async function deleteParty(id: number): Promise<void> {
   const userId = await requireUserId();
   db.delete(parties).where(and(eq(parties.id, id), eq(parties.ownerUserId, userId))).run();
-  revalidatePath("/parties");
-  revalidatePath("/planner");
+  revalidateParty(id);
   redirect("/parties");
 }
 
@@ -152,9 +163,6 @@ export async function leaveParty(id: number): Promise<ActionResult<{ removed: nu
     .run();
   db.update(parties).set({ updatedAt: new Date().toISOString() }).where(eq(parties.id, id)).run();
 
-  revalidatePath("/parties");
-  revalidatePath(`/parties/${id}`);
-  revalidatePath("/planner");
-  revalidatePath("/me");
+  revalidateParty(id);
   return { ok: true, message: `${mine.length}명 나갔습니다`, data: { removed: mine.length } };
 }

@@ -42,7 +42,7 @@ function BossRow({ pick, ocid, done, priceDate, bordered = false }: { pick: Merg
             </span>
           )}
           <span className="ml-auto shrink-0">
-            <BossPartyInput ocid={ocid} bossKey={pick.key} party={pick.party} fromParty={pick.source === "party"} />
+            <BossPartyInput ocid={ocid} bossKey={pick.key} party={pick.party} linked={pick.linkedSize != null} />
           </span>
         </span>
         <span className="flex items-end gap-2 min-w-0">
@@ -284,7 +284,11 @@ export function PickedBossList({
         </div>
       )}
 
-      {picks.length > 0 && <div className="text-[11px] text-zinc-400">인원은 바꾸는 즉시 저장됩니다. 간 보스는 아래에 흐리게 내려갑니다.</div>}
+      {picks.length > 0 && (
+        <div className="text-[11px] text-zinc-400">
+          인원은 바꾸는 즉시 저장됩니다. 🔗 은 같은 보스·난이도로 등록한 파티의 실제 구성원 수라 파티에서 고칩니다. 간 보스는 아래에 흐리게 내려갑니다.
+        </div>
+      )}
     </div>
   );
 }

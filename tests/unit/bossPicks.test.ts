@@ -9,7 +9,7 @@ describe("직접 고른 픽 + 파티 유래 픽 합치기", () => {
   it("파티 유래는 따라 들어오고 출처가 구분된다", () => {
     const m = mergePicks({ "유피테르 hard": 2 }, { "카링 normal": 3 });
     expect(m["유피테르 hard"]).toEqual({ party: 2, source: "config" });
-    expect(m["카링 normal"]).toEqual({ party: 3, source: "party" });
+    expect(m["카링 normal"]).toEqual({ party: 3, source: "party", linkedSize: 3 });
   });
 
   it("같은 보스를 양쪽에서 고르면 직접 고른 쪽이 이긴다", () => {
@@ -21,6 +21,30 @@ describe("직접 고른 픽 + 파티 유래 픽 합치기", () => {
 
   it("빈 입력이면 빈 결과", () => {
     expect(mergePicks({}, {})).toEqual({});
+  });
+
+  it("같은 보스·난이도로 파티가 있으면 인원은 파티 구성원 수를 따른다", () => {
+    // 손으로 6인이라 적어 뒀어도 실제 파티가 3인이면 3인으로 나눠야 맞다
+    const m = mergePicks({ "카링 hard": 6 }, { "카링 hard": 3 });
+    expect(m["카링 hard"]).toEqual({ party: 3, source: "config", linkedSize: 3 });
+  });
+
+  it("난이도가 다른 파티의 인원은 끌어오지 않는다", () => {
+    const m = mergePicks({ "카링 hard": 6 }, { "카링 normal": 3 });
+    expect(m["카링 hard"]).toEqual({ party: 6, source: "config" });
+    expect(m["카링 normal"]).toBeUndefined();
+  });
+
+  it("파티 유래 픽에도 연동 표시가 붙는다", () => {
+    const m = mergePicks({}, { "카링 normal": 4 });
+    expect(m["카링 normal"]).toEqual({ party: 4, source: "party", linkedSize: 4 });
+  });
+
+  it("연동된 인원이 실수령에 그대로 반영된다", () => {
+    const list = toPickList(mergePicks({ "카링 normal": 1 }, { "카링 normal": 4 }));
+    const karing = crystalPrice("카링", "normal", DATE)!;
+    expect(list[0].linkedSize).toBe(4);
+    expect(picksTotals(list, DATE).value).toBe(Math.floor(karing / 4));
   });
 });
 

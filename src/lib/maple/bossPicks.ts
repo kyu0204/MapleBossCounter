@@ -19,20 +19,38 @@ export interface MergedPick {
   diff: Difficulty;
   party: number;
   source: PickSource;
+  /**
+   * 같은 보스·난이도로 등록된 파티의 실제 구성원 수.
+   * 값이 있으면 party 가 곧 이 값이다 — 손으로 적어 둔 숫자보다 실제 파티가 맞다.
+   */
+  linkedSize?: number;
+}
+
+export interface MergedPickValue {
+  party: number;
+  source: PickSource;
+  linkedSize?: number;
 }
 
 /**
  * 직접 고른 픽과 파티 유래 픽을 합친다.
  * 같은 보스를 양쪽에서 고르면 직접 고른 쪽이 이긴다 — 캐릭터·보스당 난이도는 하나다.
+ *
+ * 다만 인원은 다르다. 같은 보스·난이도로 파티를 등록해 뒀으면 그 파티의 구성원 수가
+ * 실제 인원이므로 손으로 적어 둔 값 대신 그것을 쓴다(linkedSize). 파티에서 사람이
+ * 들고 나면 실수령도 따라 바뀐다. 난이도가 다른 파티는 다른 판이라 인원을 끌어오지 않는다.
  */
-export function mergePicks(picks: Record<string, number>, partyPicks: Record<string, number>): Record<string, { party: number; source: PickSource }> {
-  const out: Record<string, { party: number; source: PickSource }> = {};
+export function mergePicks(picks: Record<string, number>, partyPicks: Record<string, number>): Record<string, MergedPickValue> {
+  const out: Record<string, MergedPickValue> = {};
   const bossesTaken = new Set(Object.keys(picks).map((k) => parseBossKey(k)?.boss));
-  for (const [k, v] of Object.entries(picks)) out[k] = { party: v, source: "config" };
+  for (const [k, v] of Object.entries(picks)) {
+    const live = partyPicks[k];
+    out[k] = live != null ? { party: live, source: "config", linkedSize: live } : { party: v, source: "config" };
+  }
   for (const [k, v] of Object.entries(partyPicks)) {
     const b = parseBossKey(k)?.boss;
     if (b && bossesTaken.has(b)) continue;
-    out[k] = { party: v, source: "party" };
+    out[k] = { party: v, source: "party", linkedSize: v };
   }
   return out;
 }
@@ -53,11 +71,11 @@ export function sortKeysByTier(keys: string[]): string[] {
 }
 
 /** 합친 픽을 화면에 쓰기 좋은 배열로. 난이도 오름차순. */
-export function toPickList(merged: Record<string, { party: number; source: PickSource }>): MergedPick[] {
+export function toPickList(merged: Record<string, MergedPickValue>): MergedPick[] {
   return sortKeysByTier(Object.keys(merged)).flatMap((key) => {
     const r = parseBossKey(key);
     if (!r) return [];
-    return [{ key, boss: r.boss, diff: r.diff, party: merged[key].party, source: merged[key].source }];
+    return [{ key, boss: r.boss, diff: r.diff, party: merged[key].party, source: merged[key].source, linkedSize: merged[key].linkedSize }];
   });
 }
 
