@@ -14,11 +14,13 @@ const FACE_CENTER = { x: 145, y: 149 };
 /**
  * 박스를 가득 채울 원본 폭. 이 값이 배율을 정한다.
  *
- * 크기와 무관하게 원본의 x 103~187, y 107~191 이 보이므로 머리(x 108~178,
- * y 125~175)는 어느 크기에서도 잘리지 않는다. 대신 y 191 아래(다리)는 잘린다.
+ * 크기와 무관하게 원본의 x 107~183, y 111~187 이 보이므로 머리(x 108~178,
+ * y 125~175)는 어느 크기에서도 잘리지 않는다. 대신 y 187 아래(다리)는 잘린다.
  * 작게 잡을수록 얼굴이 커지고 몸이 더 잘린다.
+ *
+ * 머리 왼쪽 끝이 x 108 이라 이보다 더 좁히면 머리카락이 잘리기 시작한다.
  */
-const CONTENT_BOX = 84;
+const CONTENT_BOX = 76;
 
 export function CharacterAvatar({ src, alt = "", size = 112, className = "" }: { src: string | null | undefined; alt?: string; size?: number; className?: string }) {
   const box = { width: size, height: size };
