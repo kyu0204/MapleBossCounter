@@ -14,6 +14,7 @@ export async function Nav() {
         <nav className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 overflow-x-auto">
           {[
             ["/bosses/tiers", "티어표"],
+            ["/bosses/compare", "보상 비교"],
             ["/board", "모집"],
             ["/lookup", "조회"],
             ...(user
