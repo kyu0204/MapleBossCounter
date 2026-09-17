@@ -64,17 +64,21 @@ describe("allocatePlan — 프로토타입 회귀", () => {
     return { profiles, warnings };
   }
 
-  it("plan_config.json 입력 → 프로토타입 결과(90개, 실수령 88억 7062만)와 일치", () => {
+  it("plan_config.json 입력 → 프로토타입 결과(90개, 실수령 88억 5646만)와 일치", () => {
     const { profiles, warnings } = buildAll(planConfig);
     const out = allocatePlan({ priceDate: PRICE_DATE, worldLimit: 90, candidates: weeklyCandidates(PRICE_DATE), profiles });
     expect(out.count).toBe(90);
-    // 프로토타입 출력은 만 단위 절삭 표시("88억 7062만", "109억 1383만")
-    expect(Math.floor(out.worldValue / 10_000)).toBe(887_062);
-    expect(Math.floor(out.worldGross / 10_000)).toBe(1_091_383);
+    // 프로토타입 출력은 만 단위 절삭 표시. 프로토타입이 돌던 시점의 가격표에는
+    // 찬란한 흉성 노멀과 카링 노멀의 패치 후 가격이 서로 바뀌어 들어가 있었다
+    // (각각 593,000,000 / 576,000,000 → 실제는 576,000,000 / 593,000,000).
+    // 그것을 바로잡으면서 실수령 합이 88억 7062만에서 아래 값으로 내려간다.
+    expect(Math.floor(out.worldValue / 10_000)).toBe(885_646);
+    expect(Math.floor(out.worldGross / 10_000)).toBe(1_087_983);
     expect(warnings).toContain("알전임: 고정 픽 13개 > 주간 한도 12개 — 실수령 상위 12개만 사용");
     const byId = Object.fromEntries(out.rows.map((r) => [r.charId, r]));
     expect(byId["알전임"].picks.length).toBe(12);
-    expect(byId["알전임"].value).toBe(2_998_400_000);
+    // 흉성 노멀 가격 교정(-17,000,000)이 2인격으로 나뉘어 -8,500,000
+    expect(byId["알전임"].value).toBe(2_989_900_000);
     expect(byId["봉풀르르"].picks.length).toBe(9);
     expect(byId["봉풀르르"].value).toBe(361_200_000);
     expect(byId["윤비공부해"].value).toBe(302_070_000);
