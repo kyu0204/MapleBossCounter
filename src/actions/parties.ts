@@ -40,7 +40,8 @@ export async function resolveNickname(
   if (!n) return { ok: false, message: "닉네임을 입력하세요" };
   const found = await ensureCharacterByName(userId, n);
   if (!found) return { ok: false, message: "캐릭터를 찾을 수 없습니다 (닉네임 확인 또는 잠시 후 재시도)" };
-  const c = db.select().from(characters).where(eq(characters.id, found.id)).get()!;
+  const [c] = await db.select().from(characters).where(eq(characters.id, found.id)).limit(1);
+  if (!c) return { ok: false, message: "캐릭터를 찾을 수 없습니다" };
   return { ok: true, message: "확인", data: { name: c.name, world: c.world, level: c.level, cls: c.cls, imageUrl: c.imageUrl, linked: c.ownerUserId != null } };
 }
 
@@ -61,14 +62,16 @@ function revalidateParty(id?: number) {
 
 /** 파티장 개념은 화면에서 뺐다. is_leader 컬럼은 남겨 두되 늘 기본값(false)이다. */
 async function writeMembers(partyId: number, userId: string, members: string[]) {
-  db.delete(partyMembers).where(eq(partyMembers.partyId, partyId)).run();
+  await db.delete(partyMembers).where(eq(partyMembers.partyId, partyId));
   const seen = new Set<string>();
   let order = 0;
   for (const nick of members) {
     if (seen.has(nick)) continue;
     seen.add(nick);
     const ch = await ensureCharacterByName(userId, nick);
-    db.insert(partyMembers).values({ partyId, nickname: ch ? (db.select({ n: characters.name }).from(characters).where(eq(characters.id, ch.id)).get()?.n ?? nick) : nick, characterId: ch?.id ?? null, sortOrder: order++ }).run();
+    // 연결된 캐릭터가 있으면 DB 에 적힌 정식 이름을 쓴다 (대소문자·공백 차이 흡수)
+    const canonical = ch ? (await db.select({ n: characters.name }).from(characters).where(eq(characters.id, ch.id)).limit(1))[0]?.n ?? nick : nick;
+    await db.insert(partyMembers).values({ partyId, nickname: canonical, characterId: ch?.id ?? null, sortOrder: order++ });
   }
 }
 
@@ -77,7 +80,7 @@ export async function createParty(input: PartyInput): Promise<ActionResult<{ id:
   const p = PartySchema.safeParse(input);
   if (!p.success) return { ok: false, message: p.error.issues[0]?.message ?? "입력 오류" };
   if (crystalPrice(p.data.boss, p.data.difficulty, kstDateStr()) == null) return { ok: false, message: "가격표에 없는 보스·난이도입니다" };
-  const row = db
+  const [row] = await db
     .insert(parties)
     .values({
       ownerUserId: userId,
@@ -93,8 +96,7 @@ export async function createParty(input: PartyInput): Promise<ActionResult<{ id:
       weekStart: thisWeekStartKst(),
       memo: p.data.memo || null,
     })
-    .returning({ id: parties.id })
-    .get();
+    .returning({ id: parties.id });
   await writeMembers(row.id, userId, p.data.members);
   revalidateParty(row.id);
   redirect(`/parties/${row.id}`);
@@ -102,10 +104,11 @@ export async function createParty(input: PartyInput): Promise<ActionResult<{ id:
 
 export async function updateParty(id: number, input: PartyInput): Promise<ActionResult> {
   const userId = await requireUserId();
-  if (!getOwnedParty(id, userId)) return { ok: false, message: "권한 없음" };
+  if (!(await getOwnedParty(id, userId))) return { ok: false, message: "권한 없음" };
   const p = PartySchema.safeParse(input);
   if (!p.success) return { ok: false, message: p.error.issues[0]?.message ?? "입력 오류" };
-  db.update(parties)
+  await db
+    .update(parties)
     .set({
       name: p.data.name || null,
       boss: p.data.boss,
@@ -120,8 +123,7 @@ export async function updateParty(id: number, input: PartyInput): Promise<Action
       memo: p.data.memo || null,
       updatedAt: new Date().toISOString(),
     })
-    .where(eq(parties.id, id))
-    .run();
+    .where(eq(parties.id, id));
   await writeMembers(id, userId, p.data.members);
   revalidateParty(id);
   return { ok: true, message: "저장됨" };
@@ -129,7 +131,7 @@ export async function updateParty(id: number, input: PartyInput): Promise<Action
 
 export async function deleteParty(id: number): Promise<void> {
   const userId = await requireUserId();
-  db.delete(parties).where(and(eq(parties.id, id), eq(parties.ownerUserId, userId))).run();
+  await db.delete(parties).where(and(eq(parties.id, id), eq(parties.ownerUserId, userId)));
   revalidateParty(id);
   redirect("/parties");
 }
@@ -143,7 +145,7 @@ export async function deleteParty(id: number): Promise<void> {
  */
 export async function refreshPartyMemberStats(partyId: number): Promise<ActionResult<{ filled: number }>> {
   const userId = await requireUserId();
-  const party = getParty(partyId, userId);
+  const party = await getParty(partyId, userId);
   if (!party) return { ok: false, message: "파티를 찾을 수 없습니다" };
   const ids = party.members.map((m) => m.characterId).filter((id): id is number => id != null);
   const filled = await fillPublicStats(userId, ids);
@@ -164,23 +166,20 @@ export async function refreshPartyMemberStats(partyId: number): Promise<ActionRe
 export async function leaveParty(id: number): Promise<ActionResult<{ removed: number }>> {
   const userId = await requireUserId();
 
-  const party = db.select().from(parties).where(eq(parties.id, id)).get();
+  const [party] = await db.select().from(parties).where(eq(parties.id, id)).limit(1);
   if (!party) return { ok: false, message: "파티를 찾을 수 없습니다" };
   if (party.ownerUserId === userId) return { ok: false, message: "만든 사람은 탈퇴 대신 파티 삭제를 쓰세요" };
 
   // 내가 소유한 캐릭터로 연결된 멤버만 고른다. 닉네임만 적힌 멤버는 내 것이라 볼 수 없다.
-  const mine = db
+  const mine = await db
     .select({ id: partyMembers.id })
     .from(partyMembers)
     .innerJoin(characters, eq(partyMembers.characterId, characters.id))
-    .where(and(eq(partyMembers.partyId, id), eq(characters.ownerUserId, userId)))
-    .all();
+    .where(and(eq(partyMembers.partyId, id), eq(characters.ownerUserId, userId)));
   if (!mine.length) return { ok: false, message: "이 파티에 내 캐릭터가 없습니다" };
 
-  db.delete(partyMembers)
-    .where(inArray(partyMembers.id, mine.map((m) => m.id)))
-    .run();
-  db.update(parties).set({ updatedAt: new Date().toISOString() }).where(eq(parties.id, id)).run();
+  await db.delete(partyMembers).where(inArray(partyMembers.id, mine.map((m) => m.id)));
+  await db.update(parties).set({ updatedAt: new Date().toISOString() }).where(eq(parties.id, id));
 
   revalidateParty(id);
   return { ok: true, message: `${mine.length}명 나갔습니다`, data: { removed: mine.length } };

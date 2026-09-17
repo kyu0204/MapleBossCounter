@@ -32,20 +32,20 @@ async function main() {
   const { kstDateStr } = await import("../src/lib/maple/kst");
   const { eq } = await import("drizzle-orm");
 
-  const c = db.select().from(characters).where(eq(characters.name, name)).get();
+  const [c] = await db.select().from(characters).where(eq(characters.name, name)).limit(1);
   if (!c?.ownerUserId || !c.world) throw new Error(`${name} 캐릭터/소유자/월드 없음`);
   const userId = c.ownerUserId;
   const priceDate = kstDateStr();
   console.log(`대상 ${c.name} (${c.world}, owner ${userId.slice(0, 8)}…)`);
 
   // 페이지가 읽는 값들
-  const snap = parsed(latestSnapshot(c.id));
+  const snap = parsed(await latestSnapshot(c.id));
   const weekly = snap?.bosses.filter((b) => b.cycle === "bossWeekly") ?? [];
   const registered = weekly.filter((b) => b.registered).map((b) => bossKey(b.boss, b.diff));
   const cleared = weekly.filter((b) => b.completed).map((b) => bossKey(b.boss, b.diff));
-  const partyPicks = partyPicksByCharacter(userId).get(c.id) ?? {};
+  const partyPicks = (await partyPicksByCharacter(userId)).get(c.id) ?? {};
   console.log(`1) 페이지 입력: cap ${snap?.weeklyLimit ?? 12}, 등록 ${registered.length}, 클리어 ${cleared.length}, 파티유래 ${Object.keys(partyPicks).length}`);
-  console.log(`   기존 저장값: ${Object.keys(Object.fromEntries(normalizeBossList(loadCharConfig(userId, c.world, c.ocid).bosses).map((b) => [b.key, b.party]))).length}개`);
+  console.log(`   기존 저장값: ${Object.keys(Object.fromEntries(normalizeBossList((await loadCharConfig(userId, c.world, c.ocid)).bosses).map((b) => [b.key, b.party]))).length}개`);
 
   // 저장 (스케줄러 등록 상위 몇 개를 고른 상황을 흉내)
   const pickKeys = registered.slice(0, 5);
@@ -53,16 +53,16 @@ async function main() {
   for (const k of pickKeys) sel[k] = k.includes("세렌") ? 3 : 1;
   const v = validateBossSelection(sel, priceDate);
   if (!v.ok) throw new Error(`검증 실패: ${v.error}`);
-  patchCharConfig(userId, c.world, c.ocid, { bosses: v.clean, auto: false });
+  await patchCharConfig(userId, c.world, c.ocid, { bosses: v.clean, auto: false });
   console.log(`2) 저장: ${Object.keys(v.clean).length}개 → ${Object.keys(v.clean).map((k) => bossTag(k.slice(0, k.lastIndexOf(" ")), k.slice(k.lastIndexOf(" ") + 1))).join(", ")}`);
 
   // 재읽기
-  const back = Object.fromEntries(normalizeBossList(loadCharConfig(userId, c.world, c.ocid).bosses).map((b) => [b.key, b.party]));
+  const back = Object.fromEntries(normalizeBossList((await loadCharConfig(userId, c.world, c.ocid)).bosses).map((b) => [b.key, b.party]));
   const same = JSON.stringify(back) === JSON.stringify(v.clean);
   console.log(`3) 재읽기 일치: ${same ? "OK" : "FAIL " + JSON.stringify(back)}`);
 
   // 다른 캐릭터 설정이 보존되는지
-  const cfg = loadPlanConfig(userId, c.world);
+  const cfg = await loadPlanConfig(userId, c.world);
   console.log(`4) 같은 월드 설정 캐릭터 수: ${Object.keys(cfg.characters).length} (내 캐릭터 외 설정 보존 확인)`);
 
   // 플래너에 고정 픽으로 반영되는지

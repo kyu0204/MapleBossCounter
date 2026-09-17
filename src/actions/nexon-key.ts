@@ -39,13 +39,13 @@ export async function registerNexonKey(_prev: unknown, formData: FormData): Prom
   }
 
   const now = new Date().toISOString();
-  db.insert(nexonKeys)
+  await db
+    .insert(nexonKeys)
     .values({ userId, encKey: encryptSecret(key, userId), keyHint: key.slice(-4), status: "active", accountIds, lastOkAt: now, lastError: null, createdAt: now, updatedAt: now })
     .onConflictDoUpdate({
       target: nexonKeys.userId,
       set: { encKey: encryptSecret(key, userId), keyHint: key.slice(-4), status: "active", accountIds, lastOkAt: now, lastError: null, updatedAt: now },
-    })
-    .run();
+    });
 
   let synced = 0;
   try {
@@ -61,7 +61,7 @@ export async function registerNexonKey(_prev: unknown, formData: FormData): Prom
 
 export async function deleteNexonKey(): Promise<ActionResult> {
   const userId = await requireUserId();
-  db.delete(nexonKeys).where(eq(nexonKeys.userId, userId)).run();
+  await db.delete(nexonKeys).where(eq(nexonKeys.userId, userId));
   // 캐릭터 소유권은 유지 (기록 보존). 원하면 별도 액션으로 해제.
   revalidatePath("/settings/nexon-key");
   revalidatePath("/me");
@@ -70,7 +70,7 @@ export async function deleteNexonKey(): Promise<ActionResult> {
 
 export async function unlinkAllCharacters(): Promise<ActionResult> {
   const userId = await requireUserId();
-  db.update(characters).set({ ownerUserId: null }).where(eq(characters.ownerUserId, userId)).run();
+  await db.update(characters).set({ ownerUserId: null }).where(eq(characters.ownerUserId, userId));
   revalidatePath("/me");
   return { ok: true, message: "모든 캐릭터 연결을 해제했습니다." };
 }

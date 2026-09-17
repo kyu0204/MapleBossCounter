@@ -33,7 +33,7 @@ export default function TiersPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold">보스 티어표</h1>
         <p className="text-sm text-zinc-500">
-          별 색과 개수가 높을수록 상위 보스입니다. 가격은 {priceDate} 기준 솔로 판매가. 출처: 나무위키 보스 티어.
+          별 색과 개수가 높을수록 상위 보스입니다. 가격은 {priceDate} 기준 솔로 판매가.
         </p>
         <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 pt-1">
           <span>난이도</span>
@@ -54,7 +54,7 @@ export default function TiersPage() {
           ))}
         </div>
         <p className="text-[11px] text-zinc-400">
-          보상은 나무위키 보스 문서의 난이도별 보상에서 가져왔습니다. <b>확정</b>은 잡으면 무조건 주는 것, <b>랜덤</b>은 확률로 떨어지는 것입니다.
+          <b>확정</b>은 잡으면 무조건 주는 것, <b>랜덤</b>은 확률로 떨어지는 것입니다.
           모든 보스가 공통으로 주는 소모품(훈장·물약·경험치·주문서)과 결정석은 뺐습니다. 아이콘에 마우스를 올리면 이름이 나오고, 오른쪽 아래 숫자는 개수입니다.
           메멘토 큐브는 위 가격 기준일에 맞춰 {REWARDS_META.cubePatchDate} 패치 전후 수량이 바뀝니다. (기준 {REWARDS_META.updated})
         </p>

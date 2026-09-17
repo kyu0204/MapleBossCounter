@@ -10,7 +10,7 @@ export default async function NewPostPage() {
   return (
     <div className="max-w-2xl space-y-4">
       <h1 className="text-xl font-bold">모집글 쓰기</h1>
-      <PostForm parties={partyOptionsFor(userId)} worlds={myWorlds(userId)} today={kstDateStr()} />
+      <PostForm parties={await partyOptionsFor(userId)} worlds={await myWorlds(userId)} today={kstDateStr()} />
     </div>
   );
 }

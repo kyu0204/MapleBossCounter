@@ -23,18 +23,18 @@ async function main() {
   const serverKey = process.env.NEXON_SERVER_API_KEY;
   if (!serverKey) throw new Error("NEXON_SERVER_API_KEY 없음");
 
-  db.insert(users).values({ id: userId, name: username }).onConflictDoNothing().run();
+  await db.insert(users).values({ id: userId, name: username }).onConflictDoNothing();
   const now = new Date().toISOString();
-  db.insert(nexonKeys)
+  await db
+    .insert(nexonKeys)
     .values({ userId, encKey: encryptSecret(serverKey, userId), keyHint: serverKey.slice(-4), status: "active", accountIds: [], lastOkAt: now })
-    .onConflictDoUpdate({ target: nexonKeys.userId, set: { encKey: encryptSecret(serverKey, userId), status: "active", updatedAt: now } })
-    .run();
+    .onConflictDoUpdate({ target: nexonKeys.userId, set: { encKey: encryptSecret(serverKey, userId), status: "active", updatedAt: now } });
 
   const cred = await resolveCredential({ userId, scope: "account" });
   const sync = await syncCharacters(userId, cred, true);
   console.log(`동기화 ${sync.total}개`);
 
-  const targets = listOwnedCharacters(userId).filter((c) => (c.level ?? 0) >= minLevel);
+  const targets = (await listOwnedCharacters(userId)).filter((c) => (c.level ?? 0) >= minLevel);
   console.log(`대상 ${targets.length}명 (Lv.${minLevel}+): ${targets.map((c) => c.name).join(", ")}`);
   const wed = lastWednesdayKst();
   for (const c of targets) {
@@ -47,13 +47,13 @@ async function main() {
   // 예시 파티: 하드 세렌 3인 (존재하는 캐릭터만)
   const names = ["알전임", "다이아태훈", "호감토끼"].filter((n) => targets.some((c) => c.name === n));
   if (names.length >= 2) {
-    const exists = db.select().from(parties).where(and(eq(parties.ownerUserId, userId), eq(parties.boss, "선택받은 세렌"))).get();
+    const [exists] = await db.select().from(parties).where(and(eq(parties.ownerUserId, userId), eq(parties.boss, "선택받은 세렌"))).limit(1);
     if (!exists) {
-      const p = db.insert(parties).values({ ownerUserId: userId, name: "시드 예시 파티", boss: "선택받은 세렌", difficulty: "hard", scheduleNote: "목 21:00" }).returning().get();
-      names.forEach((n, i) => {
-        const ch = db.select({ id: characters.id }).from(characters).where(eq(characters.name, n)).get();
-        db.insert(partyMembers).values({ partyId: p.id, nickname: n, characterId: ch?.id ?? null, isLeader: i === 0, sortOrder: i }).run();
-      });
+      const [p] = await db.insert(parties).values({ ownerUserId: userId, name: "시드 예시 파티", boss: "선택받은 세렌", difficulty: "hard", scheduleNote: "목 21:00" }).returning();
+      for (const [i, n] of names.entries()) {
+        const [ch] = await db.select({ id: characters.id }).from(characters).where(eq(characters.name, n)).limit(1);
+        await db.insert(partyMembers).values({ partyId: p.id, nickname: n, characterId: ch?.id ?? null, isLeader: i === 0, sortOrder: i });
+      }
       console.log(`파티 생성: 하드 세렌 ${names.length}인격 (${names.join(", ")})`);
     }
   }

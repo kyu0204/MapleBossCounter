@@ -26,7 +26,7 @@ export default async function PlannerPage() {
   if (!PLANNER_ENABLED) notFound();
 
   const userId = await requireUserId();
-  if (!nexonKeyStatus(userId)) {
+  if (!await nexonKeyStatus(userId)) {
     return (
       <div className="card space-y-2">
         <h1 className="text-xl font-bold">주간 결정 플래너</h1>
@@ -37,7 +37,7 @@ export default async function PlannerPage() {
       </div>
     );
   }
-  const worlds = buildPlannerInputs(userId);
+  const worlds = await buildPlannerInputs(userId);
   return (
     <div className="space-y-4">
       <div>

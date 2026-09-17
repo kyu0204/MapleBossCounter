@@ -45,6 +45,41 @@ describe("boss_rewards.json 무결성", () => {
     expect(bad).toEqual([]);
   });
 
+  it("아이콘 없는 항목은 글자 라벨이라도 갖는다", () => {
+    // 아이콘도 라벨도 없으면 화면에 빈 칸이 뜬다.
+    const bad: string[] = [];
+    for (const [boss, diffs] of Object.entries(file.bosses)) {
+      for (const [diff, row] of Object.entries(diffs)) {
+        for (const r of [...row.rewards, ...Object.values(row.cubes ?? {})]) {
+          if (!r.icon && !r.short) bad.push(`${boss} ${diff} / ${r.name}`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("소울 에테르가 패치노트대로 붙어 있다", () => {
+    const has = (boss: string, diff: string, tier: number) => names(boss, diff).includes(`${tier}단계 소울 에테르`);
+    // 대적자·카링은 이지가 빠져 있다 (패치노트 기준)
+    expect(has("최초의 대적자", "easy", 1)).toBe(false);
+    for (const d of ["normal", "hard", "extreme"]) {
+      expect(has("최초의 대적자", d, 1)).toBe(true);
+      expect(has("카링", d, 1)).toBe(true);
+    }
+    for (const d of ["normal", "hard"]) {
+      expect(has("벨로나", d, 2)).toBe(true);
+      expect(has("찬란한 흉성", d, 2)).toBe(true);
+      expect(has("림보", d, 3)).toBe(true);
+      expect(has("발드릭스", d, 3)).toBe(true);
+      expect(has("유피테르", d, 4)).toBe(true);
+    }
+  });
+
+  it("소울 에테르는 확률 드롭이라 확정 보상에 안 들어간다", () => {
+    const fixed = rewardRowsFor("유피테르", "hard", AFTER).fixed.map((r) => r.name);
+    expect(fixed.some((n) => n.includes("소울 에테르"))).toBe(false);
+  });
+
   it("손으로 반입한 12종이 모두 붙어 있다", () => {
     const withIcon = new Map<string, string>();
     for (const diffs of Object.values(file.bosses)) {

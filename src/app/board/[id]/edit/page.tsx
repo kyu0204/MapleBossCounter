@@ -10,14 +10,14 @@ export const metadata = { title: "모집글 수정" };
 export default async function EditPostPage({ params }: PageProps<"/board/[id]/edit">) {
   const userId = await requireUserId();
   const { id } = await params;
-  const post = getOwnedPost(Number(id), userId);
+  const post = await getOwnedPost(Number(id), userId);
   if (!post) notFound();
   return (
     <div className="max-w-2xl space-y-4">
       <h1 className="text-xl font-bold">모집글 수정</h1>
       <PostForm
-        parties={partyOptionsFor(userId)}
-        worlds={myWorlds(userId)}
+        parties={await partyOptionsFor(userId)}
+        worlds={await myWorlds(userId)}
         today={kstDateStr()}
         initial={{
           id: post.id,

@@ -31,7 +31,7 @@ const WEEKS_PER_MONTH = 4;
 
 export default async function MePage({ searchParams }: PageProps<"/me">) {
   const userId = await requireUserId();
-  const key = nexonKeyStatus(userId);
+  const key = await nexonKeyStatus(userId);
   if (!key) {
     return (
       <div className="card space-y-3">
@@ -46,7 +46,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
 
   const sp = await searchParams;
   const showAll = sp.all === "1";
-  const all = listOwnedCharacters(userId, true);
+  const all = await listOwnedCharacters(userId, true);
   const visible = showAll ? all : all.filter((c) => !c.hidden && (c.level ?? 0) >= DASHBOARD_MIN_LEVEL);
   const hiddenCount = all.length - visible.length;
   const priceDate = kstDateStr();
@@ -56,17 +56,15 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
    * 예전에는 스케줄러가 준 클리어 전부를 파티 등록 인원으로만 나눠서, 목록에서 손으로
    * 정한 인원이 무시되고 상세 화면과 숫자가 어긋났다.
    */
-  const partyPicksAll = partyPicksByCharacter(userId);
-  const cfgCache = new Map<string, ReturnType<typeof loadPlanConfig>>();
-  const cfgOf = (world: string) => {
-    if (!cfgCache.has(world)) cfgCache.set(world, loadPlanConfig(userId, world));
-    return cfgCache.get(world)!;
-  };
+  const partyPicksAll = await partyPicksByCharacter(userId);
+  // 월드 설정은 캐릭터마다 같은 것을 여러 번 읽으므로 한 번씩만 받아 둔다.
+  const worlds = [...new Set(visible.map((c) => c.world).filter((w): w is string => !!w))];
+  const cfgCache = new Map(await Promise.all(worlds.map(async (w) => [w, await loadPlanConfig(userId, w)] as const)));
 
-  const cards = visible.map((c) => {
-    const snap = parsed(latestSnapshot(c.id));
+  const cards = await Promise.all(visible.map(async (c) => {
+    const snap = parsed(await latestSnapshot(c.id));
     const world = c.world ?? "";
-    const cfg = world ? cfgOf(world) : null;
+    const cfg = world ? cfgCache.get(world) ?? null : null;
     const defaultParty = cfg?.default_party ?? 1;
     const saved = Object.fromEntries(normalizeBossList(cfg?.characters?.[c.ocid]?.bosses).map((b) => [b.key, b.party ?? defaultParty]));
     const picks = toPickList(mergePicks(saved, partyPicksAll.get(c.id) ?? {}));
@@ -77,7 +75,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
     const rev = picks.length ? picksTotals(picks, priceDate).value : null;
     const earned = picks.length ? picksTotals(done, priceDate).value : 0;
     return { c, snap, rev, earned, remainingCount: remaining.length, picks };
-  });
+  }));
 
   // 표시 중인 캐릭터 전체 합계
   const grand = cards.reduce(
@@ -96,7 +94,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
    * 비싼 쪽 하나만 센다 — 한 달에 한 번뿐이라 둘 다 돌 수는 없다.
    * 인원은 파티 등록 기준(없으면 1인)이다. 단순 계산이라 그 이상은 따지지 않는다.
    */
-  const partyOf = partySizeLookup(userId);
+  const partyOf = await partySizeLookup(userId);
   const monthlyPicks = cards.flatMap(({ c, snap }) => {
     const best = (snap?.bosses ?? [])
       .filter((b) => b.cycle === "bossMonthly" && b.registered)

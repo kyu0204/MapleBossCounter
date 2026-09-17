@@ -29,7 +29,7 @@ export async function savePlanConfig(world: string, config: PlanConfig): Promise
   const p = ConfigSchema.safeParse(config);
   if (!p.success) return { ok: false, message: p.error.issues[0]?.message ?? "설정 형식 오류" };
   if (!world || world.length > 20) return { ok: false, message: "월드 오류" };
-  savePlanConfigRow(userId, world, p.data as PlanConfig);
+  await savePlanConfigRow(userId, world, p.data as PlanConfig);
   revalidatePath("/planner");
   return { ok: true, message: "저장됨" };
 }
@@ -43,7 +43,7 @@ const BossesSchema = z.record(z.string().max(40), z.number().int().min(1).max(6)
  */
 export async function setCharacterBosses(ocid: string, bosses: Record<string, number>): Promise<ActionResult<{ count: number }>> {
   const userId = await requireUserId();
-  const c = ownedCharacterByOcid(userId, ocid);
+  const c = await ownedCharacterByOcid(userId, ocid);
   if (!c) return { ok: false, message: "내 캐릭터가 아닙니다" };
   if (!c.world) return { ok: false, message: "캐릭터 월드 정보가 없습니다. 캐릭터 목록을 동기화해주세요" };
 
@@ -54,9 +54,9 @@ export async function setCharacterBosses(ocid: string, bosses: Record<string, nu
   if (!v.ok) return { ok: false, message: v.error };
   const clean = v.clean;
 
-  const prev = patchCharConfig(userId, c.world, ocid, {});
+  const prev = await patchCharConfig(userId, c.world, ocid, {});
   const hadConfig = prev.bosses != null;
-  patchCharConfig(userId, c.world, ocid, {
+  await patchCharConfig(userId, c.world, ocid, {
     bosses: clean,
     // 처음 지정 시에만 auto 를 끈다. 이후에는 사용자가 플래너에서 고른 값을 유지.
     auto: hadConfig ? prev.auto : Object.keys(clean).length === 0,
@@ -84,7 +84,7 @@ const PartySchema = z.number().int().min(1).max(6);
  */
 export async function setCharacterBossParty(ocid: string, key: string, party: number): Promise<ActionResult<{ party: number }>> {
   const userId = await requireUserId();
-  const c = ownedCharacterByOcid(userId, ocid);
+  const c = await ownedCharacterByOcid(userId, ocid);
   if (!c) return { ok: false, message: "내 캐릭터가 아닙니다" };
   if (!c.world) return { ok: false, message: "캐릭터 월드 정보가 없습니다. 캐릭터 목록을 동기화해주세요" };
 
@@ -92,14 +92,14 @@ export async function setCharacterBossParty(ocid: string, key: string, party: nu
   const n = PartySchema.safeParse(party);
   if (!k.success || !n.success) return { ok: false, message: "인원은 1~6 사이여야 합니다" };
 
-  const prev = patchCharConfig(userId, c.world, ocid, {});
+  const prev = await patchCharConfig(userId, c.world, ocid, {});
   const cur = Object.fromEntries(normalizeBossList(prev.bosses).map((b) => [b.key, b.party ?? 1]));
   const next = { ...cur, [k.data]: n.data };
 
   const v = validateBossSelection(next, kstDateStr());
   if (!v.ok) return { ok: false, message: v.error };
 
-  patchCharConfig(userId, c.world, ocid, { bosses: v.clean, auto: prev.auto ?? false });
+  await patchCharConfig(userId, c.world, ocid, { bosses: v.clean, auto: prev.auto ?? false });
 
   revalidatePath(`/me/characters/${ocid}`);
   revalidatePath("/planner");

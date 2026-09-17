@@ -107,7 +107,35 @@ CSS 80px 까지는 2배 DPI 화면에서도 선명하다. 그보다 크게 쓰�
 - 이름 표기가 조금 달라도(`컴플리트 언더 컨트롤` / `컴플리트 언더컨트롤`) `itemIconFor()` 가 공백 제거 + 부분 일치로 아이콘을 찾는다.
 - `tests/unit/drops.test.ts` 가 아이콘 파일 실재·주간 보스 전수·카테고리 라벨 유효성·난이도 필터·본문 찌꺼기 혼입을 검사한다.
 
+## 운영 (Vercel + Neon + GitHub Actions)
+
+지금 배포 구성이다. 역할이 셋으로 갈린다.
+
+| | 역할 | 비고 |
+|---|---|---|
+| **Vercel** | 페이지만 그린다 | 서버리스라 프로세스가 요청 사이에 안 산다 |
+| **Neon** | Postgres | `DATABASE_URL` 하나로 붙는다. 유휴 시 잠들었다 깨어난다 |
+| **GitHub Actions** | 주기 작업 | `.github/workflows/jobs.yml` |
+
+**왜 잡을 Actions 에서 도나** — 서버리스는 함수 실행 시간이 잘려서 캐릭터가 많으면
+스냅샷 잡이 중간에 죽는다. Actions 는 6시간까지 돌 수 있고, 프로세스가 하나라서
+넥슨 초당 호출 제한(p-queue)도 제대로 걸린다. Vercel 은 화면만 맡는다.
+
+필요한 Actions 시크릿: `DATABASE_URL`, `NEXON_KEY_ENC_SECRET`, `NEXON_SERVER_API_KEY`.
+`NEXON_KEY_ENC_SECRET` 이 없으면 유저 API 키를 못 풀어 잡이 아무것도 못 한다.
+
+Vercel 환경변수: 위 셋 + `AUTH_SECRET`, `AUTH_DISCORD_ID/SECRET`, `AUTH_URL`,
+`AUTH_TRUST_HOST=1`, `JOBS_SECRET`, `CRON_ENABLED=0`.
+
+마이그레이션은 `vercel-build` 가 빌드 전에 한 번 돌린다 (`scripts/db-migrate.mjs`).
+
+> 공개 저장소의 스케줄 워크플로는 **60일간 저장소 활동이 없으면 자동 비활성화**된다.
+> GitHub 가 메일로 알려 주며, 저장소에 커밋이 있으면 유지된다.
+
 ## 운영 (Ubuntu VM — Oracle Cloud / EC2)
+
+아래는 상시 서버로 옮길 때의 구성이다. `CRON_ENABLED=1` 이면 node-cron 이 프로세스
+안에서 돌아 Actions 가 필요 없어진다.
 
 최초 1회 (root):
 

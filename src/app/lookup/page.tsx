@@ -24,6 +24,8 @@ export default async function LookupPage({ searchParams }: PageProps<"/lookup">)
   const name = nameOf(await searchParams);
   const session = await auth();
   const result = name ? await lookupCharacter(name, { userId: session?.user?.id ?? null, ip: clientIpFrom(await headers()) }) : null;
+  // 이력은 JSX 안에서 못 기다린다 (그 자리는 동기 함수다). 먼저 받아 둔다.
+  const history = result?.status === "ok" ? (await powerHistory(result.character.id, 10)).slice().reverse() : [];
 
   return (
     <div className="space-y-6">
@@ -39,7 +41,6 @@ export default async function LookupPage({ searchParams }: PageProps<"/lookup">)
 
       {result?.status === "ok" && (() => {
         const c = result.character;
-        const history = powerHistory(c.id, 10).slice().reverse();
         const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
         return (
           <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">

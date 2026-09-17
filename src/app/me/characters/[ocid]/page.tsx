@@ -21,25 +21,25 @@ import { crystalPrice } from "@/lib/maple/prices";
 export default async function CharacterPage({ params }: PageProps<"/me/characters/[ocid]">) {
   const userId = await requireUserId();
   const { ocid } = await params;
-  const c = ownedCharacterByOcid(userId, ocid);
+  const c = await ownedCharacterByOcid(userId, ocid);
   if (!c) notFound();
 
   // 지난주 보기는 없앴다. 이 화면은 "이번 주에 뭐가 남았나" 를 보는 곳이다.
-  const snapRow = latestSnapshot(c.id);
+  const snapRow = await latestSnapshot(c.id);
   const snap = parsed(snapRow);
   const latest = snap;
   const priceDate = kstDateStr();
   const refreshedAt = snapRow?.fetchedAt ?? null;
-  const partyOf = partySizeLookup(userId);
-  const history = powerHistory(c.id, 30);
+  const partyOf = await partySizeLookup(userId);
+  const history = await powerHistory(c.id, 30);
   const wearingBest = c.bestSetupHash != null && c.curSetupHashes?.equipped === c.bestSetupHash;
 
   // 갈 보스 목록: 플래너와 같은 저장소(plan_configs)를 쓴다. 두 화면이 항상 같은 목록을 본다.
   const world = c.world ?? "";
-  const charCfg = world ? loadCharConfig(userId, world, ocid) : {};
-  const planDefaultParty = world ? loadPlanConfig(userId, world).default_party ?? 1 : 1;
+  const charCfg = world ? await loadCharConfig(userId, world, ocid) : {};
+  const planDefaultParty = world ? (await loadPlanConfig(userId, world)).default_party ?? 1 : 1;
   const savedBosses = Object.fromEntries(normalizeBossList(charCfg.bosses).map((b) => [b.key, b.party ?? planDefaultParty]));
-  const partyPicks = partyPicksByCharacter(userId).get(c.id) ?? {};
+  const partyPicks = (await partyPicksByCharacter(userId)).get(c.id) ?? {};
   const allPicks = toPickList(mergePicks(savedBosses, partyPicks));
   // 클리어·등록 판정은 최신 스냅샷 기준
   const weeklyRows = latest?.bosses.filter((b) => b.cycle === "bossWeekly") ?? [];

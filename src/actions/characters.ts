@@ -10,7 +10,7 @@ import { userMessageFor } from "@/lib/nexon/errors";
 import { listOwnedCharacters, syncCharacters } from "@/services/characterSync";
 import { refreshCharacter } from "@/services/characterRefresh";
 import { fetchAndSaveRealtime, latestSnapshot } from "@/services/snapshotService";
-import { DASHBOARD_MIN_LEVEL, SCHEDULER_AUTO_MAX, SCHEDULER_AUTO_STALE_MS } from "@/lib/dashboard";
+import { CHARACTER_MIN_LEVEL, DASHBOARD_MIN_LEVEL, SCHEDULER_AUTO_MAX, SCHEDULER_AUTO_STALE_MS } from "@/lib/dashboard";
 import type { ActionResult } from "./nexon-key";
 
 /** 계정 캐릭터 목록 재동기화 */
@@ -20,7 +20,8 @@ export async function resyncCharacters(): Promise<ActionResult> {
     const cred = await resolveCredential({ userId, scope: "account" });
     const r = await syncCharacters(userId, cred, true);
     revalidatePath("/me");
-    return { ok: true, message: `동기화 완료: ${r.total}개 (신규 ${r.created}${r.superseded.length ? `, 리프 감지 ${r.superseded.join(", ")}` : ""})` };
+    const low = r.skippedLowLevel ? `, Lv.${CHARACTER_MIN_LEVEL} 미만 ${r.skippedLowLevel}개 제외` : "";
+    return { ok: true, message: `동기화 완료: ${r.total}개 (신규 ${r.created}${low}${r.superseded.length ? `, 리프 감지 ${r.superseded.join(", ")}` : ""})` };
   } catch (e) {
     return { ok: false, message: userMessageFor(e) };
   }
@@ -44,10 +45,9 @@ export async function resyncCharacters(): Promise<ActionResult> {
 export async function refreshVisibleSchedulers(): Promise<ActionResult<{ updated: number; skipped: number }>> {
   const userId = await requireUserId();
 
-  const stale = listOwnedCharacters(userId)
-    .filter((c) => (c.level ?? 0) >= DASHBOARD_MIN_LEVEL)
-    .map((c) => ({ c, at: latestSnapshot(c.id)?.fetchedAt }))
-    .filter(({ at }) => !at || Date.now() - Date.parse(at.endsWith("Z") ? at : `${at}Z`) >= SCHEDULER_AUTO_STALE_MS);
+  const owned = (await listOwnedCharacters(userId)).filter((c) => (c.level ?? 0) >= DASHBOARD_MIN_LEVEL);
+  const withSnap = await Promise.all(owned.map(async (c) => ({ c, at: (await latestSnapshot(c.id))?.fetchedAt })));
+  const stale = withSnap.filter(({ at }) => !at || Date.now() - Date.parse(at.endsWith("Z") ? at : `${at}Z`) >= SCHEDULER_AUTO_STALE_MS);
 
   if (!stale.length) return { ok: true, message: "최신", data: { updated: 0, skipped: 0 } };
 
@@ -74,7 +74,7 @@ export async function refreshVisibleSchedulers(): Promise<ActionResult<{ updated
 /** 캐릭터 1개: 전투력/장비 갱신 + 스케줄러 실시간 스냅샷 */
 export async function refreshOne(ocid: string, force = false): Promise<ActionResult<{ note: string | null }>> {
   const userId = await requireUserId();
-  const ch = db.select().from(characters).where(and(eq(characters.ownerUserId, userId), eq(characters.ocid, ocid))).get();
+  const [ch] = await db.select().from(characters).where(and(eq(characters.ownerUserId, userId), eq(characters.ocid, ocid))).limit(1);
   if (!ch) return { ok: false, message: "내 캐릭터가 아닙니다" };
   try {
     const cred = await resolveCredential({ userId, scope: "account" });
@@ -97,7 +97,7 @@ export async function refreshOne(ocid: string, force = false): Promise<ActionRes
 
 export async function setHidden(ocid: string, hidden: boolean): Promise<ActionResult> {
   const userId = await requireUserId();
-  db.update(characters).set({ hidden, updatedAt: new Date().toISOString() }).where(and(eq(characters.ownerUserId, userId), eq(characters.ocid, ocid))).run();
+  await db.update(characters).set({ hidden, updatedAt: new Date().toISOString() }).where(and(eq(characters.ownerUserId, userId), eq(characters.ocid, ocid)));
   revalidatePath("/me");
   return { ok: true, message: hidden ? "숨김" : "표시" };
 }

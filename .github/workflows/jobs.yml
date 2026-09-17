@@ -1,0 +1,79 @@
+name: 주기 작업
+
+# 주기 작업을 앱 서버가 아니라 여기서 돌린다.
+#
+# 서버리스(Vercel)는 요청 사이에 프로세스가 살아 있지 않아 node-cron 이 못 돈다.
+# 게다가 함수 실행 시간이 잘려서 캐릭터가 많으면 스냅샷 잡이 중간에 죽는다.
+# Actions 는 실행 시간이 6시간까지라 한 번에 끝나고, 프로세스가 하나라서
+# 넥슨 초당 호출 제한(p-queue)도 제대로 걸린다.
+#
+# 시각은 UTC 로 적는다. KST = UTC+9.
+# GitHub 의 스케줄은 정시에 딱 맞춰 돌지 않고 수십 분 늦을 수 있다. 그래서
+# "주간 리셋 전 안전본" 은 목요일 00:00 KST 보다 한참 앞인 수요일 22:30 KST 에 잡았다.
+on:
+  schedule:
+    - cron: "30 13 * * 3" # 수 22:30 KST — 리셋 전 안전본
+    - cron: "5 15 * * 3" # 목 00:05 KST — "이번 주만" 파티 정리 (리셋 직후)
+    - cron: "0 19 * * 3" # 목 04:00 KST — 지난 수요일 권위본 백필
+    - cron: "0 20 * * 3" # 목 05:00 KST — 전투력 갱신
+    - cron: "0 */6 * * *" # 6시간마다 — 만료 캐시 청소
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 실행할 잡
+        required: true
+        type: choice
+        options:
+          - weekly_snapshot_realtime
+          - weekly_snapshot_backfill
+          - daily_snapshot
+          - weekly_power_refresh
+          - party_cleanup
+          - cache_sweep
+
+# 잡끼리 겹치지 않게. 겹치면 job_runs 락에 막혀 어차피 한쪽이 논다.
+concurrency:
+  group: maple-jobs
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: 어느 잡인지 정한다
+        id: pick
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          MANUAL: ${{ inputs.job }}
+        run: |
+          case "${SCHEDULE:-}" in
+            "30 13 * * 3") JOB=weekly_snapshot_realtime ;;
+            "5 15 * * 3")  JOB=party_cleanup ;;
+            "0 19 * * 3")  JOB=weekly_snapshot_backfill ;;
+            "0 20 * * 3")  JOB=weekly_power_refresh ;;
+            "0 */6 * * *") JOB=cache_sweep ;;
+            *)             JOB="${MANUAL:?스케줄도 수동 입력도 없다}" ;;
+          esac
+          echo "job=$JOB" >> "$GITHUB_OUTPUT"
+          echo "실행할 잡: $JOB"
+
+      - name: 잡 실행
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # 유저 API 키를 푸는 열쇠. 이게 없으면 스냅샷·전투력 잡이 아무것도 못 한다.
+          NEXON_KEY_ENC_SECRET: ${{ secrets.NEXON_KEY_ENC_SECRET }}
+          NEXON_SERVER_API_KEY: ${{ secrets.NEXON_SERVER_API_KEY }}
+          # Actions 는 6시간까지 돌 수 있다. 서버리스용 시간 예산을 넉넉히 풀어 준다.
+          JOB_BUDGET_MS: "1500000"
+          TZ: Asia/Seoul
+        run: npm run job -- ${{ steps.pick.outputs.job }}

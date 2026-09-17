@@ -33,11 +33,12 @@ const isStale = (at: string | null) => at == null || Date.now() - Date.parse(at)
  */
 export async function fillPublicStats(userId: string | null, characterIds: number[]): Promise<number> {
   if (!characterIds.length) return 0;
-  const rows = db
-    .select({ id: characters.id, ocid: characters.ocid, curPower: characters.curPower, forceFetchedAt: characters.forceFetchedAt })
-    .from(characters)
-    .where(inArray(characters.id, characterIds))
-    .all()
+  const rows = (
+    await db
+      .select({ id: characters.id, ocid: characters.ocid, curPower: characters.curPower, forceFetchedAt: characters.forceFetchedAt })
+      .from(characters)
+      .where(inArray(characters.id, characterIds))
+  )
     .filter((c) => c.curPower == null || isStale(c.forceFetchedAt))
     .slice(0, MAX_PER_CALL);
   if (!rows.length) return 0;
@@ -59,15 +60,15 @@ export async function fillPublicStats(userId: string | null, characterIds: numbe
   let filled = 0;
   for (const r of results) {
     if (!r || (r.power == null && !r.forces)) continue;
-    db.update(characters)
+    await db
+      .update(characters)
       .set({
         ...(r.power != null ? { curPower: r.power } : {}),
         ...(r.forces ? { arcaneForce: r.forces.arcane, authenticForce: r.forces.authentic } : {}),
         forceFetchedAt: now,
         updatedAt: now,
       })
-      .where(eq(characters.id, r.id))
-      .run();
+      .where(eq(characters.id, r.id));
     filled++;
   }
   return filled;

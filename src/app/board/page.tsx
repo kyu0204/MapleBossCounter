@@ -20,8 +20,8 @@ export default async function BoardPage({ searchParams }: PageProps<"/board">) {
   const world = str(sp.world);
   const all = sp.all === "1";
   const session = await auth();
-  const list = listPosts({ boss: boss || undefined, world: world || undefined, all });
-  const worlds = openPostWorlds();
+  const list = await listPosts({ boss: boss || undefined, world: world || undefined, all });
+  const worlds = await openPostWorlds();
   const bosses = Object.keys(PRICE_TABLE.prices);
 
   return (
