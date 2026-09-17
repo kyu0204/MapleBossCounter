@@ -28,7 +28,7 @@ export async function lookupCharacter(rawName: string, opts: { userId: string | 
 
   const found = await ensureCharacterByName(opts.userId, name);
   if (!found) return { status: "notfound" };
-  let ch = characterById(found.id);
+  let ch = await characterById(found.id);
   if (!ch) return { status: "notfound" };
 
   let refreshed = false;

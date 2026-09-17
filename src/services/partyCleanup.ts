@@ -13,10 +13,11 @@ import { thisWeekStartKst } from "@/lib/maple/kst";
  * week_start 가 없는 옛 데이터는 건드리지 않는다. 언제 만들었는지 모르는 것을
  * 지울 근거가 없다.
  */
-export function purgeExpiredOneOffParties(now: number = Date.now()): number {
+export async function purgeExpiredOneOffParties(now: number = Date.now()): Promise<number> {
   const cutoff = thisWeekStartKst(now);
-  return db
+  const gone = await db
     .delete(parties)
     .where(and(eq(parties.repeats, false), isNotNull(parties.weekStart), lt(parties.weekStart, cutoff)))
-    .run().changes;
+    .returning({ id: parties.id });
+  return gone.length;
 }

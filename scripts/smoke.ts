@@ -5,9 +5,10 @@
  * 별도 DB(data/smoke.db)를 쓰므로 앱 DB 를 건드리지 않는다.
  */
 import "./_bootstrap";
-import path from "node:path";
 
-process.env.DATABASE_PATH = path.join(process.cwd(), "data", "smoke.db");
+// Postgres 로 옮기면서 별도 파일 DB 를 쓸 수 없게 됐다. 앱 DB 를 건드리므로
+// 반드시 개발용 DATABASE_URL 로만 돌릴 것.
+if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL 없음 (개발용 DB 를 가리키게 하고 실행할 것)");
 
 async function main() {
   const target = process.argv[2] ?? "알전임";
@@ -28,12 +29,12 @@ async function main() {
   if (!serverKey) throw new Error("NEXON_SERVER_API_KEY 없음");
 
   const userId = "smoke-user";
-  db.insert(users).values({ id: userId, name: "smoke" }).onConflictDoNothing().run();
+  await db.insert(users).values({ id: userId, name: "smoke" }).onConflictDoNothing();
   const now = new Date().toISOString();
-  db.insert(nexonKeys)
+  await db
+    .insert(nexonKeys)
     .values({ userId, encKey: encryptSecret(serverKey, userId), keyHint: serverKey.slice(-4), status: "active", accountIds: [], lastOkAt: now })
-    .onConflictDoUpdate({ target: nexonKeys.userId, set: { encKey: encryptSecret(serverKey, userId), status: "active", updatedAt: now } })
-    .run();
+    .onConflictDoUpdate({ target: nexonKeys.userId, set: { encKey: encryptSecret(serverKey, userId), status: "active", updatedAt: now } });
   console.log("1) 키 등록(암호화) OK");
 
   const cred = await resolveCredential({ userId, scope: "account" });
@@ -41,7 +42,7 @@ async function main() {
   const sync = await syncCharacters(userId, cred, true);
   console.log(`2) 캐릭터 동기화: ${sync.total}개 (신규 ${sync.created}, 갱신 ${sync.updated}, 계정 ${sync.accountIds.length}) ${Date.now() - t0}ms`);
 
-  const ch = db.select().from(characters).where(eq(characters.name, target)).get();
+  const [ch] = await db.select().from(characters).where(eq(characters.name, target)).limit(1);
   if (!ch) throw new Error(`${target} 캐릭터 없음`);
 
   const r1 = await refreshCharacter(ch, cred, true);
@@ -56,7 +57,7 @@ async function main() {
   console.log(`4) 스케줄러: 보스 ${snap.weeklyClearCount}/${snap.weeklyLimit}, 행 ${snap.bosses.length}, 주간 결정 ${rev.byCycle.bossWeekly.count}개 ${fmtPower(rev.byCycle.bossWeekly.value)}`);
   console.log(`   상한: ${top ? `${top.boss} ${top.diff} (${tierLabel(top.tier)})` : "없음"}`);
 
-  const cs = ceilingSnapshots(ch.id);
+  const cs = await ceilingSnapshots(ch.id);
   console.log(`5) 상한 스냅샷 ${cs.length}개: ${cs.map((s) => s.date?.slice(0, 10)).join(", ")}`);
 
   // 캐시 히트 확인: 같은 basic 호출은 api_cache 에서

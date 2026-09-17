@@ -19,7 +19,7 @@ const devLogin =
           async authorize(creds) {
             const username = String(creds?.username ?? "").trim() || "dev";
             const id = `dev:${username}`;
-            db.insert(users).values({ id, name: username }).onConflictDoNothing().run();
+            await db.insert(users).values({ id, name: username }).onConflictDoNothing();
             return { id, name: username };
           },
         }),

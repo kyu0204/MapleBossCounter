@@ -64,14 +64,15 @@ export async function refreshCharacter(ch: Character, cred: NexonCredential, for
     basicFetchedAt: now,
     updatedAt: now,
   };
-  const updated = db.transaction((tx) => {
-    const row = tx.update(characters).set(patch).where(eq(characters.id, ch.id)).returning().get()!;
-    if (power != null) tx.insert(powerLog).values({ characterId: ch.id, power, setupHash: hashes.equipped, measuredAt: now }).run();
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx.update(characters).set(patch).where(eq(characters.id, ch.id)).returning();
+    if (power != null) await tx.insert(powerLog).values({ characterId: ch.id, power, setupHash: hashes.equipped, measuredAt: now });
     return row;
   });
   return { character: updated, power, note, wearingBest: hashes.equipped === best?.setupHash };
 }
 
-export function powerHistory(characterId: number, limit = 30) {
-  return db.select().from(powerLog).where(eq(powerLog.characterId, characterId)).orderBy(powerLog.measuredAt).all().slice(-limit);
+export async function powerHistory(characterId: number, limit = 30) {
+  const rows = await db.select().from(powerLog).where(eq(powerLog.characterId, characterId)).orderBy(powerLog.measuredAt);
+  return rows.slice(-limit);
 }

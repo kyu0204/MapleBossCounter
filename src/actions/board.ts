@@ -40,7 +40,7 @@ async function validatePost(userId: string, input: PostInput): Promise<Validated
   if (crystalPrice(p.data.boss, p.data.difficulty, kstDateStr()) == null) return { error: "가격표에 없는 보스·난이도입니다" };
   let partyId: number | null = null;
   if (p.data.partyId) {
-    const party = getOwnedParty(p.data.partyId, userId);
+    const party = await getOwnedParty(p.data.partyId, userId);
     if (!party) return { error: "내 파티가 아닙니다" };
     partyId = party.id;
   }
@@ -52,38 +52,37 @@ export async function createPost(input: PostInput): Promise<ActionResult<{ id: n
   const v = await validatePost(userId, input);
   if (v.error !== undefined) return { ok: false, message: v.error };
   const d = v.data;
-  const row = db
+  const [row] = await db
     .insert(posts)
     .values({ authorUserId: userId, partyId: v.partyId, boss: d.boss, difficulty: d.difficulty, world: d.world || null, title: d.title, body: d.body || null, slots: d.slots, minPower: d.minPower ?? null, scheduleNote: d.scheduleNote || null })
-    .returning({ id: posts.id })
-    .get();
+    .returning({ id: posts.id });
   revalidateBoard(row.id);
   redirect(`/board/${row.id}`);
 }
 
 export async function updatePost(id: number, input: PostInput): Promise<ActionResult> {
   const userId = await requireUserId();
-  if (!getOwnedPost(id, userId)) return { ok: false, message: "권한 없음" };
+  if (!(await getOwnedPost(id, userId))) return { ok: false, message: "권한 없음" };
   const v = await validatePost(userId, input);
   if (v.error !== undefined) return { ok: false, message: v.error };
   const d = v.data;
-  db.update(posts)
+  await db
+    .update(posts)
     .set({ partyId: v.partyId, boss: d.boss, difficulty: d.difficulty, world: d.world || null, title: d.title, body: d.body || null, slots: d.slots, minPower: d.minPower ?? null, scheduleNote: d.scheduleNote || null, updatedAt: new Date().toISOString() })
-    .where(eq(posts.id, id))
-    .run();
+    .where(eq(posts.id, id));
   revalidateBoard(id);
   return { ok: true, message: "저장됨" };
 }
 
 export async function setPostStatus(id: number, status: "open" | "closed"): Promise<void> {
   const userId = await requireUserId();
-  db.update(posts).set({ status, updatedAt: new Date().toISOString() }).where(and(eq(posts.id, id), eq(posts.authorUserId, userId))).run();
+  await db.update(posts).set({ status, updatedAt: new Date().toISOString() }).where(and(eq(posts.id, id), eq(posts.authorUserId, userId)));
   revalidateBoard(id);
 }
 
 export async function deletePost(id: number): Promise<void> {
   const userId = await requireUserId();
-  db.delete(posts).where(and(eq(posts.id, id), eq(posts.authorUserId, userId))).run();
+  await db.delete(posts).where(and(eq(posts.id, id), eq(posts.authorUserId, userId)));
   revalidateBoard();
   redirect("/board");
 }
@@ -94,23 +93,24 @@ export async function applyToPost(postId: number, input: z.infer<typeof ApplySch
   const userId = await requireUserId();
   const p = ApplySchema.safeParse(input);
   if (!p.success) return { ok: false, message: p.error.issues[0]?.message ?? "입력 오류" };
-  const post = db.select().from(posts).where(eq(posts.id, postId)).get();
+  const [post] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
   if (!post) return { ok: false, message: "글이 없습니다" };
   if (post.status !== "open") return { ok: false, message: "마감된 모집입니다" };
   if (post.authorUserId === userId) return { ok: false, message: "내 글에는 지원할 수 없습니다" };
-  const ch = db.select({ id: characters.id, name: characters.name }).from(characters).where(and(eq(characters.id, p.data.characterId), eq(characters.ownerUserId, userId))).get();
+  const [ch] = await db.select({ id: characters.id, name: characters.name }).from(characters).where(and(eq(characters.id, p.data.characterId), eq(characters.ownerUserId, userId))).limit(1);
   if (!ch) return { ok: false, message: "내 캐릭터가 아닙니다" };
-  if (post.partyId && db.select({ id: partyMembers.id }).from(partyMembers).where(and(eq(partyMembers.partyId, post.partyId), eq(partyMembers.characterId, ch.id))).get()) {
-    return { ok: false, message: "이미 이 파티의 구성원입니다" };
+  if (post.partyId) {
+    const [already] = await db.select({ id: partyMembers.id }).from(partyMembers).where(and(eq(partyMembers.partyId, post.partyId), eq(partyMembers.characterId, ch.id))).limit(1);
+    if (already) return { ok: false, message: "이미 이 파티의 구성원입니다" };
   }
 
-  const existing = db.select().from(applications).where(and(eq(applications.postId, postId), eq(applications.characterId, ch.id))).get();
+  const [existing] = await db.select().from(applications).where(and(eq(applications.postId, postId), eq(applications.characterId, ch.id))).limit(1);
   const now = new Date().toISOString();
   if (existing) {
     if (existing.status === "pending" || existing.status === "accepted") return { ok: false, message: "이미 지원한 캐릭터입니다" };
-    db.update(applications).set({ status: "pending", message: p.data.message || null, createdAt: now, decidedAt: null }).where(eq(applications.id, existing.id)).run();
+    await db.update(applications).set({ status: "pending", message: p.data.message || null, createdAt: now, decidedAt: null }).where(eq(applications.id, existing.id));
   } else {
-    db.insert(applications).values({ postId, applicantUserId: userId, characterId: ch.id, message: p.data.message || null, status: "pending" }).run();
+    await db.insert(applications).values({ postId, applicantUserId: userId, characterId: ch.id, message: p.data.message || null, status: "pending" });
   }
   revalidateBoard(postId);
   return { ok: true, message: `${ch.name}(으)로 지원했습니다` };
@@ -118,9 +118,9 @@ export async function applyToPost(postId: number, input: z.infer<typeof ApplySch
 
 export async function withdrawApplication(appId: number): Promise<void> {
   const userId = await requireUserId();
-  const a = db.select().from(applications).where(and(eq(applications.id, appId), eq(applications.applicantUserId, userId))).get();
+  const [a] = await db.select().from(applications).where(and(eq(applications.id, appId), eq(applications.applicantUserId, userId))).limit(1);
   if (!a || a.status === "withdrawn") return;
-  db.update(applications).set({ status: "withdrawn", decidedAt: new Date().toISOString() }).where(eq(applications.id, appId)).run();
+  await db.update(applications).set({ status: "withdrawn", decidedAt: new Date().toISOString() }).where(eq(applications.id, appId));
   revalidateBoard(a.postId);
 }
 
@@ -130,29 +130,29 @@ export async function withdrawApplication(appId: number): Promise<void> {
  */
 export async function decideApplication(appId: number, decision: "accepted" | "rejected"): Promise<void> {
   const userId = await requireUserId();
-  const row = db
+  const [row] = await db
     .select({ a: applications, p: posts, characterName: characters.name })
     .from(applications)
     .innerJoin(posts, eq(applications.postId, posts.id))
     .innerJoin(characters, eq(applications.characterId, characters.id))
     .where(and(eq(applications.id, appId), eq(posts.authorUserId, userId)))
-    .get();
+    .limit(1);
   if (!row || row.a.status === "withdrawn") return;
   const now = new Date().toISOString();
-  db.transaction((tx) => {
-    tx.update(applications).set({ status: decision, decidedAt: now }).where(eq(applications.id, appId)).run();
+  await db.transaction(async (tx) => {
+    await tx.update(applications).set({ status: decision, decidedAt: now }).where(eq(applications.id, appId));
     if (decision !== "accepted") return;
     if (row.p.partyId) {
-      const count = tx.select({ n: partyMembers.id }).from(partyMembers).where(eq(partyMembers.partyId, row.p.partyId)).all().length;
+      const count = (await tx.select({ n: partyMembers.id }).from(partyMembers).where(eq(partyMembers.partyId, row.p.partyId))).length;
       if (count < 6) {
-        tx.insert(partyMembers)
+        await tx
+          .insert(partyMembers)
           .values({ partyId: row.p.partyId, nickname: row.characterName, characterId: row.a.characterId, sortOrder: count })
-          .onConflictDoNothing()
-          .run();
+          .onConflictDoNothing();
       }
     }
-    const accepted = tx.select({ id: applications.id }).from(applications).where(and(eq(applications.postId, row.p.id), eq(applications.status, "accepted"))).all().length;
-    if (accepted >= row.p.slots) tx.update(posts).set({ status: "closed", updatedAt: now }).where(eq(posts.id, row.p.id)).run();
+    const accepted = (await tx.select({ id: applications.id }).from(applications).where(and(eq(applications.postId, row.p.id), eq(applications.status, "accepted")))).length;
+    if (accepted >= row.p.slots) await tx.update(posts).set({ status: "closed", updatedAt: now }).where(eq(posts.id, row.p.id));
   });
   revalidateBoard(row.p.id);
   if (row.p.partyId) {

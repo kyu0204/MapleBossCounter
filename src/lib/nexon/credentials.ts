@@ -47,15 +47,15 @@ export function serverCredential(): ApiKeyCredential | null {
 
 /** 유저 키 복호화는 여기서만. 반환된 문자열을 클라이언트로 보내지 말 것. */
 export async function userCredential(userId: string): Promise<ApiKeyCredential | null> {
-  const row = db.select().from(nexonKeys).where(eq(nexonKeys.userId, userId)).get();
+  const [row] = await db.select().from(nexonKeys).where(eq(nexonKeys.userId, userId)).limit(1);
   if (!row || row.status === "invalid") return null;
   const key = decryptSecret(row.encKey, userId);
   return new ApiKeyCredential(`user:${userId}`, key, DEV_RATE, async (code, message) => {
     if (code === "OPENAPI00005") {
-      db.update(nexonKeys)
+      await db
+        .update(nexonKeys)
         .set({ status: "invalid", lastError: `[${code}] ${message}`, updatedAt: new Date().toISOString() })
-        .where(eq(nexonKeys.userId, userId))
-        .run();
+        .where(eq(nexonKeys.userId, userId));
     }
   });
 }

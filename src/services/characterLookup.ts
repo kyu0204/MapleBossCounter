@@ -21,33 +21,35 @@ export interface LookupCharacter {
  * 리밋에 걸리거나 조회 실패면 null.
  */
 export async function ensureCharacterByName(userId: string | null, nickname: string): Promise<LookupCharacter | null> {
-  const existing = db
+  const [existing] = await db
     .select({ id: characters.id, world: characters.world, level: characters.level, owner: characters.ownerUserId })
     .from(characters)
     .where(and(eq(characters.name, nickname), isNull(characters.supersededBy)))
-    .get();
+    .limit(1);
   if (existing) return existing;
   if (!resolveLimiter.allow(userId ?? "anon")) return null;
   try {
     const cred = await resolveCredential({ userId, scope: "public" });
     const ocid = await getOcid(cred, nickname);
     const basic = await getBasic(cred, ocid);
-    return db
+    const [row] = await db
       .insert(characters)
       .values({ ocid, name: basic.character_name, world: basic.world_name, cls: basic.character_class, level: basic.character_level, imageUrl: basic.character_image, basicFetchedAt: new Date().toISOString() })
       .onConflictDoUpdate({ target: characters.ocid, set: { name: basic.character_name, world: basic.world_name, cls: basic.character_class, level: basic.character_level, updatedAt: new Date().toISOString() } })
-      .returning({ id: characters.id, world: characters.world, level: characters.level, owner: characters.ownerUserId })
-      .get();
+      .returning({ id: characters.id, world: characters.world, level: characters.level, owner: characters.ownerUserId });
+    return row;
   } catch {
     return null;
   }
 }
 
-export function characterById(id: number): Character | null {
-  return db.select().from(characters).where(eq(characters.id, id)).get() ?? null;
+export async function characterById(id: number): Promise<Character | null> {
+  const [row] = await db.select().from(characters).where(eq(characters.id, id)).limit(1);
+  return row ?? null;
 }
 
 /** 공개 조회용: 닉네임으로 현재(대체되지 않은) row. 없으면 null. */
-export function characterByName(name: string): Character | null {
-  return db.select().from(characters).where(and(eq(characters.name, name), isNull(characters.supersededBy))).get() ?? null;
+export async function characterByName(name: string): Promise<Character | null> {
+  const [row] = await db.select().from(characters).where(and(eq(characters.name, name), isNull(characters.supersededBy))).limit(1);
+  return row ?? null;
 }

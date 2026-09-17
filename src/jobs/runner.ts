@@ -27,17 +27,17 @@ export interface JobStats {
 
 /** job_runs 락 + 기록. 같은 잡이 10분 내 running 이면 스킵. */
 export async function runJob(name: JobName): Promise<{ status: string; stats?: JobStats }> {
-  const running = db.select().from(jobRuns).where(and(eq(jobRuns.jobName, name), eq(jobRuns.status, "running"))).orderBy(desc(jobRuns.startedAt)).get();
+  const [running] = await db.select().from(jobRuns).where(and(eq(jobRuns.jobName, name), eq(jobRuns.status, "running"))).orderBy(desc(jobRuns.startedAt)).limit(1);
   if (running && Date.now() - Date.parse(running.startedAt) < LOCK_MS) return { status: "locked" };
 
-  const run = db.insert(jobRuns).values({ jobName: name, status: "running" }).returning().get();
+  const [run] = await db.insert(jobRuns).values({ jobName: name, status: "running" }).returning();
   try {
     const stats = await JOBS[name]();
     const status = stats.failed > 0 && stats.ok === 0 ? "failed" : stats.failed > 0 ? "partial" : "ok";
-    db.update(jobRuns).set({ status, stats, finishedAt: new Date().toISOString() }).where(eq(jobRuns.id, run.id)).run();
+    await db.update(jobRuns).set({ status, stats, finishedAt: new Date().toISOString() }).where(eq(jobRuns.id, run.id));
     return { status, stats };
   } catch (e) {
-    db.update(jobRuns).set({ status: "failed", error: userMessageFor(e), finishedAt: new Date().toISOString() }).where(eq(jobRuns.id, run.id)).run();
+    await db.update(jobRuns).set({ status: "failed", error: userMessageFor(e), finishedAt: new Date().toISOString() }).where(eq(jobRuns.id, run.id));
     throw e;
   }
 }
@@ -48,12 +48,12 @@ function emptyStats(): JobStats {
 
 /** 활성 키 유저별 (cred, 캐릭터[]) 순회 */
 async function forEachLinkedCharacter(stats: JobStats, fn: (cred: NonNullable<Awaited<ReturnType<typeof userCredential>>>, ch: typeof characters.$inferSelect) => Promise<"ok" | "skipped">) {
-  const keyRows = db.select({ userId: nexonKeys.userId }).from(nexonKeys).where(eq(nexonKeys.status, "active")).all();
+  const keyRows = await db.select({ userId: nexonKeys.userId }).from(nexonKeys).where(eq(nexonKeys.status, "active"));
   for (const { userId } of keyRows) {
     const cred = await userCredential(userId);
     if (!cred) continue;
     stats.users++;
-    const chars = db.select().from(characters).where(and(eq(characters.ownerUserId, userId), isNull(characters.supersededBy), eq(characters.hidden, false))).all();
+    const chars = await db.select().from(characters).where(and(eq(characters.ownerUserId, userId), isNull(characters.supersededBy), eq(characters.hidden, false)));
     for (const ch of chars) {
       stats.characters++;
       try {
@@ -90,7 +90,7 @@ const JOBS: Record<JobName, () => Promise<JobStats>> = {
   /** "이번 주만" 파티 정리. 주간 리셋 직후에 돈다. */
   async party_cleanup() {
     const s = emptyStats();
-    s.deleted = purgeExpiredOneOffParties();
+    s.deleted = await purgeExpiredOneOffParties();
     s.ok = 1;
     return s;
   },
@@ -104,7 +104,7 @@ const JOBS: Record<JobName, () => Promise<JobStats>> = {
   },
   async cache_sweep() {
     const s = emptyStats();
-    s.deleted = cacheSweep();
+    s.deleted = await cacheSweep();
     s.ok = 1;
     return s;
   },

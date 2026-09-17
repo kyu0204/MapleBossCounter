@@ -9,8 +9,8 @@ const STATUS_LABEL = { pending: "대기", accepted: "수락됨", rejected: "거�
 
 export default async function MyBoardPage() {
   const userId = await requireUserId();
-  const posts = listPosts({ all: true, authorUserId: userId });
-  const apps = listMyApplications(userId);
+  const posts = await listPosts({ all: true, authorUserId: userId });
+  const apps = await listMyApplications(userId);
   return (
     <div className="space-y-6">
       <section className="space-y-3">

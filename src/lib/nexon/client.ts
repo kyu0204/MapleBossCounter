@@ -32,7 +32,7 @@ export async function nx<T = unknown>(
   const ttl = opts.ttlMs ?? 0;
   const key = ttl > 0 ? cacheKey(opts.cacheScope ?? cred.id, endpoint, params) : null;
   if (key && !opts.force) {
-    const hit = cacheGet<T>(key);
+    const hit = await cacheGet<T>(key);
     if (hit !== undefined) return hit;
   }
 
@@ -60,6 +60,6 @@ export async function nx<T = unknown>(
   };
 
   const result = (await queueFor(cred.id, cred.ratePerSec).add(run)) as T;
-  if (key) cacheSet(key, result, ttl);
+  if (key) await cacheSet(key, result, ttl);
   return result;
 }

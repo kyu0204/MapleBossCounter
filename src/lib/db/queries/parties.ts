@@ -36,15 +36,14 @@ export interface PartyWithMembers extends Party {
  * 한 주에 스냅샷이 여러 장 쌓이므로 그 중 하나라도 completed 면 잡은 것으로 본다.
  * 잡은 뒤에 찍힌 스냅샷만 completed 이고 그 전 것은 아니기 때문이다.
  */
-function clearStatus(characterIds: number[]): { seen: Set<number>; cleared: Set<string> } {
+async function clearStatus(characterIds: number[]): Promise<{ seen: Set<number>; cleared: Set<string> }> {
   const seen = new Set<number>();
   const cleared = new Set<string>();
   if (!characterIds.length) return { seen, cleared };
-  const rows = db
+  const rows = await db
     .select({ characterId: bossClears.characterId, boss: bossClears.boss, difficulty: bossClears.difficulty, completed: bossClears.completed })
     .from(bossClears)
-    .where(and(eq(bossClears.weekStart, thisWeekStartKst()), inArray(bossClears.characterId, characterIds)))
-    .all();
+    .where(and(eq(bossClears.weekStart, thisWeekStartKst()), inArray(bossClears.characterId, characterIds)));
   for (const r of rows) {
     seen.add(r.characterId);
     if (r.completed) cleared.add(`${r.characterId}|${r.boss}|${r.difficulty}`);
@@ -53,10 +52,10 @@ function clearStatus(characterIds: number[]): { seen: Set<number>; cleared: Set<
 }
 
 
-function attachMembers(rows: Party[], userId: string): PartyWithMembers[] {
+async function attachMembers(rows: Party[], userId: string): Promise<PartyWithMembers[]> {
   if (!rows.length) return [];
   const ids = rows.map((p) => p.id);
-  const members = db
+  const members = await db
     .select({
       m: partyMembers,
       linkedName: characters.name,
@@ -72,9 +71,8 @@ function attachMembers(rows: Party[], userId: string): PartyWithMembers[] {
     .from(partyMembers)
     .leftJoin(characters, eq(partyMembers.characterId, characters.id))
     .where(inArray(partyMembers.partyId, ids))
-    .orderBy(partyMembers.sortOrder, partyMembers.id)
-    .all();
-  const { seen, cleared } = clearStatus([...new Set(members.map((x) => x.m.characterId).filter((id): id is number => id != null))]);
+    .orderBy(partyMembers.sortOrder, partyMembers.id);
+  const { seen, cleared } = await clearStatus([...new Set(members.map((x) => x.m.characterId).filter((id): id is number => id != null))]);
   return rows.map((p) => {
     const ms = members
       .filter((x) => x.m.partyId === p.id)
@@ -95,29 +93,29 @@ function attachMembers(rows: Party[], userId: string): PartyWithMembers[] {
 }
 
 /** 내가 만든 파티 + 내 캐릭터가 멤버인 파티 */
-export function listPartiesForUser(userId: string): PartyWithMembers[] {
-  const memberPartyIds = db
-    .select({ id: partyMembers.partyId })
-    .from(partyMembers)
-    .innerJoin(characters, eq(partyMembers.characterId, characters.id))
-    .where(eq(characters.ownerUserId, userId))
-    .all()
-    .map((r) => r.id);
-  const rows = db
+export async function listPartiesForUser(userId: string): Promise<PartyWithMembers[]> {
+  const memberPartyIds = (
+    await db
+      .select({ id: partyMembers.partyId })
+      .from(partyMembers)
+      .innerJoin(characters, eq(partyMembers.characterId, characters.id))
+      .where(eq(characters.ownerUserId, userId))
+  ).map((r) => r.id);
+  const rows = await db
     .select()
     .from(parties)
     .where(memberPartyIds.length ? sql`${parties.ownerUserId} = ${userId} or ${parties.id} in (${sql.join(memberPartyIds.map((i) => sql`${i}`), sql`, `)})` : eq(parties.ownerUserId, userId))
-    .orderBy(parties.boss, parties.difficulty)
-    .all();
+    .orderBy(parties.boss, parties.difficulty);
   return attachMembers(rows, userId);
 }
 
-export function getParty(id: number, userId: string): PartyWithMembers | null {
-  const row = db.select().from(parties).where(eq(parties.id, id)).get();
+export async function getParty(id: number, userId: string): Promise<PartyWithMembers | null> {
+  const [row] = await db.select().from(parties).where(eq(parties.id, id)).limit(1);
   if (!row) return null;
-  return attachMembers([row], userId)[0];
+  return (await attachMembers([row], userId))[0];
 }
 
-export function getOwnedParty(id: number, userId: string): Party | null {
-  return db.select().from(parties).where(and(eq(parties.id, id), eq(parties.ownerUserId, userId))).get() ?? null;
+export async function getOwnedParty(id: number, userId: string): Promise<Party | null> {
+  const [row] = await db.select().from(parties).where(and(eq(parties.id, id), eq(parties.ownerUserId, userId))).limit(1);
+  return row ?? null;
 }

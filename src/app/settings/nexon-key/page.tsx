@@ -7,7 +7,7 @@ export const metadata = { title: "넥슨 API 키" };
 
 export default async function NexonKeyPage() {
   const userId = await requireUserId();
-  const status = nexonKeyStatus(userId);
+  const status = await nexonKeyStatus(userId);
   return (
     <div className="max-w-2xl space-y-6">
       <h1 className="text-xl font-bold">넥슨 Open API 키</h1>

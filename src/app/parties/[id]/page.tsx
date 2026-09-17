@@ -16,9 +16,9 @@ import type { Difficulty } from "@/lib/maple/bossKey";
 export default async function PartyPage({ params }: PageProps<"/parties/[id]">) {
   const userId = await requireUserId();
   const { id } = await params;
-  const party = getParty(Number(id), userId);
+  const party = await getParty(Number(id), userId);
   if (!party) notFound();
-  const mine = listOwnedCharacters(userId).map((c) => c.name);
+  const mine = (await listOwnedCharacters(userId)).map((c) => c.name);
   // 탈퇴 대상: 이 파티 구성원 중 내가 소유한 캐릭터로 연결된 것
   const myMembers = party.members.filter((m) => m.ownerUserId === userId).map((m) => m.linkedName ?? m.nickname);
 

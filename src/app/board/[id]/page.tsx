@@ -18,7 +18,7 @@ import { deletePost, setPostStatus } from "@/actions/board";
 
 export async function generateMetadata({ params }: PageProps<"/board/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const post = getPost(Number(id), null);
+  const post = await getPost(Number(id), null);
   if (!post) return { title: "모집글" };
   return { title: `${post.title} · ${post.boss} ${post.difficulty}`, description: `${post.world ?? ""} ${post.boss} ${post.difficulty} 파티 모집 ${post.slots}명` };
 }
@@ -27,7 +27,7 @@ export default async function PostPage({ params }: PageProps<"/board/[id]">) {
   const { id } = await params;
   const session = await auth();
   const userId = session?.user?.id ?? null;
-  const post = getPost(Number(id), userId);
+  const post = await getPost(Number(id), userId);
   if (!post) notFound();
 
   const price = crystalPrice(post.boss, post.difficulty, kstDateStr());
@@ -35,7 +35,7 @@ export default async function PostPage({ params }: PageProps<"/board/[id]">) {
   const remain = remainingSlots(post);
   const open = post.status === "open";
 
-  const myChars = userId && !post.isAuthor ? listOwnedCharacters(userId) : [];
+  const myChars = userId && !post.isAuthor ? await listOwnedCharacters(userId) : [];
   const disabledIds = [
     ...post.mine.filter((a) => a.status === "pending" || a.status === "accepted").map((a) => a.characterId),
     ...(post.party?.members.map((m) => m.characterId).filter((x): x is number => x != null) ?? []),

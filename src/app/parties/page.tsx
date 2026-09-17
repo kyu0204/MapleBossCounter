@@ -10,7 +10,7 @@ export default async function PartiesPage() {
   const userId = await requireUserId();
   // 크론이 꺼진 환경에서도 지난 "이번 주만" 파티가 남아 있지 않게 한 번 더 정리한다
   purgeExpiredOneOffParties();
-  const list = listPartiesForUser(userId);
+  const list = await listPartiesForUser(userId);
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">

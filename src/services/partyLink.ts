@@ -14,8 +14,8 @@ const liveParty = (r: { repeats: boolean; weekStart: string | null }) => r.repea
  * 유저의 캐릭터가 속한 파티들로 (characterId, boss, diff) → 인원 조회 함수를 만든다.
  * 파티 인원 = party_members 수. 같은 캐릭터가 같은 보스에 여러 파티면 첫 것.
  */
-export function partySizeLookup(userId: string): (characterId: number, boss: string, diff: string) => number {
-  const rows = db
+export async function partySizeLookup(userId: string): Promise<(characterId: number, boss: string, diff: string) => number> {
+  const rows = await db
     .select({
       characterId: partyMembers.characterId,
       boss: parties.boss,
@@ -27,8 +27,7 @@ export function partySizeLookup(userId: string): (characterId: number, boss: str
     .from(partyMembers)
     .innerJoin(parties, eq(partyMembers.partyId, parties.id))
     .innerJoin(characters, eq(partyMembers.characterId, characters.id))
-    .where(eq(characters.ownerUserId, userId))
-    .all();
+    .where(eq(characters.ownerUserId, userId));
   const map = new Map<string, number>();
   for (const r of rows) {
     if (r.characterId == null || !liveParty(r)) continue;
@@ -39,8 +38,8 @@ export function partySizeLookup(userId: string): (characterId: number, boss: str
 }
 
 /** 캐릭터별 파티 유래 고정 픽: characterId → { "보스 diff": 인원 } */
-export function partyPicksByCharacter(userId: string): Map<number, Record<string, number>> {
-  const rows = db
+export async function partyPicksByCharacter(userId: string): Promise<Map<number, Record<string, number>>> {
+  const rows = await db
     .select({
       characterId: partyMembers.characterId,
       boss: parties.boss,
@@ -52,8 +51,7 @@ export function partyPicksByCharacter(userId: string): Map<number, Record<string
     .from(partyMembers)
     .innerJoin(parties, eq(partyMembers.partyId, parties.id))
     .innerJoin(characters, eq(partyMembers.characterId, characters.id))
-    .where(eq(characters.ownerUserId, userId))
-    .all();
+    .where(eq(characters.ownerUserId, userId));
   const out = new Map<number, Record<string, number>>();
   for (const r of rows) {
     if (r.characterId == null || !liveParty(r)) continue;
@@ -66,6 +64,11 @@ export function partyPicksByCharacter(userId: string): Map<number, Record<string
 }
 
 /** 닉네임으로 미연결 멤버 자동 연결 (characterSync 이후 호출용) */
-export function linkMembersByName(characterId: number, name: string): number {
-  return db.update(partyMembers).set({ characterId }).where(and(eq(partyMembers.nickname, name), isNull(partyMembers.characterId))).run().changes;
+export async function linkMembersByName(characterId: number, name: string): Promise<number> {
+  const rows = await db
+    .update(partyMembers)
+    .set({ characterId })
+    .where(and(eq(partyMembers.nickname, name), isNull(partyMembers.characterId)))
+    .returning({ id: partyMembers.id });
+  return rows.length;
 }
