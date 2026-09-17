@@ -33,7 +33,7 @@ export default function TiersPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold">보스 티어표</h1>
         <p className="text-sm text-zinc-500">
-          별 색과 개수가 높을수록 상위 보스입니다. 가격은 {priceDate} 기준 솔로 판매가. 출처: 나무위키 보스 티어.
+          별 색과 개수가 높을수록 상위 보스입니다. 가격은 {priceDate} 기준 솔로 판매가.
         </p>
         <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 pt-1">
           <span>난이도</span>
