@@ -121,20 +121,6 @@ export function compareRow(boss: string, diff: Difficulty | string, party: numbe
   };
 }
 
-export type SortKey = "total" | "crystal" | "fixed" | "random";
-
-/** 비교표. 기본은 합계 내림차순. */
-export function compareRows(
-  picks: { boss: string; diff: Difficulty | string; party: number }[],
-  priceDate: string,
-  values: ItemValues,
-  sort: SortKey = "total",
-): CompareRow[] {
-  const rows = picks.map((p) => compareRow(p.boss, p.diff, p.party, priceDate, values));
-  const of = (r: CompareRow) => (sort === "crystal" ? (r.crystal ?? 0) : sort === "fixed" ? r.fixedValue : sort === "random" ? r.randomValue : r.total);
-  return rows.sort((a, b) => of(b) - of(a) || a.boss.localeCompare(b.boss, "ko"));
-}
-
 /**
  * 비교에 등장하는 아이템 목록. 값 입력 칸을 만들 때 쓴다.
  * 확정·랜덤 양쪽에 나오는 아이템이 있을 수 있어 종류를 합집합으로 들고 있는다.

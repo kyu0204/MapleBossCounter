@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareRow, compareRows, itemsIn } from "@/lib/maple/compare";
+import { compareRow, itemsIn } from "@/lib/maple/compare";
 import { crystalPrice } from "@/lib/maple/prices";
 
 const DATE = "2026-09-17";
@@ -76,28 +76,26 @@ describe("한 보스의 값어치", () => {
   });
 });
 
-describe("비교표 정렬", () => {
-  const picks = [
-    { boss: "유피테르", diff: "hard", party: 1 },
-    { boss: "루시드", diff: "hard", party: 1 },
-    { boss: "카링", diff: "normal", party: 1 },
-  ];
-
-  it("기본은 합계 내림차순", () => {
-    const rows = compareRows(picks, DATE, {});
-    for (let i = 1; i < rows.length; i++) expect(rows[i - 1].total).toBeGreaterThanOrEqual(rows[i].total);
+describe("둘을 맞대 비교", () => {
+  it("인원을 양쪽 따로 잡을 수 있다", () => {
+    // 하드 세렌 2인 vs 노말 카링 솔로처럼 조건이 다른 둘을 견주는 것이 이 화면의 쓸모다
+    const duo = compareRow("선택받은 세렌", "hard", 2, DATE, {});
+    const solo = compareRow("카링", "normal", 1, DATE, {});
+    expect(duo.party).toBe(2);
+    expect(solo.party).toBe(1);
+    expect(duo.crystal).toBeLessThan(solo.crystal!);
   });
 
-  it("랜덤 기준으로 바꾸면 기대값 높은 쪽이 앞에 온다", () => {
-    const values = { "4단계 소울 에테르": { meso: 1_000_000_000, chance: 10 } };
-    const rows = compareRows(picks, DATE, values, "random");
-    expect(rows[0].boss).toBe("유피테르");
-  });
+  it("값을 매긴 랜덤 보상이 승패를 뒤집을 수 있다", () => {
+    // 결정만 보면 노말 림보(995M)가 노말 카링(593M)보다 위다
+    const before = { karing: compareRow("카링", "normal", 1, DATE, {}), limbo: compareRow("림보", "normal", 1, DATE, {}) };
+    expect(before.karing.total).toBeLessThan(before.limbo.total);
 
-  it("같은 값이면 이름순이라 순서가 흔들리지 않는다", () => {
-    const a = compareRows(picks, DATE, {}, "random");
-    const b = compareRows([...picks].reverse(), DATE, {}, "random");
-    expect(a.map((r) => r.boss)).toEqual(b.map((r) => r.boss));
+    // 카링에만 붙는 1단계 소울 에테르에 값을 매기면 뒤집힌다 (물욕템이 결정을 이기는 경우)
+    const values = { "1단계 소울 에테르": { meso: 10_000_000_000, chance: 10 } };
+    const after = { karing: compareRow("카링", "normal", 1, DATE, values), limbo: compareRow("림보", "normal", 1, DATE, values) };
+    expect(after.karing.randomValue).toBe(1_000_000_000);
+    expect(after.karing.total).toBeGreaterThan(after.limbo.total);
   });
 });
 
