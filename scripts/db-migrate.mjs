@@ -7,11 +7,12 @@
  *
  * 사용: DATABASE_URL=... node scripts/db-migrate.mjs
  */
+import "./_runenv.mjs";
 import fs from "node:fs";
 import path from "node:path";
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
+import { Pool } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { migrate } from "drizzle-orm/neon-serverless/migrator";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -26,27 +27,15 @@ if (!fs.existsSync(folder)) {
   process.exit(0);
 }
 
-// 마이그레이션은 한 연결로 순서대로. 풀러를 거치면 DDL 이 꼬일 수 있어 max 1 로 둔다.
-const clean = (() => {
-  try {
-    const u = new URL(url);
-    const ssl = u.searchParams.get("sslmode");
-    u.search = "";
-    if (ssl) u.searchParams.set("sslmode", ssl);
-    return u.toString();
-  } catch {
-    return url;
-  }
-})();
-
-const sql = postgres(clean, { max: 1, prepare: false, connect_timeout: 30 });
+// 마이그레이션은 한 연결로 순서대로. 여러 연결로 DDL 을 돌리면 순서가 꼬인다.
+const pool = new Pool({ connectionString: url, max: 1, connectionTimeoutMillis: 30_000 });
 
 try {
-  await migrate(drizzle(sql), { migrationsFolder: folder });
+  await migrate(drizzle(pool), { migrationsFolder: folder });
   console.log("[db] migrations up to date");
 } catch (e) {
   console.error("[db] migration failed", e);
   process.exitCode = 1;
 } finally {
-  await sql.end();
+  await pool.end();
 }

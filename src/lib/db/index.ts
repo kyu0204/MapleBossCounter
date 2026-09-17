@@ -1,57 +1,43 @@
 import "server-only";
-import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { Pool } from "@neondatabase/serverless";
+import { drizzle, type NeonDatabase } from "drizzle-orm/neon-serverless";
 import * as schema from "./schema";
 
 /**
- * Postgres 연결 (Neon / Supabase / Render — 어디든 연결 문자열만 바꾸면 된다).
+ * Postgres 연결 (Neon).
  *
- * prepare 를 끈다. 트랜잭션 풀러(Supabase 6543, Neon -pooler)에서는 prepared
- * statement 가 세션에 남지 않아 깨진다. 일반 연결에서는 조금 느려질 뿐이다.
+ * 일반 Postgres 드라이버 대신 Neon 의 serverless 드라이버를 쓴다. 이유는 포트다.
+ * Postgres 기본 포트 5432 는 회사·학교 망에서 막혀 있는 경우가 많고, 실제로 개발
+ * 환경에서 ETIMEDOUT 이 났다. 이 드라이버는 WebSocket 으로 443 을 타므로 그런 망에서도
+ * 붙는다. Vercel 에서도 이쪽이 권장이다.
  *
- * max 는 작게 잡는다. 무료 등급은 동시 연결 수가 빡빡하고 이 앱은 인스턴스 하나다.
+ * HTTP 드라이버(neon-http)가 아니라 WebSocket 쪽을 쓰는 이유는 트랜잭션이다.
+ * 스냅샷 저장·캐릭터 동기화·지원 수락이 트랜잭션을 쓰는데 HTTP 모드는 지원하지 않는다.
  *
- * Neon 은 유휴 시 컴퓨트를 재운다. 자고 있을 때 첫 연결은 깨우느라 1~2초 걸리므로
- * connect_timeout 을 넉넉히 둔다.
+ * max 는 작게 잡는다. 무료 등급은 동시 연결이 빡빡하고 이 앱은 인스턴스가 하나다.
+ * Neon 은 유휴 시 컴퓨트를 재워서 첫 연결이 1~2초 걸리므로 타임아웃을 넉넉히 둔다.
+ *
+ * 다른 Postgres(Supabase·Render 등)로 옮기려면 이 파일만 postgres-js 로 되돌리면 된다.
+ * 쿼리 코드는 drizzle 이라 그대로다.
  */
-export type DB = PostgresJsDatabase<typeof schema>;
+export type DB = NeonDatabase<typeof schema>;
 
 declare global {
   var __mapleDb: DB | undefined;
-  var __mapleSql: ReturnType<typeof postgres> | undefined;
-}
-
-/**
- * postgres-js 가 모르는 쿼리 파라미터를 떼어 낸다.
- *
- * Neon 이 주는 문자열에는 channel_binding 처럼 이 드라이버가 해석하지 못하는 것이
- * 붙어 온다. 그대로 넘기면 연결 옵션으로 잘못 읽혀 죽는다. sslmode 만 남긴다.
- */
-function cleanUrl(raw: string): string {
-  try {
-    const u = new URL(raw);
-    const keep = new Map<string, string>();
-    const ssl = u.searchParams.get("sslmode");
-    if (ssl) keep.set("sslmode", ssl);
-    u.search = "";
-    for (const [k, v] of keep) u.searchParams.set(k, v);
-    return u.toString();
-  } catch {
-    return raw; // URL 로 안 읽히면 드라이버에 그대로 맡긴다
-  }
+  var __maplePool: Pool | undefined;
 }
 
 function open(): DB {
   const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL 이 없습니다 (Postgres 연결 문자열)");
-  const client = postgres(cleanUrl(url), {
+  if (!url) throw new Error("DATABASE_URL 이 없습니다 (Neon 연결 문자열)");
+  const pool = new Pool({
+    connectionString: url,
     max: Number(process.env.DATABASE_POOL_MAX ?? 5),
-    prepare: false,
-    idle_timeout: 20,
-    connect_timeout: 30,
+    idleTimeoutMillis: 20_000,
+    connectionTimeoutMillis: 30_000,
   });
-  globalThis.__mapleSql = client;
-  return drizzle(client, { schema });
+  globalThis.__maplePool = pool;
+  return drizzle(pool, { schema });
 }
 
 // dev HMR 에서 커넥션 중복 방지
