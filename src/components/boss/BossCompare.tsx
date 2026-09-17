@@ -37,8 +37,14 @@ const DEFAULT_SIDES: [Side, Side] = [
   { boss: "카링", diff: "normal", party: 1 },
 ];
 
-/** 값이 매겨진 줄만, 큰 것부터. 0 짜리는 자리만 차지한다. */
-const priced = (lines: RewardLine[]) => lines.filter((l) => l.value > 0).sort((a, b) => b.value - a.value);
+/**
+ * 보상 줄 정렬. 값을 매긴 것이 큰 것부터 위, 값을 안 매긴 것은 그 아래 이름순.
+ *
+ * 값 없는 줄도 지우지 않는다. 그 보스가 무엇을 주는지가 곧 비교 근거이고,
+ * 안 보이면 값을 넣을 생각조차 못 한다.
+ */
+const ordered = (lines: RewardLine[]) =>
+  [...lines].sort((a, b) => Number(a.unpriced) - Number(b.unpriced) || b.value - a.value || a.name.localeCompare(b.name, "ko"));
 
 function SideHeader({ side, today, onChange }: { side: Side; today: string; onChange: (s: Side) => void }) {
   return (
@@ -61,13 +67,18 @@ function SideHeader({ side, today, onChange }: { side: Side; today: string; onCh
   );
 }
 
-/** 보상 줄. 아이콘 + 수량 + 값어치. */
-function Lines({ lines, empty }: { lines: RewardLine[]; empty: string }) {
+/**
+ * 보상 줄. 아이콘 + 수량 + 값어치.
+ *
+ * 값을 안 매긴 줄은 흐리게 두고 값 자리에 "값 없음" 을 적는다. 0 원으로 적으면
+ * 정말 가치가 없는 것처럼 읽힌다 — 모르는 것과 0 은 다르다.
+ */
+function Lines({ lines, empty, showZero }: { lines: RewardLine[]; empty: string; showZero?: boolean }) {
   if (!lines.length) return <div className="text-xs text-zinc-400">{empty}</div>;
   return (
     <ul className="space-y-1">
       {lines.map((l) => (
-        <li key={l.name} className="flex items-center gap-2" title={l.name}>
+        <li key={l.name} className={`flex items-center gap-2 ${l.unpriced ? "opacity-60" : ""}`} title={l.name}>
           <span className="inline-flex items-center justify-center shrink-0" style={{ width: ICON_BOX.w, height: ICON_BOX.h }}>
             {l.icon ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -77,8 +88,10 @@ function Lines({ lines, empty }: { lines: RewardLine[]; empty: string }) {
             )}
           </span>
           <span className="min-w-0 flex-1 truncate text-xs">{l.name}</span>
-          <span className="text-xs text-zinc-500 tabular-nums shrink-0">×{l.amountText}</span>
-          <b className="text-xs tabular-nums shrink-0 w-20 text-right">{fmtPower(l.value)}</b>
+          {showZero && <span className="text-xs text-zinc-500 tabular-nums shrink-0">×{l.amountText}</span>}
+          <span className="text-xs tabular-nums shrink-0 w-20 text-right">
+            {l.unpriced ? <span className="text-[11px] text-zinc-400">값 없음</span> : <b>{fmtPower(l.value)}</b>}
+          </span>
         </li>
       ))}
     </ul>
@@ -175,15 +188,24 @@ export function BossCompare({ today }: { today: string }) {
             </dl>
 
             <div className="space-y-1.5 border-t border-zinc-100 dark:border-zinc-800 pt-2">
-              <div className="text-xs font-medium text-zinc-500">확정</div>
-              <Lines lines={priced(r.fixed)} empty={r.fixed.length ? "값을 매긴 확정 보상이 없습니다" : "확정 보상 없음"} />
-              <div className="text-xs font-medium text-zinc-500 pt-1">랜덤</div>
-              <Lines lines={priced(r.random)} empty={r.random.length ? "값·확률을 매긴 랜덤 보상이 없습니다" : "랜덤 보상 없음"} />
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xs font-medium text-zinc-500">확정</span>
+                <span className="text-[11px] text-zinc-400">잡으면 무조건 · {r.fixed.length}종</span>
+              </div>
+              {/* 확정은 수량이 곧 값어치의 근거라 같이 보여 준다 */}
+              <Lines lines={ordered(r.fixed)} empty="확정 보상 없음" showZero />
+
+              <div className="flex items-baseline gap-1.5 pt-1">
+                <span className="text-xs font-medium text-zinc-500">랜덤</span>
+                <span className="text-[11px] text-zinc-400">확률 드롭 · {r.random.length}종</span>
+              </div>
+              {/* 랜덤의 수량은 "떴을 때" 개수라 기대값과 같이 놓으면 오해를 부른다 */}
+              <Lines lines={ordered(r.random)} empty="랜덤 보상 없음" />
             </div>
 
             {r.hasUnpriced && (
               <div className="text-[11px] text-zinc-400">
-                값을 안 매긴 보상이 있어 합계가 실제보다 낮습니다. &apos;아이템 값 설정&apos;에서 채우세요.
+                &apos;값 없음&apos; 줄은 합계에 안 들어갑니다. 실제 값어치는 이보다 높습니다.
               </div>
             )}
           </div>
