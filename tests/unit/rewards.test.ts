@@ -31,22 +31,14 @@ describe("boss_rewards.json 무결성", () => {
     expect(bad).toEqual([]);
   });
 
-  /**
-   * 아이콘을 아직 못 구한 아이템. 여기 적힌 것만 글자 라벨로 나가도 된다.
-   *
-   * 2026-09-17 패치로 들어온 소울 에테르 4단계는 게임 내 신규 아이템이라 나무위키에
-   * 아직 아이콘 카드가 없다. 반입하면(scripts/import-item-icons.mjs) 이 목록에서 뺀다.
-   */
-  const ICON_PENDING = new Set(["1단계 소울 에테르", "2단계 소울 에테르", "3단계 소울 에테르", "4단계 소울 에테르"]);
-
-  it("보상과 큐브에 아이콘이 있다 (대기 목록 제외)", () => {
-    // 짧은 글자 라벨은 아이콘을 못 구했을 때의 대체 수단이다.
+  it("보상과 큐브 전부 아이콘이 있다 (이름은 마우스 오버용)", () => {
+    // 짧은 글자 라벨은 아이콘을 못 구했을 때의 대체 수단이다. 지금은 전부 아이콘이 있다.
     // 새 보상이 추가됐는데 아이콘이 없으면 여기서 잡힌다.
     const bad: string[] = [];
     for (const [boss, diffs] of Object.entries(file.bosses)) {
       for (const [diff, row] of Object.entries(diffs)) {
         for (const r of [...row.rewards, ...Object.values(row.cubes ?? {})]) {
-          if (!r.icon && !ICON_PENDING.has(r.name)) bad.push(`${boss} ${diff} / ${r.name}`);
+          if (!r.icon) bad.push(`${boss} ${diff} / ${r.name}`);
         }
       }
     }
