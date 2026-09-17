@@ -122,6 +122,84 @@ export function compareRow(boss: string, diff: Difficulty | string, party: numbe
 }
 
 /**
+ * 값으로 환산되지 못한 보상의 차이.
+ *
+ * 합계 메소만 내면 "값을 안 매긴 보상" 이 통째로 사라진다. 그런데 비교에서 정작
+ * 갈리는 게 그쪽인 경우가 많다 — 칠흑 장신구 상자처럼 값을 매기기 어려운 것,
+ * 또는 양쪽이 똑같이 주는 것.
+ *
+ * 그래서 메소 차액과 별개로 두 갈래를 따로 낸다.
+ *   gaps  한쪽이 더 주는 것. 이건 메소 차액에 얹어서 판단해야 한다.
+ *   wash  양쪽이 똑같이 주는 것. 상쇄되므로 비교에서 빼고 봐도 된다.
+ */
+export interface UnpricedDiff {
+  name: string;
+  /** 확정이면 수량 비교가 뜻이 있다. 랜덤은 "나오느냐" 만 본다 (확률을 모른다). */
+  kind: "fixed" | "random";
+  /** 왼쪽 수량. 랜덤이면 나오면 1 */
+  a: number;
+  /** 오른쪽 수량 */
+  b: number;
+  /** a - b */
+  delta: number;
+  icon?: string;
+  w?: number;
+  h?: number;
+  short?: string;
+}
+
+export interface CompareSummary {
+  /** 값을 매긴 것까지 반영한 메소 차이 (왼쪽 - 오른쪽) */
+  mesoGap: number;
+  /** 값을 못 매긴 보상 중 한쪽이 더 주는 것 */
+  gaps: UnpricedDiff[];
+  /** 값을 못 매긴 보상 중 양쪽이 똑같이 주는 것 */
+  wash: UnpricedDiff[];
+}
+
+/**
+ * 랜덤은 수량 대신 "나오느냐" 로 본다.
+ * 확률을 모르는데 개수를 견주면 5개 주는 쪽이 무조건 나은 것처럼 읽힌다.
+ */
+const presence = (lines: RewardLine[], name: string, kind: "fixed" | "random") => {
+  const hit = lines.find((l) => l.name === name);
+  if (!hit) return 0;
+  return kind === "fixed" ? hit.amount : 1;
+};
+
+export function summarize(a: CompareRow, b: CompareRow): CompareSummary {
+  const gaps: UnpricedDiff[] = [];
+  const wash: UnpricedDiff[] = [];
+
+  // 값을 못 매긴 줄만 모은다. 이름이 같으면 한 항목이다.
+  const seen = new Map<string, { kind: "fixed" | "random"; ref: RewardLine }>();
+  for (const row of [a, b]) {
+    for (const [lines, kind] of [
+      [row.fixed, "fixed"],
+      [row.random, "random"],
+    ] as const) {
+      for (const l of lines) {
+        if (!l.unpriced) continue;
+        const prev = seen.get(l.name);
+        // 한쪽에선 확정, 다른 쪽에선 랜덤으로 나오면 약한 쪽(랜덤)으로 본다
+        if (!prev) seen.set(l.name, { kind, ref: l });
+        else if (prev.kind === "fixed" && kind === "random") prev.kind = "random";
+      }
+    }
+  }
+
+  for (const [name, { kind, ref }] of seen) {
+    const av = presence(kind === "fixed" ? a.fixed : a.random, name, kind);
+    const bv = presence(kind === "fixed" ? b.fixed : b.random, name, kind);
+    const entry: UnpricedDiff = { name, kind, a: av, b: bv, delta: av - bv, icon: ref.icon, w: ref.w, h: ref.h, short: ref.short };
+    (entry.delta === 0 ? wash : gaps).push(entry);
+  }
+
+  const order = (x: UnpricedDiff, y: UnpricedDiff) => Math.abs(y.delta) - Math.abs(x.delta) || x.name.localeCompare(y.name, "ko");
+  return { mesoGap: a.total - b.total, gaps: gaps.sort(order), wash: wash.sort((x, y) => x.name.localeCompare(y.name, "ko")) };
+}
+
+/**
  * 비교에 등장하는 아이템 목록. 값 입력 칸을 만들 때 쓴다.
  * 확정·랜덤 양쪽에 나오는 아이템이 있을 수 있어 종류를 합집합으로 들고 있는다.
  */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareRow, itemsIn } from "@/lib/maple/compare";
+import { compareRow, itemsIn, summarize } from "@/lib/maple/compare";
 import { crystalPrice } from "@/lib/maple/prices";
 
 const DATE = "2026-09-17";
@@ -96,6 +96,57 @@ describe("둘을 맞대 비교", () => {
     const after = { karing: compareRow("카링", "normal", 1, DATE, values), limbo: compareRow("림보", "normal", 1, DATE, values) };
     expect(after.karing.randomValue).toBe(1_000_000_000);
     expect(after.karing.total).toBeGreaterThan(after.limbo.total);
+  });
+});
+
+describe("값 못 매긴 보상 차이 정리", () => {
+  it("양쪽이 똑같이 주는 것은 상쇄 목록으로 간다", () => {
+    // 같은 보스·난이도끼리 견주면 모든 보상이 상쇄된다
+    const a = compareRow("유피테르", "hard", 1, DATE, {});
+    const b = compareRow("유피테르", "hard", 1, DATE, {});
+    const s = summarize(a, b);
+    expect(s.mesoGap).toBe(0);
+    expect(s.gaps).toEqual([]);
+    expect(s.wash.length).toBeGreaterThan(0);
+    expect(s.wash.every((w) => w.a === w.b)).toBe(true);
+  });
+
+  it("한쪽에만 나오는 것은 차이 목록으로 간다", () => {
+    const s = summarize(compareRow("유피테르", "hard", 1, DATE, {}), compareRow("림보", "normal", 1, DATE, {}));
+    const soul4 = s.gaps.find((g) => g.name === "4단계 소울 에테르");
+    const soul3 = s.gaps.find((g) => g.name === "3단계 소울 에테르");
+    expect(soul4?.delta).toBe(1); // 유피테르만
+    expect(soul3?.delta).toBe(-1); // 림보만
+  });
+
+  it("값을 매긴 아이템은 목록에서 빠진다 (메소 차액에 이미 들어갔다)", () => {
+    const values = { "4단계 소울 에테르": { meso: 1_000_000, chance: 10 } };
+    const s = summarize(compareRow("유피테르", "hard", 1, DATE, values), compareRow("림보", "normal", 1, DATE, values));
+    expect([...s.gaps, ...s.wash].some((x) => x.name === "4단계 소울 에테르")).toBe(false);
+  });
+
+  it("확정 보상은 수량 차이를 낸다", () => {
+    // 인원이 다르면 조각·큐브 수량이 달라진다
+    const s = summarize(compareRow("루시드", "hard", 1, DATE, {}), compareRow("루시드", "hard", 2, DATE, {}));
+    const cube = s.gaps.find((g) => g.name === "메멘토 실버 큐브");
+    expect(cube?.a).toBe(1);
+    expect(cube?.b).toBe(0);
+    expect(cube?.kind).toBe("fixed");
+  });
+
+  it("랜덤은 수량 대신 나오느냐만 본다", () => {
+    const s = summarize(compareRow("유피테르", "hard", 1, DATE, {}), compareRow("림보", "normal", 1, DATE, {}));
+    for (const g of s.gaps.filter((x) => x.kind === "random")) {
+      expect(g.a === 0 || g.a === 1).toBe(true);
+      expect(g.b === 0 || g.b === 1).toBe(true);
+    }
+  });
+
+  it("차이가 큰 것이 앞에 온다", () => {
+    const s = summarize(compareRow("루시드", "hard", 1, DATE, {}), compareRow("카링", "normal", 1, DATE, {}));
+    for (let i = 1; i < s.gaps.length; i++) {
+      expect(Math.abs(s.gaps[i - 1].delta)).toBeGreaterThanOrEqual(Math.abs(s.gaps[i].delta));
+    }
   });
 });
 

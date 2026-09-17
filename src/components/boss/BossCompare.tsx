@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { compareRow, itemsIn, type ItemValues, type RewardLine } from "@/lib/maple/compare";
+import { compareRow, itemsIn, summarize, type ItemValues, type RewardLine } from "@/lib/maple/compare";
 import { bossName } from "@/lib/maple/bossMeta";
 import { fmtPower } from "@/lib/maple/format";
 import { ICON_BOX } from "@/lib/maple/rewards";
@@ -67,6 +67,20 @@ function SideHeader({ side, today, onChange }: { side: Side; today: string; onCh
   );
 }
 
+/** 아이콘 칸. 아이콘이 없으면 짧은 글자 라벨로 대신한다. */
+function Icon({ icon, w, h, short, name }: { icon?: string; w?: number; h?: number; short?: string; name: string }) {
+  return (
+    <span className="inline-flex items-center justify-center shrink-0" style={{ width: ICON_BOX.w, height: ICON_BOX.h }}>
+      {icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={icon} alt="" width={w} height={h} style={{ width: w, height: h }} className="object-contain" loading="lazy" decoding="async" />
+      ) : (
+        <span className="text-[10px] leading-none text-center">{short ?? name}</span>
+      )}
+    </span>
+  );
+}
+
 /**
  * 보상 줄. 아이콘 + 수량 + 값어치.
  *
@@ -79,14 +93,7 @@ function Lines({ lines, empty, showZero }: { lines: RewardLine[]; empty: string;
     <ul className="space-y-1">
       {lines.map((l) => (
         <li key={l.name} className={`flex items-center gap-2 ${l.unpriced ? "opacity-60" : ""}`} title={l.name}>
-          <span className="inline-flex items-center justify-center shrink-0" style={{ width: ICON_BOX.w, height: ICON_BOX.h }}>
-            {l.icon ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={l.icon} alt="" width={l.w} height={l.h} style={{ width: l.w, height: l.h }} className="object-contain" loading="lazy" decoding="async" />
-            ) : (
-              <span className="text-[10px] leading-none text-center">{l.short ?? l.name}</span>
-            )}
-          </span>
+          <Icon icon={l.icon} w={l.w} h={l.h} short={l.short} name={l.name} />
           <span className="min-w-0 flex-1 truncate text-xs">{l.name}</span>
           {showZero && <span className="text-xs text-zinc-500 tabular-nums shrink-0">×{l.amountText}</span>}
           <span className="text-xs tabular-nums shrink-0 w-20 text-right">
@@ -134,7 +141,8 @@ export function BossCompare({ today }: { today: string }) {
   const items = useMemo(() => itemsIn(picks, today), [picks, today]);
   const rows = useMemo(() => sides.map((s) => compareRow(s.boss, s.diff, s.party, today, values)), [sides, today, values]);
   const [a, b] = rows;
-  const gap = a.total - b.total;
+  const summary = useMemo(() => summarize(a, b), [a, b]);
+  const gap = summary.mesoGap;
   const winner = gap === 0 ? null : gap > 0 ? 0 : 1;
   const pricedCount = Object.keys(values).length;
 
@@ -212,21 +220,62 @@ export function BossCompare({ today }: { today: string }) {
         ))}
       </div>
 
-      {/* 차이를 한 줄로. 카드를 번갈아 보지 않아도 결론이 보인다. */}
-      <div className="card text-sm">
-        {winner == null ? (
-          <span className="text-zinc-500">두 보스의 값어치가 같습니다.</span>
-        ) : (
-          <span>
-            <span className="inline-flex items-center gap-1.5 align-middle">
-              <BossIcon boss={sides[winner].boss} diff={sides[winner].diff} size={32} showDiff={false} />
-              <DifficultyBadge diff={sides[winner].diff} size="xs" solid />
-              <b>{bossName(sides[winner].boss)}</b>
+      {/* 결론. 메소 차액만으로는 값 못 매긴 보상이 통째로 빠지므로 그 차이도 같이 낸다. */}
+      <div className="card space-y-3 text-sm">
+        <div>
+          {winner == null ? (
+            <span className="text-zinc-500">값으로 환산한 결과는 같습니다.</span>
+          ) : (
+            <span>
+              <span className="inline-flex items-center gap-1.5 align-middle">
+                <BossIcon boss={sides[winner].boss} diff={sides[winner].diff} size={32} showDiff={false} />
+                <DifficultyBadge diff={sides[winner].diff} size="xs" solid />
+                <b>{bossName(sides[winner].boss)}</b>
+              </span>
+              <span className="text-zinc-500"> 쪽이 메소로 </span>
+              <b className="text-orange-600 dark:text-orange-400 tabular-nums">{fmtPower(Math.abs(gap))}</b>
+              <span className="text-zinc-500"> 더 남습니다 ({sides[winner].party}인격 기준).</span>
             </span>
-            <span className="text-zinc-500"> 쪽이 </span>
-            <b className="text-orange-600 dark:text-orange-400 tabular-nums">{fmtPower(Math.abs(gap))}</b>
-            <span className="text-zinc-500"> 더 남습니다 ({sides[winner].party}인격 기준).</span>
-          </span>
+          )}
+        </div>
+
+        {summary.gaps.length > 0 && (
+          <div className="space-y-1.5 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+            <div className="text-xs font-medium text-zinc-500">값을 못 매긴 보상 차이</div>
+            <p className="text-[11px] text-zinc-400">위 메소 차액에 안 들어간 몫입니다. 이만큼을 얹어 판단하세요.</p>
+            <ul className="grid gap-1 sm:grid-cols-2">
+              {summary.gaps.map((g) => {
+                const side = g.delta > 0 ? 0 : 1;
+                return (
+                  <li key={g.name} className="flex items-center gap-2" title={g.name}>
+                    <Icon icon={g.icon} w={g.w} h={g.h} short={g.short} name={g.name} />
+                    <span className="min-w-0 flex-1 truncate text-xs">{g.name}</span>
+                    <span className="text-xs shrink-0 text-zinc-500 truncate max-w-[9rem]" title={bossName(sides[side].boss)}>
+                      {bossName(sides[side].boss)}
+                    </span>
+                    <b className="text-xs tabular-nums shrink-0 w-14 text-right text-orange-600 dark:text-orange-400">
+                      {g.kind === "fixed" ? `+${Math.abs(g.delta)}개` : "단독"}
+                    </b>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {summary.wash.length > 0 && (
+          <div className="space-y-1 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+            <div className="text-xs font-medium text-zinc-500">양쪽이 똑같이 주는 것 ({summary.wash.length}종)</div>
+            <p className="text-[11px] text-zinc-400">서로 상쇄되므로 비교에서 빼고 봐도 됩니다.</p>
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              {summary.wash.map((w) => (
+                <span key={w.name} className="inline-flex items-center gap-1 rounded border border-zinc-200 dark:border-zinc-800 px-1 py-0.5" title={w.name}>
+                  <Icon icon={w.icon} w={w.w} h={w.h} short={w.short} name={w.name} />
+                  {w.kind === "fixed" && w.a > 1 && <span className="text-[10px] text-zinc-500 tabular-nums pr-0.5">×{w.a}</span>}
+                </span>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
