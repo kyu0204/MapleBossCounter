@@ -87,7 +87,7 @@ export function BossSettingsModal({ ocid, cap, defaultParty, initial, partyPicks
   }, [priceDate]);
 
   const merged = useMemo(() => mergePicks(picks, partyPicks), [picks, partyPicks]);
-  const list = useMemo(() => toPickList(merged), [merged]);
+  const list = useMemo(() => toPickList(merged, priceDate), [merged, priceDate]);
   const totals = useMemo(() => picksTotals(list, priceDate), [list, priceDate]);
   const over = totals.count > cap;
 

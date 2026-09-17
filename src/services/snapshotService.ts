@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bossClears, schedulerSnapshots, type SchedulerSnapshot } from "@/lib/db/schema";
 import { getScheduler } from "@/lib/nexon/endpoints";
@@ -51,6 +51,25 @@ export async function latestSnapshot(characterId: number, kind?: "realtime" | "d
   const where = kind ? and(eq(schedulerSnapshots.characterId, characterId), eq(schedulerSnapshots.kind, kind)) : eq(schedulerSnapshots.characterId, characterId);
   const [row] = await db.select().from(schedulerSnapshots).where(where).orderBy(desc(schedulerSnapshots.snapshotDate), desc(schedulerSnapshots.fetchedAt)).limit(1);
   return row ?? null;
+}
+
+/**
+ * 여러 캐릭터의 최신 스냅샷을 한 번에.
+ *
+ * 캐릭터마다 latestSnapshot 을 부르면 목록 화면에서 왕복이 캐릭터 수만큼 난다.
+ * DB 가 파일이던 시절에는 공짜였지만 Neon 은 네트워크 너머라 그대로 지연이 된다.
+ * 한 질의로 받아 와 캐릭터별 첫 행만 남긴다.
+ */
+export async function latestSnapshotsFor(characterIds: number[]): Promise<Map<number, SchedulerSnapshot>> {
+  const out = new Map<number, SchedulerSnapshot>();
+  if (!characterIds.length) return out;
+  const rows = await db
+    .select()
+    .from(schedulerSnapshots)
+    .where(inArray(schedulerSnapshots.characterId, characterIds))
+    .orderBy(desc(schedulerSnapshots.snapshotDate), desc(schedulerSnapshots.fetchedAt));
+  for (const r of rows) if (!out.has(r.characterId)) out.set(r.characterId, r);
+  return out;
 }
 
 export async function snapshotOn(characterId: number, date: string): Promise<SchedulerSnapshot | null> {

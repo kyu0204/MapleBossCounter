@@ -129,6 +129,14 @@ Vercel 환경변수: 위 셋 + `AUTH_SECRET`, `AUTH_DISCORD_ID/SECRET`, `AUTH_UR
 
 마이그레이션은 `vercel-build` 가 빌드 전에 한 번 돌린다 (`scripts/db-migrate.mjs`).
 
+**체감 속도** — 화면마다 DB 를 여러 번 읽는다. 각 경로에 `loading.tsx` 를 둬서 이동 자체는
+즉시 일어나고 골격이 먼저 뜬다. 목록 화면은 캐릭터마다 질의하지 않고 한 번에 모아 받는다
+(`latestSnapshotsFor`).
+
+남은 지연은 **Neon 이 쉬다 깨어나는 시간**(첫 질의 1~2초)이다. 무료 등급은 몇 분 놀면
+컴퓨트를 재운다. UptimeRobot 등으로 `/api/health` 를 5분마다 치면 DB 질의가 함께 나가므로
+깨어 있는 상태가 유지된다.
+
 > 공개 저장소의 스케줄 워크플로는 **60일간 저장소 활동이 없으면 자동 비활성화**된다.
 > GitHub 가 메일로 알려 주며, 저장소에 커밋이 있으면 유지된다.
 

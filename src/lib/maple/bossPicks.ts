@@ -10,6 +10,7 @@ import { parseBossKey, type Difficulty } from "./bossKey";
 import { crystalPrice } from "./prices";
 import { tierOf } from "./tiers";
 
+
 /** config = 직접 고른 것, party = 파티 등록에서 자동으로 들어온 것 */
 export type PickSource = "config" | "party";
 
@@ -56,23 +57,33 @@ export function mergePicks(picks: Record<string, number>, partyPicks: Record<str
 }
 
 /**
- * 난이도 낮은 보스부터.
+ * 결정 값싼 보스부터.
  *
- * 티어 rank 가 (보스, 난이도) 를 합친 난이도 순서다. 실제로 도는 순서도 대개
- * 쉬운 것부터이므로 목록도 그렇게 낸다. 티어가 같으면 이름으로 갈라 순서를 고정한다
- * (안 그러면 저장 순서에 따라 줄이 들썩인다).
+ * 기준은 **솔로(1인격) 원가**다. 인원으로 나눈 값으로 줄을 세우면 같은 보스가 인원
+ * 설정에 따라 오르내려서 목록이 들썩인다. 원가로 세우면 순서가 고정된다.
+ *
+ * 티어 rank 대신 가격을 쓰는 이유는 둘이 항상 같지 않아서다. 실제로 도는 순서는
+ * 값싼 것부터에 가깝다.
+ *
+ * 가격이 없는 보스(시즌 보스 등)는 맨 뒤로 보낸다. 0 으로 치면 제일 앞에 온다.
+ * 값이 같으면 티어, 그다음 이름으로 갈라 순서를 고정한다.
  */
-export function sortKeysByTier(keys: string[]): string[] {
+export function sortKeysByPrice(keys: string[], priceDate: string): string[] {
+  const priceOf = (k: string) => {
+    const r = parseBossKey(k);
+    if (!r) return Number.POSITIVE_INFINITY;
+    return crystalPrice(r.boss, r.diff, priceDate) ?? Number.POSITIVE_INFINITY;
+  };
   const rank = (k: string) => {
     const r = parseBossKey(k);
     return r ? tierOf(r.boss, r.diff)?.rank ?? 0 : 0;
   };
-  return [...keys].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, "ko"));
+  return [...keys].sort((a, b) => priceOf(a) - priceOf(b) || rank(a) - rank(b) || a.localeCompare(b, "ko"));
 }
 
-/** 합친 픽을 화면에 쓰기 좋은 배열로. 난이도 오름차순. */
-export function toPickList(merged: Record<string, MergedPickValue>): MergedPick[] {
-  return sortKeysByTier(Object.keys(merged)).flatMap((key) => {
+/** 합친 픽을 화면에 쓰기 좋은 배열로. 솔로 결정가 오름차순. */
+export function toPickList(merged: Record<string, MergedPickValue>, priceDate: string): MergedPick[] {
+  return sortKeysByPrice(Object.keys(merged), priceDate).flatMap((key) => {
     const r = parseBossKey(key);
     if (!r) return [];
     return [{ key, boss: r.boss, diff: r.diff, party: merged[key].party, source: merged[key].source, linkedSize: merged[key].linkedSize }];

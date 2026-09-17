@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUserId } from "@/auth";
 import { nexonKeyStatus } from "@/lib/db/queries/nexonKeys";
 import { listOwnedCharacters } from "@/services/characterSync";
-import { latestSnapshot, parsed } from "@/services/snapshotService";
+import { latestSnapshotsFor, parsed } from "@/services/snapshotService";
 import { kstDateStr } from "@/lib/maple/kst";
 import { loadPlanConfig } from "@/services/planInput";
 import { partyPicksByCharacter } from "@/services/partyLink";
@@ -61,13 +61,16 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const worlds = [...new Set(visible.map((c) => c.world).filter((w): w is string => !!w))];
   const cfgCache = new Map(await Promise.all(worlds.map(async (w) => [w, await loadPlanConfig(userId, w)] as const)));
 
-  const cards = await Promise.all(visible.map(async (c) => {
-    const snap = parsed(await latestSnapshot(c.id));
+  // 스냅샷은 한 질의로 몰아 받는다. 캐릭터마다 부르면 왕복이 그 수만큼 난다.
+  const snaps = await latestSnapshotsFor(visible.map((c) => c.id));
+
+  const cards = visible.map((c) => {
+    const snap = parsed(snaps.get(c.id) ?? null);
     const world = c.world ?? "";
     const cfg = world ? cfgCache.get(world) ?? null : null;
     const defaultParty = cfg?.default_party ?? 1;
     const saved = Object.fromEntries(normalizeBossList(cfg?.characters?.[c.ocid]?.bosses).map((b) => [b.key, b.party ?? defaultParty]));
-    const picks = toPickList(mergePicks(saved, partyPicksAll.get(c.id) ?? {}));
+    const picks = toPickList(mergePicks(saved, partyPicksAll.get(c.id) ?? {}), priceDate);
     const cleared = (snap?.bosses ?? []).filter((b) => b.cycle === "bossWeekly" && b.completed).map((b) => bossKey(b.boss, b.diff));
     const { remaining, done } = splitByCleared(picks, cleared);
     // 카드에는 총 수익만 낸다. 진행 상황은 "주간 보스 n/12" 줄이 이미 보여 주고,
@@ -75,7 +78,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
     const rev = picks.length ? picksTotals(picks, priceDate).value : null;
     const earned = picks.length ? picksTotals(done, priceDate).value : 0;
     return { c, snap, rev, earned, remainingCount: remaining.length, picks };
-  }));
+  });
 
   // 표시 중인 캐릭터 전체 합계
   const grand = cards.reduce(

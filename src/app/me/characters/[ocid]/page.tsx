@@ -40,7 +40,7 @@ export default async function CharacterPage({ params }: PageProps<"/me/character
   const planDefaultParty = world ? (await loadPlanConfig(userId, world)).default_party ?? 1 : 1;
   const savedBosses = Object.fromEntries(normalizeBossList(charCfg.bosses).map((b) => [b.key, b.party ?? planDefaultParty]));
   const partyPicks = (await partyPicksByCharacter(userId)).get(c.id) ?? {};
-  const allPicks = toPickList(mergePicks(savedBosses, partyPicks));
+  const allPicks = toPickList(mergePicks(savedBosses, partyPicks), priceDate);
   // 클리어·등록 판정은 최신 스냅샷 기준
   const weeklyRows = latest?.bosses.filter((b) => b.cycle === "bossWeekly") ?? [];
   const clearedKeys = weeklyRows.filter((b) => b.completed).map((b) => bossKey(b.boss, b.diff));

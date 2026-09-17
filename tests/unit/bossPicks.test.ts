@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergePicks, picksTotals, splitByCleared, sortKeysByTier, toPickList } from "@/lib/maple/bossPicks";
+import { mergePicks, picksTotals, splitByCleared, sortKeysByPrice, toPickList } from "@/lib/maple/bossPicks";
 import { crystalPrice } from "@/lib/maple/prices";
 
 const DATE = "2026-09-15";
@@ -41,7 +41,7 @@ describe("직접 고른 픽 + 파티 유래 픽 합치기", () => {
   });
 
   it("연동된 인원이 실수령에 그대로 반영된다", () => {
-    const list = toPickList(mergePicks({ "카링 normal": 1 }, { "카링 normal": 4 }));
+    const list = toPickList(mergePicks({ "카링 normal": 1 }, { "카링 normal": 4 }), DATE);
     const karing = crystalPrice("카링", "normal", DATE)!;
     expect(list[0].linkedSize).toBe(4);
     expect(picksTotals(list, DATE).value).toBe(Math.floor(karing / 4));
@@ -49,20 +49,30 @@ describe("직접 고른 픽 + 파티 유래 픽 합치기", () => {
 });
 
 describe("정렬과 합계", () => {
-  it("난이도 낮은 보스가 앞에 온다", () => {
-    const sorted = sortKeysByTier(["유피테르 hard", "스우 normal", "진 힐라 hard"]);
+  it("결정 싼 보스가 앞에 온다", () => {
+    const sorted = sortKeysByPrice(["유피테르 hard", "스우 normal", "진 힐라 hard"], DATE);
     expect(sorted).toEqual(["스우 normal", "진 힐라 hard", "유피테르 hard"]);
   });
 
-  it("티어가 같으면 이름으로 갈라 순서가 흔들리지 않는다", () => {
-    // 루시드 하드와 윌 하드는 같은 은별 3티어
-    const a = sortKeysByTier(["윌 hard", "루시드 hard"]);
-    const b = sortKeysByTier(["루시드 hard", "윌 hard"]);
+  it("기준은 솔로 원가라 인원 설정과 무관하다", () => {
+    // 인원으로 나눈 값으로 세우면 같은 보스가 설정에 따라 오르내려 줄이 들썩인다
+    const keys = ["카링 normal", "림보 normal"];
+    expect(sortKeysByPrice(keys, DATE)).toEqual(["카링 normal", "림보 normal"]);
+  });
+
+  it("가격이 없는 보스는 맨 뒤로 간다 (0 으로 치면 맨 앞에 온다)", () => {
+    const sorted = sortKeysByPrice(["시즌 보스 메이린 hard", "스우 normal"], DATE);
+    expect(sorted[sorted.length - 1]).toBe("시즌 보스 메이린 hard");
+  });
+
+  it("같은 값이면 순서가 흔들리지 않는다", () => {
+    const a = sortKeysByPrice(["윌 hard", "루시드 hard"], DATE);
+    const b = sortKeysByPrice(["루시드 hard", "윌 hard"], DATE);
     expect(a).toEqual(b);
   });
 
   it("실수령은 인원으로 나눈 값의 합, 정가 합은 나누지 않는다", () => {
-    const list = toPickList(mergePicks({ "유피테르 hard": 2, "카링 normal": 1 }, {}));
+    const list = toPickList(mergePicks({ "유피테르 hard": 2, "카링 normal": 1 }, {}), DATE);
     const t = picksTotals(list, DATE);
     const jupiter = crystalPrice("유피테르", "hard", DATE)!;
     const karing = crystalPrice("카링", "normal", DATE)!;
@@ -72,7 +82,7 @@ describe("정렬과 합계", () => {
   });
 
   it("가격이 없는 보스는 합계에서 빠지지만 개수에는 남는다", () => {
-    const list = toPickList(mergePicks({ "시즌 보스 메이린 hard": 1 }, {}));
+    const list = toPickList(mergePicks({ "시즌 보스 메이린 hard": 1 }, {}), DATE);
     const t = picksTotals(list, DATE);
     expect(t.count).toBe(1);
     expect(t.gross).toBe(0);
@@ -80,7 +90,7 @@ describe("정렬과 합계", () => {
 });
 
 describe("이번 주 갈 보스 — 간 것과 안 간 것", () => {
-  const list = toPickList(mergePicks({ "유피테르 hard": 1, "카링 normal": 1, "진 힐라 hard": 1 }, {}));
+  const list = toPickList(mergePicks({ "유피테르 hard": 1, "카링 normal": 1, "진 힐라 hard": 1 }, {}), DATE);
 
   it("클리어한 보스는 남은 목록에서 빠진다", () => {
     const { remaining, done } = splitByCleared(list, ["카링 normal"]);
