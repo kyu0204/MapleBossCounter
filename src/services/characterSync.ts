@@ -3,6 +3,7 @@ import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { characters, partyMembers } from "@/lib/db/schema";
 import { getMyCharacterList } from "@/lib/nexon/endpoints";
+import { CHARACTER_MIN_LEVEL } from "@/lib/dashboard";
 import type { NexonCredential } from "@/lib/nexon/credentials";
 
 export interface SyncResult {
@@ -12,6 +13,8 @@ export interface SyncResult {
   /** 월드 리프 등으로 ocid 가 바뀐 캐릭터 (이름 기준) */
   superseded: string[];
   accountIds: string[];
+  /** CHARACTER_MIN_LEVEL 미만이라 저장하지 않은 캐릭터 수 */
+  skippedLowLevel: number;
 }
 
 /**
@@ -22,7 +25,7 @@ export interface SyncResult {
 export async function syncCharacters(userId: string, cred: NexonCredential, force = false): Promise<SyncResult> {
   const list = await getMyCharacterList(cred, force);
   const now = new Date().toISOString();
-  const result: SyncResult = { total: 0, created: 0, updated: 0, superseded: [], accountIds: [] };
+  const result: SyncResult = { total: 0, created: 0, updated: 0, superseded: [], accountIds: [], skippedLowLevel: 0 };
 
   const mine = await db.select().from(characters).where(eq(characters.ownerUserId, userId));
   const byOcid = new Map(mine.map((c) => [c.ocid, c]));
@@ -33,6 +36,13 @@ export async function syncCharacters(userId: string, cred: NexonCredential, forc
     for (const acc of list.account_list ?? []) {
       result.accountIds.push(acc.account_id);
       for (const c of acc.character_list ?? []) {
+        // 저레벨은 저장하지 않는다. 잡이 소유 캐릭터를 전부 돌기 때문에 저장하는 순간
+        // API 한도를 먹는다. 이미 저장된 캐릭터는 건드리지 않는다 — 지우는 것은
+        // 파티·지원 기록이 걸릴 수 있어 손으로 판단할 일이다.
+        if ((c.character_level ?? 0) < CHARACTER_MIN_LEVEL && !byOcid.has(c.ocid)) {
+          result.skippedLowLevel++;
+          continue;
+        }
         result.total++;
         seenOcids.add(c.ocid);
         const base = { name: c.character_name, world: c.world_name, cls: c.character_class, level: c.character_level, accountId: acc.account_id, ownerUserId: userId, updatedAt: now };

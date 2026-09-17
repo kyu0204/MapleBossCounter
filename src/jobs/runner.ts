@@ -8,6 +8,7 @@ import { fetchAndSaveDated, fetchAndSaveRealtime, snapshotOn } from "@/services/
 import { refreshCharacter } from "@/services/characterRefresh";
 import { purgeExpiredOneOffParties } from "@/services/partyCleanup";
 import { kstDateStr, lastWednesdayKst } from "@/lib/maple/kst";
+import { CHARACTER_MIN_LEVEL } from "@/lib/dashboard";
 import { userMessageFor } from "@/lib/nexon/errors";
 
 export const JOB_NAMES = ["weekly_snapshot_realtime", "weekly_snapshot_backfill", "daily_snapshot", "weekly_power_refresh", "party_cleanup", "cache_sweep"] as const;
@@ -71,7 +72,10 @@ async function forEachLinkedCharacter(stats: JobStats, fn: (cred: NonNullable<Aw
     const cred = await userCredential(userId);
     if (!cred) continue;
     stats.users++;
-    const chars = await db.select().from(characters).where(and(eq(characters.ownerUserId, userId), isNull(characters.supersededBy), eq(characters.hidden, false)));
+    // 저레벨은 건너뛴다. 캐릭터당 API 4~5건이라 저레벨까지 돌면 하루 한도를 태운다.
+    const chars = (await db.select().from(characters).where(and(eq(characters.ownerUserId, userId), isNull(characters.supersededBy), eq(characters.hidden, false)))).filter(
+      (c) => (c.level ?? 0) >= CHARACTER_MIN_LEVEL,
+    );
     for (const ch of chars) {
       if (Date.now() > deadline) {
         remaining++;

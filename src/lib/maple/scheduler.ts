@@ -87,6 +87,8 @@ function parseContent(c: RawContentRow): ContentRow {
 }
 
 export function parseSnapshot(raw: RawScheduler): ParsedSnapshot {
+  // 인게임 주간 보스 입장 한도. 넥슨이 값을 안 줄 때 쓰는 기본값이다.
+  const DEFAULT_WEEKLY_LIMIT = 12;
   const bosses: BossClearRow[] = (raw.boss_contents ?? [])
     .map((b) => ({
       boss: b.content_name,
@@ -105,7 +107,10 @@ export function parseSnapshot(raw: RawScheduler): ParsedSnapshot {
     level: raw.character_level,
     cls: raw.character_class,
     weeklyClearCount: raw.weekly_boss_clear_count ?? 0,
-    weeklyLimit: raw.weekly_boss_clear_limit_count ?? 12,
+    // 0 은 "한도가 0" 이 아니라 "아직 모름" 이다. 주간 리셋 직후, 그 캐릭터로 아직
+    // 접속하지 않았으면 넥슨이 한도를 0 으로 준다. 그대로 두면 화면에 0/0 이 뜨고
+    // "입장 한도(0)를 넘게 골랐다" 는 거짓 경고가 나온다. 인게임 한도는 누구나 12 다.
+    weeklyLimit: raw.weekly_boss_clear_limit_count || DEFAULT_WEEKLY_LIMIT,
     bosses,
     daily: (raw.daily_contents ?? []).map(parseContent),
     weekly: (raw.weekly_contents ?? []).map(parseContent),

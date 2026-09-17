@@ -10,7 +10,7 @@ import { userMessageFor } from "@/lib/nexon/errors";
 import { listOwnedCharacters, syncCharacters } from "@/services/characterSync";
 import { refreshCharacter } from "@/services/characterRefresh";
 import { fetchAndSaveRealtime, latestSnapshot } from "@/services/snapshotService";
-import { DASHBOARD_MIN_LEVEL, SCHEDULER_AUTO_MAX, SCHEDULER_AUTO_STALE_MS } from "@/lib/dashboard";
+import { CHARACTER_MIN_LEVEL, DASHBOARD_MIN_LEVEL, SCHEDULER_AUTO_MAX, SCHEDULER_AUTO_STALE_MS } from "@/lib/dashboard";
 import type { ActionResult } from "./nexon-key";
 
 /** 계정 캐릭터 목록 재동기화 */
@@ -20,7 +20,8 @@ export async function resyncCharacters(): Promise<ActionResult> {
     const cred = await resolveCredential({ userId, scope: "account" });
     const r = await syncCharacters(userId, cred, true);
     revalidatePath("/me");
-    return { ok: true, message: `동기화 완료: ${r.total}개 (신규 ${r.created}${r.superseded.length ? `, 리프 감지 ${r.superseded.join(", ")}` : ""})` };
+    const low = r.skippedLowLevel ? `, Lv.${CHARACTER_MIN_LEVEL} 미만 ${r.skippedLowLevel}개 제외` : "";
+    return { ok: true, message: `동기화 완료: ${r.total}개 (신규 ${r.created}${low}${r.superseded.length ? `, 리프 감지 ${r.superseded.join(", ")}` : ""})` };
   } catch (e) {
     return { ok: false, message: userMessageFor(e) };
   }
