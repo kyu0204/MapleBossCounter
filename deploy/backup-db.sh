@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SQLite 온라인 백업 (WAL 안전). backups/app-YYYYmmdd-HHMMSS.db.gz, 14일 보관.
-# 크론: 30 19 * * * (UTC) = 04:30 KST. setup-ec2.sh 가 등록한다.
+# 크론: 30 19 * * * (UTC) = 04:30 KST. setup-server.sh 가 등록한다.
 # 복구: gunzip -c backups/app-....db.gz > data/app.db  (pm2 stop 후)
 set -euo pipefail
 cd "$(dirname "$0")/.."

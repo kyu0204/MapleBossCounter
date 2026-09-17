@@ -68,7 +68,7 @@ node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 
     색을 못 쓰는 `<option>`·`title` 에는 `tierLabel()` 이 `🟡★★★★★` 형태 텍스트를 준다.
   - `BossIcon` / `BossChip` — 보스 아이콘, 아이콘 + 난이도 배지 + 약칭 + 실수령.
   - `DropList` / `DropChip` / `RewardChip` — 드롭 아이템 칩 (아이콘 + 여명/칠흑/에테르넬 세트별 색).
-- `deploy/` — EC2 셋업·배포·nginx·DB 백업 스크립트. `ecosystem.config.js` — pm2.
+- `deploy/` — 서버 셋업·배포·nginx·DB 백업·DuckDNS 스크립트. `ecosystem.config.js` — pm2.
 
 ### 갈 보스 설정
 
@@ -107,16 +107,22 @@ CSS 80px 까지는 2배 DPI 화면에서도 선명하다. 그보다 크게 쓰�
 - 이름 표기가 조금 달라도(`컴플리트 언더 컨트롤` / `컴플리트 언더컨트롤`) `itemIconFor()` 가 공백 제거 + 부분 일치로 아이콘을 찾는다.
 - `tests/unit/drops.test.ts` 가 아이콘 파일 실재·주간 보스 전수·카테고리 라벨 유효성·난이도 필터·본문 찌꺼기 혼입을 검사한다.
 
-## 운영 (EC2 Ubuntu)
+## 운영 (Ubuntu VM — Oracle Cloud / EC2)
 
 최초 1회 (root):
 
 ```bash
 git clone <repo> ~/maple-board && cd ~/maple-board
-sudo bash deploy/setup-ec2.sh <domain>       # Node 20, build-essential, pm2, nginx, certbot, 백업 크론
+sudo bash deploy/setup-server.sh <domain>    # Node 22, build-essential, pm2, nginx, certbot, 방화벽, 백업 크론
 cp .env.example .env.local && vi .env.local  # AUTH_URL=https://<domain>, AUTH_TRUST_HOST=1 필수
 sudo certbot --nginx -d <domain>
 ```
+
+x86_64·arm64 양쪽에서 돈다 (better-sqlite3 는 프리빌드가 없으면 `build-essential` 로 소스 빌드).
+
+**Oracle Cloud 는 방화벽이 두 겹이다.** 콘솔의 Security List 에서 80·443 인그레스를 열고, VM 안의 iptables 도 열어야 한다 (후자는 셋업 스크립트가 처리). 하나만 열면 접속이 안 되는데 증상이 같아서 찾기 어렵다.
+
+도메인이 없으면 **DuckDNS** 로 `<이름>.duckdns.org` 를 받아 쓴다. `deploy/duckdns-update.sh` 를 5분 크론으로 걸면 공인 IP 가 바뀌어도 따라간다 (오라클 무료 VM 은 예약 IP 가 아니면 재시작 시 바뀔 수 있다). certbot 은 DNS 가 이 서버를 가리킨 뒤에 실행할 것.
 
 배포/업데이트 (앱 유저):
 
