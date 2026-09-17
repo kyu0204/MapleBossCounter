@@ -19,6 +19,7 @@
 import type { Difficulty } from "./bossKey";
 import { crystalPrice } from "./prices";
 import { rewardAmount, rewardRowsFor, type DisplayReward } from "./rewards";
+import dropData from "@/data/drop_rates.json";
 
 /** 아이템 하나에 매긴 값. 화면에서 입력받아 localStorage 에 둔다. */
 export interface ItemValue {
@@ -30,6 +31,61 @@ export interface ItemValue {
 
 export type ItemValues = Record<string, ItemValue>;
 
+// ---------- 드롭 확률 ----------
+
+interface DropRateRow {
+  boss: string;
+  diff: string;
+  item: string;
+  kills: number;
+  drops: number;
+  rate: number;
+}
+
+interface DropFile {
+  _meta: { updated: string; notes: string[]; sources: { label: string; url: string; note?: string }[] };
+  applyDropRate: Record<string, boolean | string>;
+  rates: DropRateRow[];
+}
+
+const drops = dropData as unknown as DropFile;
+export const DROP_META = drops._meta;
+
+const rateIndex = new Map(drops.rates.map((r) => [`${r.boss}|${r.diff}|${r.item}`, r]));
+
+/**
+ * 관측된 드롭률. 없으면 null.
+ *
+ * 넥슨은 보스 드롭률을 공개하지 않는다 (확률형 아이템 공개 의무는 유료 아이템 대상이다).
+ * 그래서 전부 커뮤니티 대표본 추정치이고, 표본 수를 함께 들고 다닌다 — 103회짜리와
+ * 3,600회짜리를 같은 신뢰도로 보여 주면 안 된다.
+ */
+export function dropRateOf(boss: string, diff: Difficulty | string, item: string): DropRateRow | null {
+  return rateIndex.get(`${boss}|${String(diff)}|${item}`) ?? null;
+}
+
+/**
+ * 아이템 드롭률 증가(아획)가 먹히는 아이템인지.
+ *
+ * 보스 보상 대부분은 아획을 안 탄다. 장신구류·반지 상자·연마석만 탄다.
+ * 모르는 아이템은 보정하지 않는다 — 안 먹는 것을 올려 잡으면 기대값이 부풀려진다.
+ */
+export function takesDropRate(item: string): boolean {
+  return drops.applyDropRate[item] === true;
+}
+
+/**
+ * 내 아획을 반영한 실효 확률(%).
+ *
+ * 표본 자체가 어느 정도 아획에서 나왔는지 글에 안 적혀 있다. 관측값이 칠흑 기본
+ * 추정치(0.4%)와 비슷해 낮은 아획으로 보고, 관측값을 기준선으로 삼아 내 아획만큼 곱한다.
+ * 정확한 모델이 아니라 어림이다 — 화면에서 그렇게 밝힌다.
+ */
+export function effectiveChance(row: DropRateRow, dropRatePercent: number): number {
+  if (!takesDropRate(row.item)) return row.rate;
+  return row.rate * (1 + Math.max(0, dropRatePercent) / 100);
+}
+
 export interface RewardLine {
   name: string;
   /** 인원 분배까지 반영한 수량 (확정). 랜덤은 1 로 둔다. */
@@ -40,6 +96,12 @@ export interface RewardLine {
   value: number;
   /** 값을 안 매겨서 0 으로 친 줄인지 */
   unpriced: boolean;
+  /** 기대값 계산에 쓴 확률(%). 랜덤에만 붙는다. */
+  chance?: number;
+  /** 그 확률의 출처. manual = 손으로 넣음, stats = 커뮤니티 통계 */
+  chanceFrom?: "manual" | "stats";
+  /** 통계에서 왔을 때의 표본 수 (신뢰도 표시용) */
+  kills?: number;
   icon?: string;
   w?: number;
   h?: number;
@@ -83,7 +145,15 @@ const line = (r: DisplayReward, amount: number, amountText: string, value: numbe
  * 랜덤은 수량을 곱하지 않는다. 확률 드롭의 "몇 개" 는 떴을 때의 개수라 회당 기대값과
  * 섞으면 이중으로 곱해진다. 단가 × 확률만 본다.
  */
-export function compareRow(boss: string, diff: Difficulty | string, party: number, priceDate: string, values: ItemValues): CompareRow {
+export function compareRow(
+  boss: string,
+  diff: Difficulty | string,
+  party: number,
+  priceDate: string,
+  values: ItemValues,
+  /** 내 아이템 획득 증가(%). 알려진 드롭률을 이 값으로 보정한다. */
+  dropRatePercent = 0,
+): CompareRow {
   const n = Math.max(1, party);
   const price = crystalPrice(boss, diff, priceDate);
   const crystal = price == null ? null : Math.floor(price / n);
@@ -100,9 +170,15 @@ export function compareRow(boss: string, diff: Difficulty | string, party: numbe
   for (const r of randomRaw) {
     const v = values[r.name] ?? {};
     const meso = v.meso ?? 0;
-    const chance = v.chance ?? 0;
+    // 손으로 넣은 확률이 있으면 그것이 이긴다. 없으면 알려진 통계를 쓴다.
+    const known = dropRateOf(boss, diff, r.name);
+    const chance = v.chance ?? (known ? effectiveChance(known, dropRatePercent) : 0);
     const expected = meso > 0 && chance > 0 ? Math.floor((meso * chance) / 100) : 0;
-    random.push(line(r, 1, r.range ?? String(r.count ?? 1), expected, meso <= 0 || chance <= 0));
+    const l = line(r, 1, r.range ?? String(r.count ?? 1), expected, meso <= 0 || chance <= 0);
+    l.chance = chance > 0 ? chance : undefined;
+    l.chanceFrom = v.chance != null ? "manual" : known ? "stats" : undefined;
+    l.kills = v.chance == null && known ? known.kills : undefined;
+    random.push(l);
   }
 
   const fixedValue = fixed.reduce((s, l) => s + l.value, 0);

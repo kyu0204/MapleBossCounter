@@ -99,6 +99,43 @@ describe("둘을 맞대 비교", () => {
   });
 });
 
+describe("알려진 드롭률", () => {
+  it("통계가 있는 아이템은 값만 넣어도 기대값이 잡힌다", () => {
+    // 하드 스우 루컨마: 표본 3,114회에서 0.48%
+    const r = compareRow("스우", "hard", 1, DATE, { "루즈 컨트롤 머신 마크": { meso: 1_000_000_000 } });
+    const l = r.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    expect(l.chanceFrom).toBe("stats");
+    expect(l.kills).toBe(3114);
+    expect(l.value).toBe(4_800_000);
+    expect(l.unpriced).toBe(false);
+  });
+
+  it("손으로 넣은 확률이 통계를 이긴다", () => {
+    const r = compareRow("스우", "hard", 1, DATE, { "루즈 컨트롤 머신 마크": { meso: 1_000_000_000, chance: 1 } });
+    const l = r.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    expect(l.chanceFrom).toBe("manual");
+    expect(l.value).toBe(10_000_000);
+  });
+
+  it("아획은 드롭률 증가가 먹는 아이템에만 곱해진다", () => {
+    const values = { "루즈 컨트롤 머신 마크": { meso: 1_000_000_000 }, "앱솔랩스 무기 상자": { meso: 1_000_000_000 } };
+    const base = compareRow("스우", "hard", 1, DATE, values, 0);
+    const buffed = compareRow("스우", "hard", 1, DATE, values, 100);
+    const mark = (r: typeof base) => r.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!.value;
+    const absol = (r: typeof base) => r.random.find((x) => x.name === "앱솔랩스 무기 상자")!.value;
+    expect(mark(buffed)).toBe(mark(base) * 2); // 칠흑은 아획 적용
+    expect(absol(buffed)).toBe(absol(base)); // 앱솔 상자는 미적용 (둘 다 통계 없어 0)
+  });
+
+  it("통계가 없는 아이템은 손으로 넣기 전까지 기대값이 0이다", () => {
+    const r = compareRow("유피테르", "hard", 1, DATE, { "4단계 소울 에테르": { meso: 1_000_000_000 } });
+    const l = r.random.find((x) => x.name === "4단계 소울 에테르")!;
+    expect(l.chanceFrom).toBeUndefined();
+    expect(l.value).toBe(0);
+    expect(l.unpriced).toBe(true);
+  });
+});
+
 describe("값 못 매긴 보상 차이 정리", () => {
   it("양쪽이 똑같이 주는 것은 상쇄 목록으로 간다", () => {
     // 같은 보스·난이도끼리 견주면 모든 보상이 상쇄된다

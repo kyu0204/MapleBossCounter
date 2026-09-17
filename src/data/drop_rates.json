@@ -1,0 +1,68 @@
+{
+  "_meta": {
+    "updated": "2026-09-18",
+    "notes": [
+      "넥슨은 보스 드롭률을 공개하지 않는다. 확률형 아이템 정보공개 의무(2024-03 게임산업법)는 유료 확률형 아이템 대상이라 보스 드롭은 빠진다.",
+      "따라서 아래 값은 전부 커뮤니티 대표본 추정치다. 공식 수치가 아니며 표본 오차가 있다.",
+      "rate 는 표본에서 관측된 비율이다. base 가 아니라 '그 표본의 아이템 획득 증가(아획) 조건에서 나온 값'이다.",
+      "드롭률 증가가 적용되는 아이템만 아획으로 보정한다 (applyDropRate). 적용 안 되는 것은 아획과 무관하게 고정이다.",
+      "표본이 1000회 미만인 행은 참고용이다. 특히 익스트림 세렌(103회)은 오차가 매우 크다."
+    ],
+    "sources": [
+      {
+        "label": "인벤 — 칠흑 드랍 확률 통계 (보스별 대표본)",
+        "url": "https://www.inven.co.kr/board/maple/5974/6190668",
+        "note": "표본 아획 조건 미표기. 관측값이 칠흑 기본 추정치(0.4%)와 비슷해 낮은 아획으로 보인다."
+      },
+      {
+        "label": "인벤 — 칠흑·여명·반상·연마석 드롭률 추정치 정리",
+        "url": "https://www.inven.co.kr/board/maple/2304/39341",
+        "note": "0% 기준 추정: 칠흑 0.4, 여명 2.5, 가엔링 5.3, 반지상자 1.5, 연마석(하드) 3.3"
+      },
+      {
+        "label": "에펨코리아 — 보스 보상 드롭률 적용 기준 정리",
+        "url": "https://www.fmkorea.com/6719475698",
+        "note": "아이템 드롭률 증가 적용/미적용 목록"
+      }
+    ]
+  },
+
+  "applyDropRate": {
+    "_note": "true = 아이템 드롭률 증가가 적용된다. 목록에 없는 아이템은 모름이라 보정하지 않는다.",
+    "루즈 컨트롤 머신 마크": true,
+    "컴플리트 언더컨트롤": true,
+    "마력이 깃든 안대": true,
+    "몽환의 벨트": true,
+    "저주받은 마도서 선택 상자": true,
+    "거대한 공포": true,
+    "커맨더 포스 이어링": true,
+    "고통의 근원": true,
+    "미트라의 분노 선택 상자": true,
+    "생명의 연마석": true,
+    "녹옥의 보스 반지 상자": true,
+    "홍옥의 보스 반지 상자": true,
+    "흑옥의 보스 반지 상자": true,
+    "백옥의 보스 반지 상자": true,
+    "생명의 보스 반지 상자": true,
+
+    "앱솔랩스 방어구 상자": false,
+    "앱솔랩스 무기 상자": false,
+    "아케인셰이드 방어구 상자": false,
+    "아케인셰이드 무기 상자": false
+  },
+
+  "rates": [
+    { "boss": "스우", "diff": "hard", "item": "루즈 컨트롤 머신 마크", "kills": 3114, "drops": 15, "rate": 0.48, "source": 0 },
+    { "boss": "스우", "diff": "extreme", "item": "루즈 컨트롤 머신 마크", "kills": 717, "drops": 17.5, "rate": 2.44, "source": 0 },
+    { "boss": "스우", "diff": "extreme", "item": "컴플리트 언더컨트롤", "kills": 717, "drops": 12, "rate": 1.67, "source": 0 },
+    { "boss": "데미안", "diff": "hard", "item": "마력이 깃든 안대", "kills": 3630, "drops": 14, "rate": 0.39, "source": 0 },
+    { "boss": "루시드", "diff": "hard", "item": "몽환의 벨트", "kills": 3555, "drops": 13, "rate": 0.37, "source": 0 },
+    { "boss": "윌", "diff": "hard", "item": "저주받은 마도서 선택 상자", "kills": 3484, "drops": 19, "rate": 0.55, "source": 0 },
+    { "boss": "더스크", "diff": "chaos", "item": "거대한 공포", "kills": 3692, "drops": 15, "rate": 0.41, "source": 0 },
+    { "boss": "듄켈", "diff": "hard", "item": "커맨더 포스 이어링", "kills": 3654, "drops": 16, "rate": 0.44, "source": 0 },
+    { "boss": "진 힐라", "diff": "hard", "item": "고통의 근원", "kills": 3531, "drops": 14, "rate": 0.4, "source": 0 },
+    { "boss": "선택받은 세렌", "diff": "hard", "item": "미트라의 분노 선택 상자", "kills": 1490, "drops": 40.4, "rate": 2.71, "source": 0 },
+    { "boss": "선택받은 세렌", "diff": "extreme", "item": "미트라의 분노 선택 상자", "kills": 103, "drops": 7.7, "rate": 7.45, "source": 0 },
+    { "boss": "선택받은 세렌", "diff": "extreme", "item": "익셉셔널 해머 (얼굴장식)", "kills": 103, "drops": 0.9, "rate": 0.89, "source": 0 }
+  ]
+}

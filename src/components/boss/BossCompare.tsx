@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { compareRow, itemsIn, summarize, type ItemValues, type RewardLine } from "@/lib/maple/compare";
+import { compareRow, DROP_META, itemsIn, summarize, type ItemValues, type RewardLine } from "@/lib/maple/compare";
 import { bossName } from "@/lib/maple/bossMeta";
 import { fmtPower } from "@/lib/maple/format";
 import { ICON_BOX } from "@/lib/maple/rewards";
@@ -25,6 +25,7 @@ import { ItemValueEditor } from "./ItemValueEditor";
  */
 const VALUES_KEY = "maple-item-values";
 const SIDES_KEY = "maple-compare-sides";
+const DROP_KEY = "maple-drop-rate";
 
 interface Side {
   boss: string;
@@ -95,6 +96,15 @@ function Lines({ lines, empty, showZero }: { lines: RewardLine[]; empty: string;
         <li key={l.name} className={`flex items-center gap-2 ${l.unpriced ? "opacity-60" : ""}`} title={l.name}>
           <Icon icon={l.icon} w={l.w} h={l.h} short={l.short} name={l.name} />
           <span className="min-w-0 flex-1 truncate text-xs">{l.name}</span>
+          {/* 확률이 어디서 왔는지 밝힌다. 통계는 표본 수까지 — 103회와 3,600회는 신뢰도가 다르다. */}
+          {l.chance != null && (
+            <span
+              className={`text-[10px] tabular-nums shrink-0 ${l.chanceFrom === "manual" ? "text-zinc-500" : "text-sky-700 dark:text-sky-400"}`}
+              title={l.chanceFrom === "manual" ? "직접 넣은 확률" : `커뮤니티 통계 · 표본 ${l.kills?.toLocaleString("ko-KR")}회`}
+            >
+              {l.chance.toFixed(2)}%{l.chanceFrom === "stats" && l.kills ? ` (${l.kills >= 1000 ? `${Math.round(l.kills / 1000)}천` : l.kills}회)` : ""}
+            </span>
+          )}
           {showZero && <span className="text-xs text-zinc-500 tabular-nums shrink-0">×{l.amountText}</span>}
           <span className="text-xs tabular-nums shrink-0 w-20 text-right">
             {l.unpriced ? <span className="text-[11px] text-zinc-400">값 없음</span> : <b>{fmtPower(l.value)}</b>}
@@ -108,6 +118,7 @@ function Lines({ lines, empty, showZero }: { lines: RewardLine[]; empty: string;
 export function BossCompare({ today }: { today: string }) {
   const [values, setValues] = useState<ItemValues>({});
   const [sides, setSides] = useState<[Side, Side]>(DEFAULT_SIDES);
+  const [dropRate, setDropRate] = useState(0);
   const [openValues, setOpenValues] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -121,6 +132,8 @@ export function BossCompare({ today }: { today: string }) {
         const parsed = JSON.parse(s) as Side[];
         if (Array.isArray(parsed) && parsed.length === 2 && parsed.every((x) => x?.boss && x?.diff)) setSides([parsed[0], parsed[1]]);
       }
+      const d = Number(localStorage.getItem(DROP_KEY));
+      if (Number.isFinite(d) && d >= 0) setDropRate(d);
     } catch {
       // 사생활 보호 모드 등에서 막힐 수 있다. 값 없이 그냥 쓴다.
     }
@@ -132,14 +145,15 @@ export function BossCompare({ today }: { today: string }) {
     try {
       localStorage.setItem(VALUES_KEY, JSON.stringify(values));
       localStorage.setItem(SIDES_KEY, JSON.stringify(sides));
+      localStorage.setItem(DROP_KEY, String(dropRate));
     } catch {
       /* 저장 못 해도 화면은 돈다 */
     }
-  }, [values, sides, loaded]);
+  }, [values, sides, dropRate, loaded]);
 
   const picks = useMemo(() => sides.map((s) => ({ boss: s.boss, diff: s.diff })), [sides]);
   const items = useMemo(() => itemsIn(picks, today), [picks, today]);
-  const rows = useMemo(() => sides.map((s) => compareRow(s.boss, s.diff, s.party, today, values)), [sides, today, values]);
+  const rows = useMemo(() => sides.map((s) => compareRow(s.boss, s.diff, s.party, today, values, dropRate)), [sides, today, values, dropRate]);
   const [a, b] = rows;
   const summary = useMemo(() => summarize(a, b), [a, b]);
   const gap = summary.mesoGap;
@@ -151,6 +165,19 @@ export function BossCompare({ today }: { today: string }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-1.5 text-sm" title="아이템 획득 증가. 알려진 드롭률 중 아획이 먹는 것만 이 값으로 보정합니다.">
+          <span className="text-zinc-500">아이템 획득</span>
+          <input
+            type="number"
+            min={0}
+            max={999}
+            value={dropRate}
+            onChange={(e) => setDropRate(Math.max(0, Math.min(999, Number(e.target.value) || 0)))}
+            className="w-16 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-1.5 py-0.5 text-center tabular-nums"
+          />
+          <span className="text-zinc-500">%</span>
+        </label>
+
         <button type="button" className="btn-ghost text-xs" onClick={() => setOpenValues((v) => !v)}>
           아이템 값 {openValues ? "접기" : `설정 (${items.filter((i) => values[i.name]).length}/${items.length})`}
         </button>
@@ -280,7 +307,10 @@ export function BossCompare({ today }: { today: string }) {
       </div>
 
       <p className="text-[11px] text-zinc-400">
-        결정은 가격표를 인원수로 나눈 값입니다. 조각·큐브는 파티 한 몫이 떨어져 인원수로 나뉘고 소수점은 버립니다. 랜덤은 단가 × 확률이며, 확률은 넥슨이 공개하지 않아 직접 넣은 추정값입니다.
+        결정은 가격표를 인원수로 나눈 값입니다. 조각·큐브는 파티 한 몫이 떨어져 인원수로 나뉘고 소수점은 버립니다. 랜덤은 단가 × 확률입니다.
+        <br />
+        <b>확률은 넥슨이 공개하지 않습니다.</b> 파란 숫자는 커뮤니티 대표본 통계이며 괄호 안이 표본 수입니다 — 표본이 작을수록 오차가 큽니다. 직접 넣은 값이 있으면 그쪽이 우선합니다. 아이템 획득 증가는 그것이 적용되는
+        아이템(장신구·반지 상자·연마석)에만 곱합니다. (통계 기준 {DROP_META.updated})
       </p>
     </div>
   );
