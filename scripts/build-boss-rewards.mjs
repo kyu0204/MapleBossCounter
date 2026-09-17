@@ -137,6 +137,7 @@ const SHORT = [
   [/^혼돈의 칠흑 장신구 상자$/, "칠흑장신구"],
   [/^메이린의 칠흑 장신구 상자$/, "칠흑장신구"],
   [/^익셉셔널 해머.*$/, "익셉해머"],
+  [/^(\d)단계 소울 에테르$/, "소울에테$1"],
 ];
 function shortOf(name) {
   for (const [re, rep] of SHORT) if (re.test(name)) return name.replace(re, rep);
@@ -288,6 +289,34 @@ for (const [key, spec] of Object.entries(CUBE_ONLY)) {
   }
   out[boss] ??= {};
   out[boss][diff] = { rewards: [], cubes };
+}
+
+/**
+ * 패치노트로 새로 생긴 드롭. 나무위키 수집본(boss_rewards_raw.json)에는 아직 없어서
+ * 여기에 손으로 적는다. 다음 수집 때 문서에 반영돼 들어오면 중복되지 않게 이름으로 거른다.
+ *
+ * 2026-09-17 — 소울 에테르 4단계. 낮은 확률 드롭이라 fixed 를 붙이지 않는다.
+ * 난이도는 패치노트에 적힌 것만 넣는다. 대적자·카링은 이지가 빠져 있다.
+ */
+const EXTRA_DROPS = [
+  { name: "1단계 소울 에테르", at: { "최초의 대적자": ["normal", "hard", "extreme"], 카링: ["normal", "hard", "extreme"] } },
+  { name: "2단계 소울 에테르", at: { 벨로나: ["normal", "hard"], "찬란한 흉성": ["normal", "hard"] } },
+  { name: "3단계 소울 에테르", at: { 림보: ["normal", "hard"], 발드릭스: ["normal", "hard"] } },
+  { name: "4단계 소울 에테르", at: { 유피테르: ["normal", "hard"] } },
+];
+for (const { name, at } of EXTRA_DROPS) {
+  for (const [boss, diffs] of Object.entries(at)) {
+    for (const diff of diffs) {
+      const row = out[boss]?.[diff];
+      if (!row) {
+        console.warn(`[extra] ${boss} ${diff} 행이 없어 ${name} 를 못 넣었다`);
+        continue;
+      }
+      if (row.rewards.some((r) => r.name === name)) continue; // 수집본에 이미 들어왔으면 그대로 둔다
+      const ic = findIcon(name);
+      row.rewards.push({ name, ...(ic ? { icon: ic.file, w: ic.w, h: ic.h } : { short: shortOf(name) }) });
+    }
+  }
 }
 
 /**
