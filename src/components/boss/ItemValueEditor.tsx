@@ -2,7 +2,7 @@
 
 import type { ItemRef, ItemValues } from "@/lib/maple/compare";
 import { ICON_BOX } from "@/lib/maple/rewards";
-import { fmtPower } from "@/lib/maple/format";
+import { fmtMesoFull, fmtPower } from "@/lib/maple/format";
 
 /**
  * 아이템 값어치 입력.
@@ -61,6 +61,8 @@ export function ItemValueEditor({ items, values, onChange }: { items: ItemRef[];
                     aria-label={`${it.name} 단가(메소)`}
                     className="w-24 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-1 py-0.5 text-xs tabular-nums"
                   />
+                  {/* 0 을 몇 개 쳤는지 눈으로 세지 않아도 되게 되읽어 준다. 여기서는 끝자리를 버리지 않는다. */}
+                  {v.meso ? <span className="text-[10px] text-zinc-500 tabular-nums whitespace-nowrap">{fmtMesoFull(v.meso)}</span> : null}
                   {it.asRandom && (
                     <>
                       <input

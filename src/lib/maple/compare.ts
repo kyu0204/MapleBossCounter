@@ -86,10 +86,36 @@ export function effectiveChance(row: DropRateRow, dropRatePercent: number): numb
   return row.rate * (1 + Math.max(0, dropRatePercent) / 100);
 }
 
+/**
+ * 조각으로 쪼개져 나오는 보상.
+ *
+ * 같은 보스라도 난이도가 낮으면 본품 대신 조각으로 준다 (카링 노말은 "뒤엉킨 흉수의
+ * 고리 조각", 하드는 "뒤엉킨 흉수의 고리"). 이름이 달라 그대로 두면 개수를 못 견준다.
+ * 조각 수를 본품 수로 환산해 같은 저울에 올린다.
+ *
+ * per = 본품 하나를 만드는 데 드는 조각 수.
+ */
+const FRAGMENTS: Record<string, { base: string; per: number }> = {
+  "남겨진 칼로스의 의지 조각": { base: "남겨진 칼로스의 의지", per: 2 },
+  "이어진 고대의 결의 조각": { base: "이어진 고대의 결의", per: 2 },
+  "뒤엉킨 흉수의 고리 조각": { base: "뒤엉킨 흉수의 고리", per: 2 },
+  "황홀한 환상의 단편 조각": { base: "황홀한 환상의 단편", per: 2 },
+};
+
+/** 조각이면 본품 이름과 환산 개수, 아니면 자기 자신 그대로. */
+export function toBaseItem(name: string, amount: number): { baseName: string; baseAmount: number } {
+  const f = FRAGMENTS[name];
+  return f ? { baseName: f.base, baseAmount: amount / f.per } : { baseName: name, baseAmount: amount };
+}
+
 export interface RewardLine {
   name: string;
   /** 인원 분배까지 반영한 수량 (확정). 랜덤은 1 로 둔다. */
   amount: number;
+  /** 조각이면 본품 이름. 아니면 name 과 같다. 확정 보상 비교의 기준이다. */
+  baseName?: string;
+  /** 본품으로 환산한 개수. 조각 5개면 2.5 처럼 소수가 나온다. */
+  baseAmount?: number;
   /** 화면 표기용 수량 문자열 */
   amountText: string;
   /** 이 줄이 합계에 보탠 메소 */
@@ -116,13 +142,13 @@ export interface CompareRow {
   party: number;
   /** 결정 1인 실수령. 가격표에 없으면 null */
   crystal: number | null;
+  /** 확정 보상. 값이 아니라 개수로 견준다. */
   fixed: RewardLine[];
   random: RewardLine[];
-  fixedValue: number;
   randomValue: number;
-  /** 결정 + 확정 + 랜덤 기대값 */
+  /** 결정 + 랜덤 기대값. 확정 보상은 값을 안 매기므로 빠진다. */
   total: number;
-  /** 값을 안 매긴 보상이 하나라도 있는지 (합계가 실제보다 낮다는 뜻) */
+  /** 값을 안 매긴 랜덤 보상이 하나라도 있는지 (합계가 실제보다 낮다는 뜻) */
   hasUnpriced: boolean;
 }
 
@@ -169,11 +195,16 @@ export function compareRow(
   const crystal = price == null ? null : Math.floor(price / n);
   const { fixed: fixedRaw, random: randomRaw } = rewardRowsFor(boss, diff, priceDate);
 
+  // 확정 보상은 값을 매기지 않는다. 주문의 흔적·큐브·조각은 거래가 안 돼 시세가 없고,
+  // 있어도 사람마다 값이 달라 합계에 섞으면 비교가 흐려진다. 개수로만 견준다.
   const fixed: RewardLine[] = [];
   for (const r of fixedRaw) {
     const amt = rewardAmount(r, n);
-    const meso = values[r.name]?.meso ?? 0;
-    fixed.push(line(r, amt.value, amt.text, amt.value * meso, meso <= 0));
+    const { baseName, baseAmount } = toBaseItem(r.name, amt.value);
+    const l = line(r, amt.value, amt.text, 0, false);
+    l.baseName = baseName;
+    l.baseAmount = baseAmount;
+    fixed.push(l);
   }
 
   const random: RewardLine[] = [];
@@ -196,7 +227,6 @@ export function compareRow(
     random.push(l);
   }
 
-  const fixedValue = fixed.reduce((s, l) => s + l.value, 0);
   const randomValue = random.reduce((s, l) => s + l.value, 0);
   return {
     boss,
@@ -205,10 +235,10 @@ export function compareRow(
     crystal,
     fixed,
     random,
-    fixedValue,
     randomValue,
-    total: (crystal ?? 0) + fixedValue + randomValue,
-    hasUnpriced: [...fixed, ...random].some((l) => l.unpriced),
+    // 확정 보상은 메소로 환산하지 않으므로 합계에 안 들어간다. 개수는 따로 견준다.
+    total: (crystal ?? 0) + randomValue,
+    hasUnpriced: random.some((l) => l.unpriced),
   };
 }
 
@@ -262,31 +292,40 @@ export function summarize(a: CompareRow, b: CompareRow): CompareSummary {
   const gaps: UnpricedDiff[] = [];
   const wash: UnpricedDiff[] = [];
 
-  // 값을 못 매긴 줄만 모은다. 이름이 같으면 한 항목이다.
-  const seen = new Map<string, { kind: "fixed" | "random"; ref: RewardLine }>();
-  for (const row of [a, b]) {
-    for (const [lines, kind] of [
-      [row.fixed, "fixed"],
-      [row.random, "random"],
-    ] as const) {
-      for (const l of lines) {
-        if (!l.unpriced) continue;
-        const prev = seen.get(l.name);
-        // 한쪽에선 확정, 다른 쪽에선 랜덤으로 나오면 약한 쪽(랜덤)으로 본다
-        if (!prev) seen.set(l.name, { kind, ref: l });
-        else if (prev.kind === "fixed" && kind === "random") prev.kind = "random";
-      }
+  /** 확정: 본품 환산 개수로 모은다. 조각과 본품이 한 항목으로 합쳐진다. */
+  const fixedOf = (row: CompareRow) => {
+    const m = new Map<string, { amount: number; ref: RewardLine }>();
+    for (const l of row.fixed) {
+      const key = l.baseName ?? l.name;
+      const hit = m.get(key);
+      if (hit) hit.amount += l.baseAmount ?? l.amount;
+      else m.set(key, { amount: l.baseAmount ?? l.amount, ref: l });
     }
-  }
-
-  for (const [name, { kind, ref }] of seen) {
-    const av = presence(kind === "fixed" ? a.fixed : a.random, name, kind);
-    const bv = presence(kind === "fixed" ? b.fixed : b.random, name, kind);
-    const entry: UnpricedDiff = { name, kind, a: av, b: bv, delta: av - bv, icon: ref.icon, w: ref.w, h: ref.h, short: ref.short };
+    return m;
+  };
+  const fa = fixedOf(a);
+  const fb = fixedOf(b);
+  for (const name of new Set([...fa.keys(), ...fb.keys()])) {
+    const av = fa.get(name)?.amount ?? 0;
+    const bv = fb.get(name)?.amount ?? 0;
+    const ref = (fa.get(name) ?? fb.get(name))!.ref;
+    const entry: UnpricedDiff = { name, kind: "fixed", a: av, b: bv, delta: av - bv, icon: ref.icon, w: ref.w, h: ref.h, short: ref.short };
     (entry.delta === 0 ? wash : gaps).push(entry);
   }
 
-  const order = (x: UnpricedDiff, y: UnpricedDiff) => Math.abs(y.delta) - Math.abs(x.delta) || x.name.localeCompare(y.name, "ko");
+  // 랜덤: 값을 못 매긴 것만. 값을 매긴 것은 이미 메소 차액에 들어갔다.
+  const seen = new Map<string, RewardLine>();
+  for (const row of [a, b]) for (const l of row.random) if (l.unpriced && !seen.has(l.name)) seen.set(l.name, l);
+  for (const [name, ref] of seen) {
+    const av = presence(a.random, name, "random");
+    const bv = presence(b.random, name, "random");
+    const entry: UnpricedDiff = { name, kind: "random", a: av, b: bv, delta: av - bv, icon: ref.icon, w: ref.w, h: ref.h, short: ref.short };
+    (entry.delta === 0 ? wash : gaps).push(entry);
+  }
+
+  const order = (x: UnpricedDiff, y: UnpricedDiff) =>
+    // 확정이 먼저 (확실히 들어오는 몫이라 판단에 더 크게 걸린다)
+    Number(x.kind === "random") - Number(y.kind === "random") || Math.abs(y.delta) - Math.abs(x.delta) || x.name.localeCompare(y.name, "ko");
   return { mesoGap: a.total - b.total, gaps: gaps.sort(order), wash: wash.sort((x, y) => x.name.localeCompare(y.name, "ko")) };
 }
 
@@ -309,16 +348,10 @@ export interface ItemRef {
 export function itemsIn(picks: { boss: string; diff: Difficulty | string }[], priceDate: string): ItemRef[] {
   const acc = new Map<string, ItemRef>();
   for (const p of picks) {
-    const { fixed, random } = rewardRowsFor(p.boss, p.diff, priceDate);
-    for (const [list, key] of [
-      [fixed, "asFixed"],
-      [random, "asRandom"],
-    ] as const) {
-      for (const r of list) {
-        const hit = acc.get(r.name);
-        if (hit) hit[key] = true;
-        else acc.set(r.name, { name: r.name, asFixed: key === "asFixed", asRandom: key === "asRandom", icon: r.icon, w: r.w, h: r.h, short: r.short });
-      }
+    // 확정 보상은 값을 안 매기므로 입력 칸도 만들지 않는다. 랜덤만 받는다.
+    for (const r of rewardRowsFor(p.boss, p.diff, priceDate).random) {
+      if (acc.has(r.name)) continue;
+      acc.set(r.name, { name: r.name, asFixed: false, asRandom: true, icon: r.icon, w: r.w, h: r.h, short: r.short });
     }
   }
   return [...acc.values()].sort((a, b) => a.name.localeCompare(b.name, "ko"));

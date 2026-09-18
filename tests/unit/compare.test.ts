@@ -8,10 +8,16 @@ describe("한 보스의 값어치", () => {
   it("값을 하나도 안 매기면 결정만 남는다", () => {
     const r = compareRow("유피테르", "hard", 1, DATE, {});
     expect(r.crystal).toBe(crystalPrice("유피테르", "hard", DATE));
-    expect(r.fixedValue).toBe(0);
     expect(r.randomValue).toBe(0);
     expect(r.total).toBe(r.crystal);
     expect(r.hasUnpriced).toBe(true);
+  });
+
+  it("확정 보상은 값을 안 매기므로 합계에 안 들어간다", () => {
+    // 주문의 흔적에 값을 넣어도 합계는 그대로다 — 확정은 개수로만 견준다
+    const bare = compareRow("유피테르", "hard", 1, DATE, {});
+    const priced = compareRow("유피테르", "hard", 1, DATE, { "솔 에르다의 기운": { meso: 1_000_000 } });
+    expect(priced.total).toBe(bare.total);
   });
 
   it("결정은 인원수로 나뉜다", () => {
@@ -20,12 +26,22 @@ describe("한 보스의 값어치", () => {
     expect(duo.crystal).toBe(Math.floor(solo.crystal! / 2));
   });
 
-  it("확정 보상은 수량 × 단가", () => {
-    // 솔 에르다의 기운은 각자에게 들어와 인원수로 안 나뉜다
-    const r = compareRow("유피테르", "hard", 1, DATE, { "솔 에르다의 기운": { meso: 100 } });
+  it("확정 보상은 개수를 들고 있는다", () => {
+    const r = compareRow("유피테르", "hard", 1, DATE, {});
     const sol = r.fixed.find((l) => l.name === "솔 에르다의 기운")!;
-    expect(sol.value).toBe(sol.amount * 100);
-    expect(sol.unpriced).toBe(false);
+    expect(sol.amount).toBeGreaterThan(0);
+    expect(sol.value).toBe(0); // 값으로 환산하지 않는다
+  });
+
+  it("조각은 본품 개수로 환산해 들고 있는다", () => {
+    // 노말 카링은 조각 5개 = 본품 2.5개, 하드는 본품 7개
+    const frag = compareRow("카링", "normal", 1, DATE, {}).fixed.find((l) => l.name === "뒤엉킨 흉수의 고리 조각")!;
+    expect(frag.baseName).toBe("뒤엉킨 흉수의 고리");
+    expect(frag.baseAmount).toBe(2.5);
+
+    const whole = compareRow("카링", "hard", 1, DATE, {}).fixed.find((l) => l.name === "뒤엉킨 흉수의 고리")!;
+    expect(whole.baseName).toBe("뒤엉킨 흉수의 고리");
+    expect(whole.baseAmount).toBe(whole.amount);
   });
 
   it("안 나뉘는 확정 보상은 인원이 늘어도 수량이 그대로다", () => {
@@ -35,15 +51,14 @@ describe("한 보스의 값어치", () => {
     expect(amt(duo)).toBe(amt(solo));
   });
 
-  it("조각·큐브는 인원수로 나뉜 뒤 곱해진다", () => {
-    const solo = compareRow("루시드", "hard", 1, DATE, { "메멘토 실버 큐브": { meso: 1000 } });
-    const duo = compareRow("루시드", "hard", 2, DATE, { "메멘토 실버 큐브": { meso: 1000 } });
+  it("조각·큐브는 인원수로 나뉜다", () => {
+    const solo = compareRow("루시드", "hard", 1, DATE, {});
+    const duo = compareRow("루시드", "hard", 2, DATE, {});
     const s = solo.fixed.find((l) => l.name === "메멘토 실버 큐브")!;
     const d = duo.fixed.find((l) => l.name === "메멘토 실버 큐브")!;
     // 1개짜리는 2인격이면 0개 (나눠 떨어지지 않으면 못 받는다)
     expect(s.amount).toBe(1);
     expect(d.amount).toBe(0);
-    expect(d.value).toBe(0);
   });
 
   it("랜덤은 단가 × 확률이 기대값이다", () => {
@@ -72,7 +87,7 @@ describe("한 보스의 값어치", () => {
   it("가격표에 없는 보스는 결정이 null 이고 합계에서 0으로 친다", () => {
     const r = compareRow("시즌 보스 메이린", "hard", 1, DATE, {});
     expect(r.crystal).toBeNull();
-    expect(r.total).toBe(r.fixedValue + r.randomValue);
+    expect(r.total).toBe(r.randomValue);
   });
 });
 
@@ -144,7 +159,7 @@ describe("확률 보정 끄기", () => {
     const off = compareRow("스우", "hard", 1, DATE, values, 0, false);
     expect(on.randomValue).toBeGreaterThan(0);
     expect(off.randomValue).toBe(0);
-    expect(off.total).toBe((off.crystal ?? 0) + off.fixedValue);
+    expect(off.total).toBe(off.crystal ?? 0);
   });
 
   it("끄면 단가는 그대로 들고 있어 화면에 띄울 수 있다", () => {
@@ -172,7 +187,7 @@ describe("확률 보정 끄기", () => {
     const on = compareRow("스우", "hard", 1, DATE, values, 0, true);
     const off = compareRow("스우", "hard", 1, DATE, values, 0, false);
     expect(off.crystal).toBe(on.crystal);
-    expect(off.fixedValue).toBe(on.fixedValue);
+    expect(off.fixed.map((l) => l.amount)).toEqual(on.fixed.map((l) => l.amount));
   });
 });
 
@@ -186,6 +201,24 @@ describe("값 못 매긴 보상 차이 정리", () => {
     expect(s.gaps).toEqual([]);
     expect(s.wash.length).toBeGreaterThan(0);
     expect(s.wash.every((w) => w.a === w.b)).toBe(true);
+  });
+
+  it("조각과 본품을 같은 항목으로 견준다", () => {
+    // 노말 카링 조각 5개(=본품 2.5) vs 하드 카링 본품 7개 → 하드가 4.5개 더
+    const s = summarize(compareRow("카링", "normal", 1, DATE, {}), compareRow("카링", "hard", 1, DATE, {}));
+    const ring = s.gaps.find((g) => g.name === "뒤엉킨 흉수의 고리")!;
+    expect(ring.kind).toBe("fixed");
+    expect(ring.a).toBe(2.5);
+    expect(ring.b).toBe(7);
+    expect(ring.delta).toBe(-4.5);
+    // 조각 이름으로는 따로 잡히지 않는다
+    expect(s.gaps.some((g) => g.name === "뒤엉킨 흉수의 고리 조각")).toBe(false);
+  });
+
+  it("확정 보상은 값을 매겨도 개수 비교에서 안 빠진다", () => {
+    const values = { "솔 에르다의 기운": { meso: 1_000_000 } };
+    const s = summarize(compareRow("유피테르", "hard", 1, DATE, values), compareRow("림보", "normal", 1, DATE, values));
+    expect([...s.gaps, ...s.wash].some((x) => x.name === "솔 에르다의 기운")).toBe(true);
   });
 
   it("한쪽에만 나오는 것은 차이 목록으로 간다", () => {
@@ -228,13 +261,12 @@ describe("값 못 매긴 보상 차이 정리", () => {
 });
 
 describe("값 입력 칸에 쓸 아이템 목록", () => {
-  it("확정·랜덤 여부를 표시한다", () => {
+  it("랜덤만 담는다 (확정은 값을 안 매기므로 입력칸도 없다)", () => {
     const items = itemsIn([{ boss: "유피테르", diff: "hard" }], DATE);
-    const sol = items.find((i) => i.name === "솔 에르다의 기운");
+    expect(items.some((i) => i.name === "솔 에르다의 기운")).toBe(false); // 확정
     const soul = items.find((i) => i.name === "4단계 소울 에테르");
-    expect(sol?.asFixed).toBe(true);
     expect(soul?.asRandom).toBe(true);
-    expect(soul?.asFixed).toBe(false);
+    expect(items.every((i) => i.asRandom && !i.asFixed)).toBe(true);
   });
 
   it("여러 보스에 걸쳐도 아이템은 한 번만 나온다", () => {
