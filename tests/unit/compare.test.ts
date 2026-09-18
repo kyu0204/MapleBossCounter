@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareRow, itemsIn, summarize } from "@/lib/maple/compare";
+import { compareRow, itemsIn, marketPriceOf, summarize } from "@/lib/maple/compare";
 import { crystalPrice } from "@/lib/maple/prices";
 
 const DATE = "2026-09-17";
@@ -148,6 +148,22 @@ describe("알려진 드롭률", () => {
     expect(l.chanceFrom).toBeUndefined();
     expect(l.value).toBe(0);
     expect(l.unpriced).toBe(true);
+  });
+});
+
+describe("경매장 시세 기본값", () => {
+  it("시세가 없으면 직접 넣기 전까지 값이 없다", () => {
+    // item_prices.json 은 CI 가 채운다. 비어 있어도 화면은 돌아야 한다.
+    const r = compareRow("스우", "hard", 1, DATE, {});
+    const l = r.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    expect(marketPriceOf("루즈 컨트롤 머신 마크") ?? 0).toBe(l.unitPrice ?? 0);
+  });
+
+  it("직접 넣은 값이 시세를 이긴다", () => {
+    const r = compareRow("스우", "hard", 1, DATE, { "루즈 컨트롤 머신 마크": { meso: 12_345 } });
+    const l = r.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    expect(l.unitPrice).toBe(12_345);
+    expect(l.priceFrom).toBe("manual");
   });
 });
 

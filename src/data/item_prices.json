@@ -1,0 +1,8 @@
+{
+  "_meta": {
+    "updated": null,
+    "source": "경매장 price-info",
+    "note": "meso = 주간 평균가, 없으면 등록 최저가. scripts/fetch-item-prices.mjs 가 채운다."
+  },
+  "items": {}
+}

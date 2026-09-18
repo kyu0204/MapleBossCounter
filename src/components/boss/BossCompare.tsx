@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { compareRow, DROP_META, itemsIn, summarize, type ItemValues, type RewardLine } from "@/lib/maple/compare";
+import { compareRow, DROP_META, itemsIn, PRICE_META, summarize, type ItemValues, type RewardLine } from "@/lib/maple/compare";
 import { bossName } from "@/lib/maple/bossMeta";
 import { fmtPower } from "@/lib/maple/format";
 import { ICON_BOX } from "@/lib/maple/rewards";
@@ -335,51 +335,47 @@ export function BossCompare({ today }: { today: string }) {
             <div className="text-xs font-medium text-zinc-500">메소 밖의 이득</div>
             <p className="text-[11px] text-zinc-400">위 차액에 안 들어간 몫입니다. 어느 쪽이 더 받는지를 편별로 모았습니다.</p>
 
-            {/* 편을 좌우로 갈라 놓는다. 줄마다 색을 읽어 가며 어느 쪽인지 세는 것보다,
-                애초에 자리가 갈려 있으면 "왼쪽이 이만큼, 오른쪽이 이만큼" 이 한눈에 잡힌다. */}
+            {/*
+              편을 좌우로 갈라 놓되, 격자를 편이 아니라 **항목 기준**으로 짠다.
+              한 편을 한 칸에 몰아넣으면 확정 개수가 다를 때 아래 랜덤 상자가 서로 다른
+              높이에서 시작한다. 확정끼리 한 행, 랜덤끼리 한 행에 두면 행 높이가 자동으로
+              같아져 좌우가 늘 맞는다.
+
+              비어도 칸을 없애지 않는다. "여긴 더 받는 게 없다" 와 "그 항목 자체가 안 뜬다"
+              는 다르다.
+            */}
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-              {([0, 1] as const).map((side) => {
-                const mine = summary.gaps.filter((g) => (g.delta > 0 ? 0 : 1) === side);
-                const fixed = mine.filter((g) => g.kind === "fixed");
-                const random = mine.filter((g) => g.kind === "random");
-                return (
-                  <div key={side} className={`space-y-1.5 border-l-2 pl-2 ${SIDE_TONE[side].bar}`}>
-                    <div className={`text-[11px] font-medium truncate ${SIDE_TONE[side].text}`} title={bossName(sides[side].boss)}>
-                      {bossName(sides[side].boss)}
+              {([0, 1] as const).map((side) => (
+                <div key={`head-${side}`} className={`text-[11px] font-medium truncate border-l-2 pl-2 ${SIDE_TONE[side].bar} ${SIDE_TONE[side].text}`} title={bossName(sides[side].boss)}>
+                  {bossName(sides[side].boss)}
+                </div>
+              ))}
+
+              {(["fixed", "random"] as const).flatMap((kind) =>
+                ([0, 1] as const).map((side) => {
+                  const list = summary.gaps.filter((g) => g.kind === kind && (g.delta > 0 ? 0 : 1) === side);
+                  return (
+                    <div key={`${kind}-${side}`} className="space-y-0.5 rounded border border-zinc-200 dark:border-zinc-800 p-1.5">
+                      <div className="text-[10px] text-zinc-400">{kind === "fixed" ? "확정" : "랜덤"}</div>
+                      {list.length === 0 ? (
+                        <div className="text-[11px] text-zinc-400">없음</div>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {list.map((g) => (
+                            <li key={g.name} className="flex items-center gap-1" title={g.name}>
+                              <Icon icon={g.icon} w={g.w} h={g.h} short={g.short} name={g.name} />
+                              <span className="sr-only">{g.name}</span>
+                              <b className={`text-[11px] tabular-nums ${SIDE_TONE[side].text}`}>
+                                {g.kind === "fixed" ? `+${fmtCount(Math.abs(g.delta))}` : "단독"}
+                              </b>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
-                    {/*
-                      비어도 칸을 없애지 않는다. 한쪽에만 확정이 있으면 그쪽만 상자가 생겨
-                      좌우 줄이 어긋나고, "여긴 아예 없다" 와 "그 항목 자체가 안 뜬다" 가
-                      구분되지 않는다.
-                    */}
-                    {([
-                      ["확정", fixed],
-                      ["랜덤", random],
-                    ] as const).map(([label, list]) => (
-                      <div key={label} className="space-y-0.5 rounded border border-zinc-200 dark:border-zinc-800 p-1.5">
-                        <div className="text-[10px] text-zinc-400">{label}</div>
-                        {list.length === 0 ? (
-                          <div className="text-[11px] text-zinc-400" style={{ minHeight: ICON_BOX.h }}>
-                            없음
-                          </div>
-                        ) : (
-                          <ul className="space-y-0.5">
-                            {list.map((g) => (
-                              <li key={g.name} className="flex items-center gap-1" title={g.name}>
-                                <Icon icon={g.icon} w={g.w} h={g.h} short={g.short} name={g.name} />
-                                <span className="sr-only">{g.name}</span>
-                                <b className={`text-[11px] tabular-nums ${SIDE_TONE[side].text}`}>
-                                  {g.kind === "fixed" ? `+${fmtCount(Math.abs(g.delta))}` : "단독"}
-                                </b>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
+                  );
+                }),
+              )}
             </div>
           </div>
         )}
@@ -405,6 +401,7 @@ export function BossCompare({ today }: { today: string }) {
         <br />
         <b>확률은 넥슨이 공개하지 않습니다.</b> 표본 수가 붙은 확률은 커뮤니티 통계이며, 표본이 작을수록 오차가 큽니다. 직접 넣은 값이 있으면 그쪽이 우선합니다. 아이템 획득 증가는 그것이 적용되는
         아이템(장신구·반지 상자·연마석)에만 곱합니다. (통계 기준 {DROP_META.updated})
+        {PRICE_META.updated && <> · 시세는 경매장 주간 평균가 기준 {PRICE_META.updated.slice(0, 10)}</>}
       </p>
     </div>
   );
