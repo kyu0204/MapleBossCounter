@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { setCharacterBossParty } from "@/actions/planner";
 import { parseBossKey } from "@/lib/maple/bossKey";
 import { clampParty, DEFAULT_MAX_PARTY, maxPartyFor } from "@/lib/maple/partySize";
+import { PartySizePicker } from "@/components/boss/PartySizePicker";
 
 /**
  * 보스 한 줄의 파티 인원 입력. 바꾸면 바로 저장한다.
@@ -62,23 +63,8 @@ export function BossPartyInput({
   }
 
   return (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap" title="파티 인원 (등록한 파티가 없어 직접 정합니다)">
-      <input
-        type="number"
-        min={1}
-        max={max}
-        title={max < DEFAULT_MAX_PARTY ? `이 보스는 최대 ${max}인` : undefined}
-        value={value}
-        disabled={pending}
-        onChange={(e) => setValue(Number(e.target.value))}
-        onBlur={(e) => commit(Number(e.target.value))}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur();
-        }}
-        className={`w-12 rounded border px-1 py-0.5 text-xs text-center tabular-nums ${err ? "border-red-400" : "border-zinc-300 dark:border-zinc-700"} bg-white dark:bg-zinc-900 disabled:opacity-50`}
-        aria-label={`${bossKey} 파티 인원`}
-      />
-      <span className="text-xs text-zinc-500">인</span>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap" title={max < DEFAULT_MAX_PARTY ? `이 보스는 최대 ${max}인` : "파티 인원 (등록한 파티가 없어 직접 정합니다)"}>
+      <PartySizePicker value={value} max={max} onChange={commit} disabled={pending} compact label={`${bossKey} 파티 인원`} />
       {err && <span className="text-xs text-red-600">{err}</span>}
     </span>
   );

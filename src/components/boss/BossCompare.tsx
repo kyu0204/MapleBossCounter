@@ -9,7 +9,8 @@ import type { Difficulty } from "@/lib/maple/bossKey";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { BossPickerModal } from "@/components/party/BossPickerModal";
-import { clampParty, DEFAULT_MAX_PARTY, maxPartyFor } from "@/lib/maple/partySize";
+import { clampParty, maxPartyFor } from "@/lib/maple/partySize";
+import { PartySizePicker } from "./PartySizePicker";
 import { ItemValueModal } from "./ItemValueModal";
 
 /**
@@ -228,19 +229,12 @@ export function BossCompare({ today }: { today: string }) {
               today={today}
               onPick={(boss, diff: Difficulty) => setSide(i as 0 | 1)({ boss, diff, party: clampParty(boss, diff, sides[i].party) })}
             />
-            <label className="flex items-center gap-1 text-sm">
-              <input
-                type="number"
-                min={1}
-                max={maxPartyFor(sides[i].boss, sides[i].diff)}
-                title={maxPartyFor(sides[i].boss, sides[i].diff) < DEFAULT_MAX_PARTY ? `이 보스는 최대 ${maxPartyFor(sides[i].boss, sides[i].diff)}인` : undefined}
-                value={sides[i].party}
-                onChange={(e) => setSide(i as 0 | 1)({ ...sides[i], party: clampParty(sides[i].boss, sides[i].diff, Number(e.target.value)) })}
-                className="w-12 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-1 py-0.5 text-center tabular-nums"
-                aria-label={`${bossName(sides[i].boss)} 인원`}
-              />
-              <span className="text-zinc-500">인격</span>
-            </label>
+            <PartySizePicker
+              value={sides[i].party}
+              max={maxPartyFor(sides[i].boss, sides[i].diff)}
+              onChange={(n) => setSide(i as 0 | 1)({ ...sides[i], party: n })}
+              label={`${bossName(sides[i].boss)} 인원`}
+            />
 
             <span className="ml-auto flex items-baseline gap-2">
               <span className="text-xs text-zinc-500">합계</span>
