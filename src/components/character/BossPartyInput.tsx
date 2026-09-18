@@ -52,11 +52,10 @@ export function BossPartyInput({
   if (linked) {
     return (
       <span
-        className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-zinc-600 dark:text-zinc-300"
+        className="inline-flex items-center gap-0.5 whitespace-nowrap text-xs text-zinc-600 dark:text-zinc-300"
         title="등록한 파티의 구성원 수와 연동된 인원입니다. 파티 구성원을 고치면 함께 바뀝니다."
       >
-        <span className="rounded border border-orange-300 bg-orange-50 px-1.5 py-0.5 tabular-nums dark:border-orange-800 dark:bg-orange-950/30">{party}</span>
-        <span className="text-zinc-500">인</span>
+        <span className="rounded border border-orange-300 bg-orange-50 px-1 py-0.5 tabular-nums dark:border-orange-800 dark:bg-orange-950/30">{party}인</span>
         <span aria-hidden>🔗</span>
       </span>
     );
