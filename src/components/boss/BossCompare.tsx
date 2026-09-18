@@ -234,6 +234,7 @@ export function BossCompare({ today }: { today: string }) {
               max={maxPartyFor(sides[i].boss, sides[i].diff)}
               onChange={(n) => setSide(i as 0 | 1)({ ...sides[i], party: n })}
               label={`${bossName(sides[i].boss)} 인원`}
+              className="text-sm"
             />
 
             <span className="ml-auto flex items-baseline gap-2">

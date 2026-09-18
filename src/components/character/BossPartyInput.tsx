@@ -63,7 +63,7 @@ export function BossPartyInput({
 
   return (
     <span className="inline-flex items-center gap-1 whitespace-nowrap" title={max < DEFAULT_MAX_PARTY ? `이 보스는 최대 ${max}인` : "파티 인원 (등록한 파티가 없어 직접 정합니다)"}>
-      <PartySizePicker value={value} max={max} onChange={commit} disabled={pending} compact label={`${bossKey} 파티 인원`} />
+      <PartySizePicker value={value} max={max} onChange={commit} disabled={pending} label={`${bossKey} 파티 인원`} />
       {err && <span className="text-xs text-red-600">{err}</span>}
     </span>
   );
