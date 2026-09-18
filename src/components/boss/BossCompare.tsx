@@ -100,8 +100,27 @@ function Icon({ icon, w, h, short, name }: { icon?: string; w?: number; h?: numb
  * 값을 안 매긴 줄은 흐리게 두고 값 자리에 "값 없음" 을 적는다. 0 원으로 적으면
  * 정말 가치가 없는 것처럼 읽힌다 — 모르는 것과 0 은 다르다.
  */
-function Lines({ lines, empty, showUnit, counts }: { lines: RewardLine[]; empty: string; showUnit?: boolean; counts?: boolean }) {
-  if (!lines.length) return <div className="text-xs text-zinc-400">{empty}</div>;
+function Lines({
+  lines,
+  empty,
+  showUnit,
+  counts,
+  padTo = 0,
+}: {
+  lines: RewardLine[];
+  empty: string;
+  showUnit?: boolean;
+  counts?: boolean;
+  /**
+   * 이 개수만큼 줄을 채운다 (모자라면 빈 줄).
+   *
+   * 두 보스의 보상 종수가 달라 상자 높이가 제각각이면, 아래에 오는 랜덤 상자가
+   * 서로 다른 높이에서 시작해 위아래로 견주기 어렵다. 픽셀을 찍는 대신 줄 수를 맞춘다.
+   */
+  padTo?: number;
+}) {
+  if (!lines.length && padTo === 0) return <div className="text-xs text-zinc-400">{empty}</div>;
+  const pad = Math.max(0, padTo - lines.length);
   return (
     // 아이콘·수량·값을 바짝 붙인다. 사이를 늘리면 어느 값이 어느 아이콘 것인지 눈이 헤맨다.
     <ul className="grid gap-x-3 gap-y-1 grid-cols-2">
@@ -137,6 +156,10 @@ function Lines({ lines, empty, showUnit, counts }: { lines: RewardLine[]; empty:
             )}
           </span>
         </li>
+      ))}
+      {/* 높이를 맞추는 빈 줄. 읽어 주는 데는 잡히지 않게 한다. */}
+      {Array.from({ length: pad }, (_, i) => (
+        <li key={`pad-${i}`} aria-hidden style={{ height: ICON_BOX.h }} />
       ))}
     </ul>
   );
@@ -193,6 +216,9 @@ export function BossCompare({ today }: { today: string }) {
   const winner = gap === 0 ? null : gap > 0 ? 0 : 1;
 
   const setSide = (i: 0 | 1) => (s: Side) => setSides((prev) => (i === 0 ? [s, prev[1]] : [prev[0], s]));
+
+  // 두 카드의 확정 상자를 같은 높이로. 그래야 아래 랜덤 상자도 같은 자리에서 시작한다.
+  const maxFixed = Math.max(a.fixed.length, b.fixed.length);
 
   return (
     <div className="space-y-3">
@@ -286,7 +312,12 @@ export function BossCompare({ today }: { today: string }) {
                 <span className="text-xs font-medium">확정</span>
                 <span className="text-[11px] text-zinc-400">잡으면 무조건 · {r.fixed.length}종 · 개수</span>
               </div>
-              <Lines lines={[...r.fixed].sort((x, y) => (y.baseAmount ?? 0) - (x.baseAmount ?? 0) || x.name.localeCompare(y.name, "ko"))} empty="확정 보상 없음" counts />
+              <Lines
+                lines={[...r.fixed].sort((x, y) => (y.baseAmount ?? 0) - (x.baseAmount ?? 0) || x.name.localeCompare(y.name, "ko"))}
+                empty="확정 보상 없음"
+                counts
+                padTo={maxFixed}
+              />
             </div>
 
             <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-2 space-y-1.5">
