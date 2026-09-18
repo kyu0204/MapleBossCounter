@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { setCharacterBossParty } from "@/actions/planner";
+import { parseBossKey } from "@/lib/maple/bossKey";
+import { clampParty, DEFAULT_MAX_PARTY, maxPartyFor } from "@/lib/maple/partySize";
 
 /**
  * 보스 한 줄의 파티 인원 입력. 바꾸면 바로 저장한다.
@@ -31,8 +33,12 @@ export function BossPartyInput({
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
 
+  // 보스마다 입장 인원이 다르다. 못 가는 인원으로 나누면 실수령이 통째로 틀린다.
+  const parsed = parseBossKey(bossKey);
+  const max = parsed ? maxPartyFor(parsed.boss, parsed.diff) : DEFAULT_MAX_PARTY;
+
   function commit(next: number) {
-    const n = Math.min(6, Math.max(1, Math.round(next) || 1));
+    const n = parsed ? clampParty(parsed.boss, parsed.diff, next) : Math.min(max, Math.max(1, Math.round(next) || 1));
     setValue(n);
     if (n === party) return;
     start(async () => {
@@ -60,7 +66,8 @@ export function BossPartyInput({
       <input
         type="number"
         min={1}
-        max={6}
+        max={max}
+        title={max < DEFAULT_MAX_PARTY ? `이 보스는 최대 ${max}인` : undefined}
         value={value}
         disabled={pending}
         onChange={(e) => setValue(Number(e.target.value))}

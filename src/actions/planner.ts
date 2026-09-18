@@ -6,7 +6,8 @@ import { requireUserId } from "@/auth";
 import { ownedCharacterByOcid } from "@/services/characterSync";
 import { patchCharConfig, savePlanConfigRow } from "@/services/planInput";
 import { kstDateStr } from "@/lib/maple/kst";
-import { normalizeBossList } from "@/lib/maple/bossKey";
+import { normalizeBossList, parseBossKey } from "@/lib/maple/bossKey";
+import { maxPartyFor } from "@/lib/maple/partySize";
 import { validateBossSelection, type PlanConfig } from "@/lib/maple/planner";
 import type { ActionResult } from "./nexon-key";
 
@@ -91,6 +92,14 @@ export async function setCharacterBossParty(ocid: string, key: string, party: nu
   const k = KeySchema.safeParse(key);
   const n = PartySchema.safeParse(party);
   if (!k.success || !n.success) return { ok: false, message: "인원은 1~6 사이여야 합니다" };
+
+  // 보스마다 입장 인원이 다르다. 화면에서만 막으면 우회되고, 그러면 못 가는 인원으로
+  // 나눈 실수령이 저장돼 숫자가 통째로 틀린다.
+  const parsedKey = parseBossKey(k.data);
+  if (parsedKey) {
+    const max = maxPartyFor(parsedKey.boss, parsedKey.diff);
+    if (n.data > max) return { ok: false, message: `${parsedKey.boss}은(는) 최대 ${max}인입니다` };
+  }
 
   const prev = await patchCharConfig(userId, c.world, ocid, {});
   const cur = Object.fromEntries(normalizeBossList(prev.bosses).map((b) => [b.key, b.party ?? 1]));

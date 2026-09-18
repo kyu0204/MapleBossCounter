@@ -8,6 +8,7 @@ import { tierOf } from "@/lib/maple/tiers";
 import { bossName, DIFF_LABEL } from "@/lib/maple/bossMeta";
 import { fmtPower } from "@/lib/maple/format";
 import { mergePicks, picksTotals, toPickList } from "@/lib/maple/bossPicks";
+import { clampParty } from "@/lib/maple/partySize";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyButton } from "@/components/boss/DifficultyBadge";
 import { TierStars } from "@/components/boss/TierStars";
@@ -101,7 +102,8 @@ export function BossSettingsModal({ ocid, cap, defaultParty, initial, partyPicks
       }
       // 같은 보스의 다른 난이도는 교체 (캐릭터·보스당 난이도 1개)
       for (const k of Object.keys(next)) if (parseBossKey(k)?.boss === boss) delete next[k];
-      next[key] = partyPicks[key] ?? defaultParty;
+      // 기본 인원이 이 보스의 상한을 넘으면 잘라 넣는다 (3인 보스에 6인이 박히면 안 된다)
+      next[key] = clampParty(boss, diff, partyPicks[key] ?? defaultParty);
       return next;
     });
     setMsg(null);

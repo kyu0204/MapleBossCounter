@@ -9,6 +9,7 @@ import type { Difficulty } from "@/lib/maple/bossKey";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge } from "@/components/boss/DifficultyBadge";
 import { BossPickerModal } from "@/components/party/BossPickerModal";
+import { clampParty, DEFAULT_MAX_PARTY, maxPartyFor } from "@/lib/maple/partySize";
 import { ItemValueModal } from "./ItemValueModal";
 
 /**
@@ -95,21 +96,22 @@ function Icon({ icon, w, h, short, name }: { icon?: string; w?: number; h?: numb
 function Lines({ lines, empty, showUnit, counts }: { lines: RewardLine[]; empty: string; showUnit?: boolean; counts?: boolean }) {
   if (!lines.length) return <div className="text-xs text-zinc-400">{empty}</div>;
   return (
-    <ul className="grid gap-1 grid-cols-2 lg:grid-cols-3">
+    // 아이콘·수량·값을 바짝 붙인다. 사이를 늘리면 어느 값이 어느 아이콘 것인지 눈이 헤맨다.
+    <ul className="grid gap-x-3 gap-y-1 grid-cols-2">
       {lines.map((l) => (
-        <li key={l.name} className={`flex items-center gap-1.5 ${l.unpriced ? "opacity-60" : ""}`} title={l.name}>
+        <li key={l.name} className={`flex items-center gap-1 ${l.unpriced ? "opacity-60" : ""}`} title={l.name}>
           <Icon icon={l.icon} w={l.w} h={l.h} short={l.short} name={l.name} />
           {/* 이름은 아이콘과 마우스 오버로 알아본다. 화면에서만 감추고 읽어 주는 데는 남긴다. */}
           <span className="sr-only">{l.name}</span>
           {/* 근거: 확정은 수량, 랜덤은 확률(과 표본 수) */}
-          <span className="text-[10px] text-zinc-400 tabular-nums shrink-0 flex-1 min-w-0 truncate">
+          <span className="text-[10px] text-zinc-400 tabular-nums shrink-0">
             {counts
               ? "" // 확정은 오른쪽 칸이 곧 개수라 여기 또 적지 않는다
               : l.chance != null
                 ? `${l.chance.toFixed(2)}%${l.chanceFrom === "stats" && l.kills ? ` · ${l.kills >= 1000 ? `${Math.round(l.kills / 1000)}천` : l.kills}회` : ""}`
                 : ""}
           </span>
-          <span className="text-xs tabular-nums shrink-0 w-20 text-right">
+          <span className="text-xs tabular-nums shrink-0">
             {counts ? (
               // 확정은 개수로 견준다. 조각은 본품 환산도 같이 (5조각 = 2.5개)
               <b>
@@ -214,19 +216,26 @@ export function BossCompare({ today }: { today: string }) {
       </div>
 
       {/* 보스 둘은 왼쪽에 세로로, 결론은 오른쪽에. 결론이 눈에서 안 벗어난다. */}
-      <div className="grid gap-3 lg:grid-cols-[1fr_20rem] items-start">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,34rem)_20rem] items-start">
         <div className="space-y-3 min-w-0">
       {rows.map((r, i) => (
         <section key={i} className={`card space-y-3 border-l-4 ${SIDE_TONE[i].bar}`}>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <BossPickerModal boss={sides[i].boss} diff={sides[i].diff} today={today} onPick={(boss, diff: Difficulty) => setSide(i as 0 | 1)({ ...sides[i], boss, diff })} />
+            {/* 3인 보스로 바꿨는데 6인이 남아 있으면 안 되므로 고를 때도 자른다 */}
+            <BossPickerModal
+              boss={sides[i].boss}
+              diff={sides[i].diff}
+              today={today}
+              onPick={(boss, diff: Difficulty) => setSide(i as 0 | 1)({ boss, diff, party: clampParty(boss, diff, sides[i].party) })}
+            />
             <label className="flex items-center gap-1 text-sm">
               <input
                 type="number"
                 min={1}
-                max={6}
+                max={maxPartyFor(sides[i].boss, sides[i].diff)}
+                title={maxPartyFor(sides[i].boss, sides[i].diff) < DEFAULT_MAX_PARTY ? `이 보스는 최대 ${maxPartyFor(sides[i].boss, sides[i].diff)}인` : undefined}
                 value={sides[i].party}
-                onChange={(e) => setSide(i as 0 | 1)({ ...sides[i], party: Math.min(6, Math.max(1, Number(e.target.value) || 1)) })}
+                onChange={(e) => setSide(i as 0 | 1)({ ...sides[i], party: clampParty(sides[i].boss, sides[i].diff, Number(e.target.value)) })}
                 className="w-12 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-1 py-0.5 text-center tabular-nums"
                 aria-label={`${bossName(sides[i].boss)} 인원`}
               />
