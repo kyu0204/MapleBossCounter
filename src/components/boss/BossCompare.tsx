@@ -100,27 +100,8 @@ function Icon({ icon, w, h, short, name }: { icon?: string; w?: number; h?: numb
  * 값을 안 매긴 줄은 흐리게 두고 값 자리에 "값 없음" 을 적는다. 0 원으로 적으면
  * 정말 가치가 없는 것처럼 읽힌다 — 모르는 것과 0 은 다르다.
  */
-function Lines({
-  lines,
-  empty,
-  showUnit,
-  counts,
-  padTo = 0,
-}: {
-  lines: RewardLine[];
-  empty: string;
-  showUnit?: boolean;
-  counts?: boolean;
-  /**
-   * 이 개수만큼 줄을 채운다 (모자라면 빈 줄).
-   *
-   * 두 보스의 보상 종수가 달라 상자 높이가 제각각이면, 아래에 오는 랜덤 상자가
-   * 서로 다른 높이에서 시작해 위아래로 견주기 어렵다. 픽셀을 찍는 대신 줄 수를 맞춘다.
-   */
-  padTo?: number;
-}) {
-  if (!lines.length && padTo === 0) return <div className="text-xs text-zinc-400">{empty}</div>;
-  const pad = Math.max(0, padTo - lines.length);
+function Lines({ lines, empty, showUnit, counts }: { lines: RewardLine[]; empty: string; showUnit?: boolean; counts?: boolean }) {
+  if (!lines.length) return <div className="text-xs text-zinc-400">{empty}</div>;
   return (
     // 아이콘·수량·값을 바짝 붙인다. 사이를 늘리면 어느 값이 어느 아이콘 것인지 눈이 헤맨다.
     <ul className="grid gap-x-3 gap-y-1 grid-cols-2">
@@ -156,10 +137,6 @@ function Lines({
             )}
           </span>
         </li>
-      ))}
-      {/* 높이를 맞추는 빈 줄. 읽어 주는 데는 잡히지 않게 한다. */}
-      {Array.from({ length: pad }, (_, i) => (
-        <li key={`pad-${i}`} aria-hidden style={{ height: ICON_BOX.h }} />
       ))}
     </ul>
   );
@@ -217,8 +194,6 @@ export function BossCompare({ today }: { today: string }) {
 
   const setSide = (i: 0 | 1) => (s: Side) => setSides((prev) => (i === 0 ? [s, prev[1]] : [prev[0], s]));
 
-  // 두 카드의 확정 상자를 같은 높이로. 그래야 아래 랜덤 상자도 같은 자리에서 시작한다.
-  const maxFixed = Math.max(a.fixed.length, b.fixed.length);
 
   return (
     <div className="space-y-3">
@@ -285,7 +260,8 @@ export function BossCompare({ today }: { today: string }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-1 border-y border-zinc-100 dark:border-zinc-800 py-2 text-sm">
+          {/* 줄바꿈 대신 가로 스크롤. 한쪽만 두 줄이 되면 아래 상자들이 통째로 밀린다. */}
+          <div className="flex gap-x-6 overflow-x-auto whitespace-nowrap border-y border-zinc-100 dark:border-zinc-800 py-2 text-sm">
             <span>
               <span className="text-zinc-500">결정 (1인) </span>
               <b className="tabular-nums">{r.crystal == null ? <span className="text-xs font-normal text-zinc-400">가격 미등록</span> : fmtPower(r.crystal)}</b>
@@ -312,12 +288,7 @@ export function BossCompare({ today }: { today: string }) {
                 <span className="text-xs font-medium">확정</span>
                 <span className="text-[11px] text-zinc-400">잡으면 무조건 · {r.fixed.length}종 · 개수</span>
               </div>
-              <Lines
-                lines={[...r.fixed].sort((x, y) => (y.baseAmount ?? 0) - (x.baseAmount ?? 0) || x.name.localeCompare(y.name, "ko"))}
-                empty="확정 보상 없음"
-                counts
-                padTo={maxFixed}
-              />
+              <Lines lines={[...r.fixed].sort((x, y) => (y.baseAmount ?? 0) - (x.baseAmount ?? 0) || x.name.localeCompare(y.name, "ko"))} empty="확정 보상 없음" counts />
             </div>
 
             <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-2 space-y-1.5">
@@ -331,7 +302,10 @@ export function BossCompare({ today }: { today: string }) {
             </div>
           </div>
 
-          {r.hasUnpriced && <div className="text-[11px] text-zinc-400">&apos;값 없음&apos; 줄은 합계에 안 들어갑니다. 실제 값어치는 이보다 높습니다.</div>}
+          {/* 한쪽에만 뜨면 카드 높이가 어긋난다. 자리는 늘 잡아 두고 글자만 비운다. */}
+          <div className="text-[11px] text-zinc-400 min-h-4">
+            {r.hasUnpriced ? "'값 없음' 줄은 합계에 안 들어갑니다. 실제 값어치는 이보다 높습니다." : ""}
+          </div>
         </section>
       ))}
         </div>
@@ -373,15 +347,22 @@ export function BossCompare({ today }: { today: string }) {
                     <div className={`text-[11px] font-medium truncate ${SIDE_TONE[side].text}`} title={bossName(sides[side].boss)}>
                       {bossName(sides[side].boss)}
                     </div>
-                    {mine.length === 0 && <div className="text-[11px] text-zinc-400">더 받는 것 없음</div>}
-
+                    {/*
+                      비어도 칸을 없애지 않는다. 한쪽에만 확정이 있으면 그쪽만 상자가 생겨
+                      좌우 줄이 어긋나고, "여긴 아예 없다" 와 "그 항목 자체가 안 뜬다" 가
+                      구분되지 않는다.
+                    */}
                     {([
                       ["확정", fixed],
                       ["랜덤", random],
-                    ] as const).map(([label, list]) =>
-                      list.length === 0 ? null : (
-                        <div key={label} className="space-y-0.5 rounded border border-zinc-200 dark:border-zinc-800 p-1.5">
-                          <div className="text-[10px] text-zinc-400">{label}</div>
+                    ] as const).map(([label, list]) => (
+                      <div key={label} className="space-y-0.5 rounded border border-zinc-200 dark:border-zinc-800 p-1.5">
+                        <div className="text-[10px] text-zinc-400">{label}</div>
+                        {list.length === 0 ? (
+                          <div className="text-[11px] text-zinc-400" style={{ minHeight: ICON_BOX.h }}>
+                            없음
+                          </div>
+                        ) : (
                           <ul className="space-y-0.5">
                             {list.map((g) => (
                               <li key={g.name} className="flex items-center gap-1" title={g.name}>
@@ -393,9 +374,9 @@ export function BossCompare({ today }: { today: string }) {
                               </li>
                             ))}
                           </ul>
-                        </div>
-                      ),
-                    )}
+                        )}
+                      </div>
+                    ))}
                   </div>
                 );
               })}
