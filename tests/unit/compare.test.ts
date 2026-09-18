@@ -69,12 +69,14 @@ describe("한 보스의 값어치", () => {
   });
 
   it("확률만 넣거나 단가만 넣으면 기대값은 0이고 미입력으로 남는다", () => {
-    const onlyPrice = compareRow("유피테르", "hard", 1, DATE, { "4단계 소울 에테르": { meso: 1_000_000_000 } });
-    const onlyChance = compareRow("유피테르", "hard", 1, DATE, { "4단계 소울 에테르": { chance: 5 } });
+    // 시세표에도 드롭 통계에도 없는 것으로 본다. 둘 중 하나라도 있으면 나머지 한쪽만
+    // 넣어도 값이 잡히므로 이 규칙을 못 본다.
+    const onlyPrice = compareRow("유피테르", "hard", 1, DATE, { "오만의 원죄": { meso: 1_000_000_000 } });
+    const onlyChance = compareRow("유피테르", "hard", 1, DATE, { "오만의 원죄": { chance: 5 } });
     for (const r of [onlyPrice, onlyChance]) {
-      const soul = r.random.find((l) => l.name === "4단계 소울 에테르")!;
-      expect(soul.value).toBe(0);
-      expect(soul.unpriced).toBe(true);
+      const sin = r.random.find((l) => l.name === "오만의 원죄")!;
+      expect(sin.value).toBe(0);
+      expect(sin.unpriced).toBe(true);
     }
   });
 
@@ -194,8 +196,9 @@ describe("확률 보정 끄기", () => {
   });
 
   it("끈 상태에서 단가가 없으면 값 없음으로 남는다", () => {
+    // 스우로이드는 시세표에도 없다. 시세표에 있는 것은 단가가 자동으로 붙어 값이 생긴다.
     const off = compareRow("스우", "hard", 1, DATE, {}, 0, false);
-    const l = off.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    const l = off.random.find((x) => x.name === "스우로이드")!;
     expect(l.unpriced).toBe(true);
   });
 

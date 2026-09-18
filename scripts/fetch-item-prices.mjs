@@ -1,129 +1,98 @@
 /**
- * 경매장에서 보스 물욕템 시세를 받아 src/data/item_prices.json 에 병합한다.
+ * 보스 물욕템 시세를 받아 src/data/item_prices.json 에 쓴다.
  *
- * 왜 이런 모양인가
- *   - 넥슨 공개 API 에는 시세가 없다. 경매장 웹이 쓰는 내부 API 를 부른다.
- *     문서화된 곳이 아니라 언제든 바뀔 수 있다 — 실패해도 앱은 기존 값으로 돈다.
- *   - 인증은 로그인 쿠키(NPP)다. API 키가 아니라 세션이라 사용자에게 받을 수 없다.
- *     그래서 웹앱이 아니라 여기(CI)에서만 부르고, 결과 JSON 만 앱으로 넘긴다.
- *   - 세션 토큰(_wts)은 3시간짜리다. 매 실행마다 로그인 쿠키로 새로 받는다.
- *     되돌려 저장할 것이 없으므로 시크릿은 NPP 하나면 된다.
- *   - price-info 는 검색 쿼터를 소모하지 않는다 (하루 100회 제한은 새 검색 생성에만 걸린다).
+ * 출처: 메이플증권(mitemprice.kr) 메인 페이지. 스카니아(본 서버) 기준.
  *
- * 사용:
- *   NEXON_COOKIE='NPP=...; ...' node scripts/fetch-item-prices.mjs [--dry]
+ * 왜 여기서 가져오나
+ *   경매장 내부 API 를 직접 부르는 길도 있었지만 그건 로그인 쿠키를 요구한다. 세션을
+ *   CI 에 두면 해외 IP 에서 매일 접속하는 모양이 되고, 쿠키가 새면 계정 자체가 위험하다.
+ *   그 사이트는 이미 공개된 페이지에 시세를 싣고 있고 robots.txt 가 "/" 를 허용한다.
+ *   ("/api.php" 는 막아 두었으므로 부르지 않는다. 사람이 보는 페이지만 읽는다.)
+ *   그래서 이 스크립트에는 자격증명이 하나도 안 들어간다.
+ *
+ * 예의
+ *   요청은 실행당 한 번뿐이다. 하루 한 번이면 충분한 값이라 더 자주 돌릴 이유가 없다.
+ *   User-Agent 에 이 앱이 누구인지 밝힌다 — 브라우저인 척하지 않는다.
+ *
+ * 사용: node scripts/fetch-item-prices.mjs [--dry]
  */
-import "./_runenv.mjs";
 import fs from "node:fs";
 import path from "node:path";
 
-const API = "https://api.mskr.nexon.com/v1/market/web";
-const ORIGIN = "https://auction.maplestory.nexon.com";
+const SRC = "https://mitemprice.kr/";
 const OUT = path.join("src", "data", "item_prices.json");
-const IDS = path.join("src", "data", "auction_ids.json");
-
 const dry = process.argv.includes("--dry");
-const WORLD_ID = process.env.NEXON_WORLD_ID ?? "0";
 
-const cookie = process.env.NEXON_COOKIE;
-if (!cookie) {
-  console.error("NEXON_COOKIE 가 필요하다 (경매장 로그인 쿠키). 브라우저에서 복사해 시크릿에 넣을 것.");
-  process.exit(1);
-}
-
-/** 쿠키 저장소. 성공 응답의 Set-Cookie 로 _wts 를 갱신한다. */
-const jar = new Map();
-for (const kv of cookie.split(/;\s*/)) {
-  const i = kv.indexOf("=");
-  if (i > 0) jar.set(kv.slice(0, i).trim(), kv.slice(i + 1).trim());
-}
-const cookieHeader = () => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
-
-function applySetCookie(res) {
-  const list = typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [res.headers.get("set-cookie")].filter(Boolean);
-  for (const sc of list ?? []) {
-    const [kv, ...attrs] = sc.split(";");
-    const i = kv.indexOf("=");
-    if (i <= 0) continue;
-    const name = kv.slice(0, i).trim();
-    const value = kv.slice(i + 1).trim();
-    // 인증 실패 응답은 로그인 쿠키를 지우라고 보낸다. 따르면 재발급도 못 하게 된다.
-    if (!value || attrs.some((a) => /^\s*max-age=0\s*$/i.test(a))) continue;
-    jar.set(name, value);
-  }
-}
-
-const headers = () => ({
-  accept: "application/json",
-  origin: ORIGIN,
-  referer: `${ORIGIN}/`,
-  cookie: cookieHeader(),
-  "user-agent": "Mozilla/5.0 maple-board price collector",
-});
-
-async function call(url, init = {}) {
-  const res = await fetch(url, { ...init, headers: { ...headers(), ...(init.headers ?? {}) } });
-  if (res.ok) applySetCookie(res);
-  const body = await res.json().catch(() => ({}));
-  return { res, body };
-}
-
-/** 세션 토큰 재발급. 로그인 쿠키만 있으면 된다. */
-async function renewSession() {
-  const { res } = await call("https://api.mskr.nexon.com/v1/auth/web-token/session", { method: "POST" });
-  if (!res.ok) throw new Error(`세션 재발급 실패 (${res.status}). 로그인 쿠키가 만료됐을 수 있다.`);
-}
-
-/** 한 아이템의 시세. 실패하면 null (개별 실패는 전체를 막지 않는다). */
-async function priceOf(id) {
-  const qs = new URLSearchParams({ worldId: WORLD_ID, royalSpecialType: "0", petGrade: "0", itemCount: "5", isCashEquip: "false" });
-  const url = `${API}/items/${id}/price-info?${qs}`;
-  let { res, body } = await call(url);
-  // 401 + code 12 = 세션 만료. 한 번만 재발급하고 다시 시도한다.
-  if (res.status === 401) {
-    await renewSession();
-    ({ res, body } = await call(url));
-  }
-  if (!res.ok) return { error: `${res.status} ${body?.error?.name ?? ""}`.trim() };
-  const lowest = Number(body.registeredLowestPrice ?? 0);
-  const week = Number(body.weekAveragePrice ?? 0);
-  return { lowest: lowest || null, weekAverage: week || null };
-}
+/**
+ * 사이트 이름 → 우리 보상 이름.
+ *
+ * 대부분은 이름이 같아 그대로 쓴다. 여기 적는 것은 우리가 "선택 상자" 로 들고 있는데
+ * 사이트는 그 안에서 나오는 물건 이름으로 파는 경우다. 상자의 값어치를 그 물건 값으로
+ * 보는 셈인데, 상자를 까면 그게 나오므로 비교 목적에는 맞다.
+ */
+const ALIAS = {
+  마도서: "저주받은 마도서 선택 상자",
+  "미트라의 분노": "미트라의 분노 선택 상자",
+};
 
 async function main() {
-  const ids = JSON.parse(fs.readFileSync(IDS, "utf8")).items;
-  const names = Object.keys(ids);
-  console.log(`대상 ${names.length}종${dry ? " (--dry: 요청 안 함)" : ""}`);
+  const res = await fetch(SRC, {
+    headers: {
+      accept: "text/html",
+      // HTTP 헤더는 ASCII 만 담을 수 있다. 한글이나 em dash 를 넣으면 요청 자체가 실패한다.
+      "user-agent": "maple-board/1.0 price reader (+https://github.com/kyu0204/MapleBossCounter; once a day, public page only)",
+    },
+  });
+  if (!res.ok) throw new Error(`가져오기 실패: ${res.status}`);
+  const html = await res.text();
+
+  // <img alt="이름" ...>이름</td><td ...>12.34</td> — 숫자는 억 단위다
+  const rows = [...html.matchAll(/alt="([^"]+)"[^>]*>\s*\1\s*<\/td>\s*<td[^>]*>([\d.]+)<\/td>/g)];
+  if (rows.length === 0) throw new Error("표를 못 읽었다. 페이지 구조가 바뀐 것으로 보인다.");
+
+  const rewards = JSON.parse(fs.readFileSync(path.join("src", "data", "boss_rewards.json"), "utf8"));
+  const wanted = new Set();
+  for (const diffs of Object.values(rewards.bosses)) {
+    for (const v of Object.values(diffs)) {
+      for (const r of v.rewards ?? []) if (!r.fixed) wanted.add(r.name);
+    }
+  }
+
+  const now = new Date().toISOString();
+  const items = {};
+  const skipped = [];
+  for (const [, rawName, eok] of rows) {
+    const name = ALIAS[rawName] ?? rawName;
+    if (!wanted.has(name)) {
+      skipped.push(rawName);
+      continue;
+    }
+    const meso = Math.round(Number(eok) * 100_000_000);
+    if (!Number.isFinite(meso) || meso <= 0) continue;
+    items[name] = { meso, at: now };
+  }
+
+  console.log(`페이지에서 ${rows.length}행 읽음 → 보스 보상과 맞는 것 ${Object.keys(items).length}종`);
   if (dry) {
-    for (const n of names.slice(0, 5)) console.log(`  ${n} -> ${ids[n]}`);
+    for (const [n, v] of Object.entries(items)) console.log(`  ${n}: ${(v.meso / 100_000_000).toFixed(2)}억`);
+    console.log(`\n보상 목록에 없어 건너뛴 것 ${skipped.length}종`);
     return;
   }
 
-  await renewSession();
-
+  // 이번에 못 받은 것은 이전 값을 지킨다. 값이 사라지는 것보다 오래된 값이 낫다.
   const prev = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, "utf8")) : { items: {} };
-  const items = { ...prev.items };
-  const now = new Date().toISOString();
-  let ok = 0;
-  const failed = [];
+  const merged = { ...prev.items, ...items };
 
-  for (const name of names) {
-    const r = await priceOf(ids[name]);
-    if (r.error || (r.lowest == null && r.weekAverage == null)) {
-      // 실패한 것은 이전 값을 그대로 둔다. 값이 사라지는 것보다 오래된 값이 낫다.
-      failed.push(`${name}: ${r.error ?? "매물 없음"}`);
-      continue;
-    }
-    // 주간 평균이 있으면 그쪽을 쓴다. 최저가만 보면 급매 하나에 값이 휘청인다.
-    items[name] = { meso: r.weekAverage ?? r.lowest, lowest: r.lowest, weekAverage: r.weekAverage, at: now };
-    ok++;
-    await new Promise((r) => setTimeout(r, 200)); // 예의상 간격
-  }
-
-  fs.writeFileSync(OUT, JSON.stringify({ _meta: { updated: now, source: "경매장 price-info", note: "meso = 주간 평균가, 없으면 등록 최저가" }, items }, null, 2) + "\n");
-  console.log(`${ok}종 갱신 → ${OUT}`);
-  if (failed.length) console.log(`\n실패 ${failed.length}종 (이전 값 유지):\n  ${failed.join("\n  ")}`);
-  if (ok === 0) process.exitCode = 1; // 전부 실패면 쿠키 문제로 보고 알린다
+  fs.writeFileSync(
+    OUT,
+    JSON.stringify(
+      { _meta: { updated: now, source: "메이플증권(mitemprice.kr) · 스카니아 기준", note: "억 단위 표기를 메소로 환산. 값은 참고용이다." }, items: merged },
+      null,
+      2,
+    ) + "\n",
+  );
+  console.log(`→ ${OUT}`);
+  if (Object.keys(items).length === 0) process.exitCode = 1; // 하나도 못 읽으면 구조가 바뀐 것이다
 }
 
 main().catch((e) => {
