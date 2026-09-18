@@ -100,13 +100,40 @@ function Icon({ icon, w, h, short, name }: { icon?: string; w?: number; h?: numb
  * 값을 안 매긴 줄은 흐리게 두고 값 자리에 "값 없음" 을 적는다. 0 원으로 적으면
  * 정말 가치가 없는 것처럼 읽힌다 — 모르는 것과 0 은 다르다.
  */
+/**
+ * 상자 구성 표기.
+ *
+ *   고를 수 있는 상자 — 가장 비싼 것이 곧 그 상자 값이라 값 칸에 그대로 나온다.
+ *     여기서는 무엇을 골라 나온 값인지만 밝힌다.
+ *   못 고르는 상자 — 값을 하나로 못 세운다. 구성이 둘뿐이면 둘 다, 많으면 폭을 적는다.
+ */
+function boxText(box: NonNullable<RewardLine["box"]>): string | null {
+  const priced = box.contents.filter((c) => c.meso != null);
+  if (!priced.length) return null;
+  if (box.kind === "choice") return `상자 최고가 · ${priced.length}종 중`;
+  if (priced.length <= 2) return priced.map((c) => fmtPower(c.meso!)).join(" · ");
+  return `${fmtPower(box.min!)}~${fmtPower(box.max!)}`;
+}
+
+/** 마우스 오버로 보는 구성 목록. 좁은 칸에 다 못 적는 것을 여기 담는다. */
+function boxTitle(name: string, box?: RewardLine["box"]): string {
+  if (!box) return name;
+  const body = box.contents
+    .slice(0, 8)
+    .map((c) => `  ${c.name} ${c.meso == null ? "시세 없음" : fmtPower(c.meso)}`)
+    .join("\n");
+  const more = box.contents.length > 8 ? `\n  … 외 ${box.contents.length - 8}종` : "";
+  const head = box.kind === "choice" ? "골라 꺼내는 상자" : "무엇이 나올지 못 고르는 상자";
+  return `${name}\n${head}${box.note ? `\n${box.note}` : ""}\n${body}${more}`;
+}
+
 function Lines({ lines, empty, showUnit, counts }: { lines: RewardLine[]; empty: string; showUnit?: boolean; counts?: boolean }) {
   if (!lines.length) return <div className="text-xs text-zinc-400">{empty}</div>;
   return (
     // 아이콘·수량·값을 바짝 붙인다. 사이를 늘리면 어느 값이 어느 아이콘 것인지 눈이 헤맨다.
     <ul className="grid gap-x-3 gap-y-1 grid-cols-2">
       {lines.map((l) => (
-        <li key={l.name} className={`flex items-center gap-1 ${l.unpriced ? "opacity-60" : ""}`} title={l.name}>
+        <li key={l.name} className={`flex items-center gap-1 ${l.unpriced ? "opacity-60" : ""}`} title={boxTitle(l.name, l.box)}>
           <Icon icon={l.icon} w={l.w} h={l.h} short={l.short} name={l.name} />
           {/* 이름은 아이콘과 마우스 오버로 알아본다. 화면에서만 감추고 읽어 주는 데는 남긴다. */}
           <span className="sr-only">{l.name}</span>
@@ -128,12 +155,23 @@ function Lines({ lines, empty, showUnit, counts }: { lines: RewardLine[]; empty:
                 ) : null}
               </b>
             ) : l.unpriced ? (
-              <span className="text-[11px] text-zinc-400">값 없음</span>
+              // 못 고르는 상자는 값을 못 세운다. 그래도 구성 시세는 판단에 쓰이므로 적는다.
+              l.box && boxText(l.box) ? (
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{boxText(l.box)}</span>
+              ) : (
+                <span className="text-[11px] text-zinc-400">값 없음</span>
+              )
             ) : showUnit ? (
               // 확률 보정을 끈 랜덤 줄: 기대값이 아니라 단가다. 합계에 안 들어간다.
-              <span className="text-zinc-600 dark:text-zinc-300">{fmtPower(l.unitPrice ?? 0)}</span>
+              <span className="text-zinc-600 dark:text-zinc-300">
+                {fmtPower(l.unitPrice ?? 0)}
+                {l.priceFrom === "box" ? <span className="text-[10px] text-zinc-400"> 상자</span> : null}
+              </span>
             ) : (
-              <b>{fmtPower(l.value)}</b>
+              <b>
+                {fmtPower(l.value)}
+                {l.priceFrom === "box" ? <span className="font-normal text-[10px] text-zinc-400"> 상자</span> : null}
+              </b>
             )}
           </span>
         </li>

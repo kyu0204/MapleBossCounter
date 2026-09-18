@@ -20,7 +20,8 @@ import type { Difficulty } from "./bossKey";
 import { crystalPrice } from "./prices";
 import { rewardAmount, rewardRowsFor, type DisplayReward } from "./rewards";
 import dropData from "@/data/drop_rates.json";
-import priceData from "@/data/item_prices.json";
+import { boxInfo, boxValueOf, type BoxInfo } from "./boxes";
+import { marketPriceOf, PRICE_META } from "./itemPrices";
 
 /** 아이템 하나에 매긴 값. 화면에서 입력받아 localStorage 에 둔다. */
 export interface ItemValue {
@@ -34,30 +35,22 @@ export type ItemValues = Record<string, ItemValue>;
 
 // ---------- 경매장 시세 ----------
 
-interface PriceFile {
-  _meta: { updated: string | null; source: string; note: string };
-  items: Record<string, { meso: number; lowest: number | null; weekAverage: number | null; at: string }>;
-}
-
-const prices = priceData as unknown as PriceFile;
-export const PRICE_META = prices._meta;
+export { marketPriceOf, PRICE_META };
 
 /**
- * 경매장에서 받아 둔 시세. 없으면 null.
+ * 값을 정하는 순서. 직접 넣은 값 > 그 아이템의 시세 > 상자면 구성품 시세.
  *
- * 값을 코드에 박는 것이 아니라 CI 가 채운다 (scripts/fetch-item-prices.mjs).
- * 거래 불가 아이템과 신규 아이템은 여기 없다 — 그건 여전히 직접 넣어야 한다.
+ * 상자는 거래가 안 돼 제 시세가 없다. 고를 수 있는 상자(에테르넬 방어구 상자)만
+ * 가장 비싼 구성품 값을 쓴다 — 고를 수 있으니 그게 실제로 받는 값이다.
+ * 못 고르는 상자는 값을 세우지 않는다 (boxes.ts 참고).
  */
-export function marketPriceOf(item: string): number | null {
-  return prices.items[item]?.meso ?? null;
-}
-
-/** 사용자가 넣은 값이 있으면 그것, 없으면 시세. 둘 다 없으면 0. */
-function mesoFor(item: string, values: ItemValues): { meso: number; fromMarket: boolean } {
+function mesoFor(item: string, values: ItemValues): { meso: number; from: "manual" | "market" | "box" } {
   const mine = values[item]?.meso ?? 0;
-  if (mine > 0) return { meso: mine, fromMarket: false };
+  if (mine > 0) return { meso: mine, from: "manual" };
   const market = marketPriceOf(item);
-  return market ? { meso: market, fromMarket: true } : { meso: 0, fromMarket: false };
+  if (market) return { meso: market, from: "market" };
+  const box = boxValueOf(item);
+  return box ? { meso: box, from: "box" } : { meso: 0, from: "manual" };
 }
 
 // ---------- 드롭 확률 ----------
@@ -153,8 +146,10 @@ export interface RewardLine {
   unpriced: boolean;
   /** 개당 단가. 확률 보정을 껐을 때 이 값을 보여 준다. */
   unitPrice?: number;
-  /** 그 단가의 출처. market = 경매장 시세, manual = 직접 입력 */
-  priceFrom?: "market" | "manual";
+  /** 그 단가의 출처. market = 시세, manual = 직접 입력, box = 상자 구성품 중 최고가 */
+  priceFrom?: "market" | "manual" | "box";
+  /** 상자 보상이면 그 속. 화면에서 구성과 값을 펼쳐 보여 준다. */
+  box?: BoxInfo;
   /** 기대값 계산에 쓴 확률(%). 랜덤에만 붙는다. */
   chance?: number;
   /** 그 확률의 출처. manual = 손으로 넣음, stats = 커뮤니티 통계 */
@@ -241,8 +236,8 @@ export function compareRow(
   const random: RewardLine[] = [];
   for (const r of randomRaw) {
     const v = values[r.name] ?? {};
-    // 손으로 넣은 단가가 있으면 그것, 없으면 경매장 시세를 쓴다.
-    const { meso, fromMarket } = mesoFor(r.name, values);
+    // 손으로 넣은 단가가 있으면 그것, 없으면 시세, 그것도 없고 고를 수 있는 상자면 최고가.
+    const { meso, from } = mesoFor(r.name, values);
     // 손으로 넣은 확률이 있으면 그것이 이긴다. 없으면 알려진 통계를 쓴다.
     const known = dropRateOf(boss, diff, r.name);
     const chance = useChance ? v.chance ?? (known ? effectiveChance(known, dropRatePercent) : 0) : 0;
@@ -251,7 +246,8 @@ export function compareRow(
     const unpriced = useChance ? meso <= 0 || chance <= 0 : meso <= 0;
     const l = line(r, 1, r.range ?? String(r.count ?? 1), expected, unpriced);
     l.unitPrice = meso > 0 ? meso : undefined;
-    l.priceFrom = meso > 0 ? (fromMarket ? "market" : "manual") : undefined;
+    l.priceFrom = meso > 0 ? from : undefined;
+    l.box = boxInfo(r.name) ?? undefined;
     if (useChance) {
       l.chance = chance > 0 ? chance : undefined;
       l.chanceFrom = v.chance != null ? "manual" : known ? "stats" : undefined;

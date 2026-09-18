@@ -15,6 +15,7 @@ export async function Nav() {
           {[
             ["/bosses/tiers", "티어표"],
             ["/bosses/compare", "보상 비교"],
+            ["/prices", "시세"],
             ["/board", "모집"],
             ["/lookup", "조회"],
             ...(user
