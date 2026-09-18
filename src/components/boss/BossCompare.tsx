@@ -275,20 +275,29 @@ export function BossCompare({ today }: { today: string }) {
             </span>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-medium text-zinc-500">확정</span>
-              <span className="text-[11px] text-zinc-400">잡으면 무조건 · {r.fixed.length}종 · 개수</span>
+          {/*
+            확정과 랜덤은 성격이 아예 다르다 — 하나는 잡으면 들어오는 개수, 하나는 확률에
+            기댄 메소다. 한 덩어리로 흘려 놓으면 위아래 줄이 같은 종류인 줄 읽힌다.
+            각자 상자에 넣어 경계를 준다.
+          */}
+          <div className="space-y-2">
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-2 space-y-1.5">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xs font-medium">확정</span>
+                <span className="text-[11px] text-zinc-400">잡으면 무조건 · {r.fixed.length}종 · 개수</span>
+              </div>
+              <Lines lines={[...r.fixed].sort((x, y) => (y.baseAmount ?? 0) - (x.baseAmount ?? 0) || x.name.localeCompare(y.name, "ko"))} empty="확정 보상 없음" counts />
             </div>
-            <Lines lines={[...r.fixed].sort((x, y) => (y.baseAmount ?? 0) - (x.baseAmount ?? 0) || x.name.localeCompare(y.name, "ko"))} empty="확정 보상 없음" counts />
 
-            <div className="flex items-baseline gap-1.5 pt-1">
-              <span className="text-xs font-medium text-zinc-500">랜덤</span>
-              <span className="text-[11px] text-zinc-400">
-                확률 드롭 · {r.random.length}종{useChance ? "" : " · 단가 표시 (합계 제외)"}
-              </span>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-2 space-y-1.5">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xs font-medium">랜덤</span>
+                <span className="text-[11px] text-zinc-400">
+                  확률 드롭 · {r.random.length}종{useChance ? "" : " · 단가 표시 (합계 제외)"}
+                </span>
+              </div>
+              <Lines lines={ordered(r.random)} empty="랜덤 보상 없음" showUnit={!useChance} />
             </div>
-            <Lines lines={ordered(r.random)} empty="랜덤 보상 없음" showUnit={!useChance} />
           </div>
 
           {r.hasUnpriced && <div className="text-[11px] text-zinc-400">&apos;값 없음&apos; 줄은 합계에 안 들어갑니다. 실제 값어치는 이보다 높습니다.</div>}
@@ -340,7 +349,7 @@ export function BossCompare({ today }: { today: string }) {
                       ["랜덤", random],
                     ] as const).map(([label, list]) =>
                       list.length === 0 ? null : (
-                        <div key={label} className="space-y-0.5">
+                        <div key={label} className="space-y-0.5 rounded border border-zinc-200 dark:border-zinc-800 p-1.5">
                           <div className="text-[10px] text-zinc-400">{label}</div>
                           <ul className="space-y-0.5">
                             {list.map((g) => (
