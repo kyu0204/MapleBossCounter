@@ -26,6 +26,7 @@ import { ItemValueEditor } from "./ItemValueEditor";
 const VALUES_KEY = "maple-item-values";
 const SIDES_KEY = "maple-compare-sides";
 const DROP_KEY = "maple-drop-rate";
+const USE_CHANCE_KEY = "maple-use-chance";
 
 interface Side {
   boss: string;
@@ -88,7 +89,7 @@ function Icon({ icon, w, h, short, name }: { icon?: string; w?: number; h?: numb
  * 값을 안 매긴 줄은 흐리게 두고 값 자리에 "값 없음" 을 적는다. 0 원으로 적으면
  * 정말 가치가 없는 것처럼 읽힌다 — 모르는 것과 0 은 다르다.
  */
-function Lines({ lines, empty, showZero }: { lines: RewardLine[]; empty: string; showZero?: boolean }) {
+function Lines({ lines, empty, showZero, showUnit }: { lines: RewardLine[]; empty: string; showZero?: boolean; showUnit?: boolean }) {
   if (!lines.length) return <div className="text-xs text-zinc-400">{empty}</div>;
   return (
     <ul className="space-y-1">
@@ -107,7 +108,14 @@ function Lines({ lines, empty, showZero }: { lines: RewardLine[]; empty: string;
           )}
           {showZero && <span className="text-xs text-zinc-500 tabular-nums shrink-0">×{l.amountText}</span>}
           <span className="text-xs tabular-nums shrink-0 w-20 text-right">
-            {l.unpriced ? <span className="text-[11px] text-zinc-400">값 없음</span> : <b>{fmtPower(l.value)}</b>}
+            {l.unpriced ? (
+              <span className="text-[11px] text-zinc-400">값 없음</span>
+            ) : showUnit ? (
+              // 확률 보정을 끈 랜덤 줄: 기대값이 아니라 단가다. 합계에 안 들어간다.
+              <span className="text-zinc-600 dark:text-zinc-300">{fmtPower(l.unitPrice ?? 0)}</span>
+            ) : (
+              <b>{fmtPower(l.value)}</b>
+            )}
           </span>
         </li>
       ))}
@@ -119,6 +127,7 @@ export function BossCompare({ today }: { today: string }) {
   const [values, setValues] = useState<ItemValues>({});
   const [sides, setSides] = useState<[Side, Side]>(DEFAULT_SIDES);
   const [dropRate, setDropRate] = useState(0);
+  const [useChance, setUseChance] = useState(true);
   const [openValues, setOpenValues] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -134,6 +143,8 @@ export function BossCompare({ today }: { today: string }) {
       }
       const d = Number(localStorage.getItem(DROP_KEY));
       if (Number.isFinite(d) && d >= 0) setDropRate(d);
+      // 저장된 적이 없으면 켠 상태로 둔다 (통계가 있으니 기본은 보정 쓰는 쪽)
+      if (localStorage.getItem(USE_CHANCE_KEY) === "0") setUseChance(false);
     } catch {
       // 사생활 보호 모드 등에서 막힐 수 있다. 값 없이 그냥 쓴다.
     }
@@ -146,14 +157,18 @@ export function BossCompare({ today }: { today: string }) {
       localStorage.setItem(VALUES_KEY, JSON.stringify(values));
       localStorage.setItem(SIDES_KEY, JSON.stringify(sides));
       localStorage.setItem(DROP_KEY, String(dropRate));
+      localStorage.setItem(USE_CHANCE_KEY, useChance ? "1" : "0");
     } catch {
       /* 저장 못 해도 화면은 돈다 */
     }
-  }, [values, sides, dropRate, loaded]);
+  }, [values, sides, dropRate, useChance, loaded]);
 
   const picks = useMemo(() => sides.map((s) => ({ boss: s.boss, diff: s.diff })), [sides]);
   const items = useMemo(() => itemsIn(picks, today), [picks, today]);
-  const rows = useMemo(() => sides.map((s) => compareRow(s.boss, s.diff, s.party, today, values, dropRate)), [sides, today, values, dropRate]);
+  const rows = useMemo(
+    () => sides.map((s) => compareRow(s.boss, s.diff, s.party, today, values, dropRate, useChance)),
+    [sides, today, values, dropRate, useChance],
+  );
   const [a, b] = rows;
   const summary = useMemo(() => summarize(a, b), [a, b]);
   const gap = summary.mesoGap;
@@ -165,18 +180,25 @@ export function BossCompare({ today }: { today: string }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-1.5 text-sm" title="아이템 획득 증가. 알려진 드롭률 중 아획이 먹는 것만 이 값으로 보정합니다.">
-          <span className="text-zinc-500">아이템 획득</span>
-          <input
-            type="number"
-            min={0}
-            max={999}
-            value={dropRate}
-            onChange={(e) => setDropRate(Math.max(0, Math.min(999, Number(e.target.value) || 0)))}
-            className="w-16 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-1.5 py-0.5 text-center tabular-nums"
-          />
-          <span className="text-zinc-500">%</span>
+        <label className="flex items-center gap-1.5 text-sm" title="끄면 랜덤 보상을 기대값으로 환산하지 않고 단가만 보여 줍니다. 합계에는 결정과 확정 보상만 들어갑니다.">
+          <input type="checkbox" checked={useChance} onChange={(e) => setUseChance(e.target.checked)} className="accent-orange-500" />
+          <span>확률 보정</span>
         </label>
+
+        {useChance && (
+          <label className="flex items-center gap-1.5 text-sm" title="아이템 획득 증가. 알려진 드롭률 중 아획이 먹는 것만 이 값으로 보정합니다.">
+            <span className="text-zinc-500">아이템 획득</span>
+            <input
+              type="number"
+              min={0}
+              max={999}
+              value={dropRate}
+              onChange={(e) => setDropRate(Math.max(0, Math.min(999, Number(e.target.value) || 0)))}
+              className="w-16 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-1.5 py-0.5 text-center tabular-nums"
+            />
+            <span className="text-zinc-500">%</span>
+          </label>
+        )}
 
         <button type="button" className="btn-ghost text-xs" onClick={() => setOpenValues((v) => !v)}>
           아이템 값 {openValues ? "접기" : `설정 (${items.filter((i) => values[i.name]).length}/${items.length})`}
@@ -218,7 +240,9 @@ export function BossCompare({ today }: { today: string }) {
               </div>
               <div className="flex justify-between">
                 <dt className="text-zinc-500">랜덤 기대값</dt>
-                <dd className="tabular-nums">{r.randomValue ? fmtPower(r.randomValue) : "-"}</dd>
+                <dd className="tabular-nums">
+                  {useChance ? r.randomValue ? fmtPower(r.randomValue) : "-" : <span className="text-xs text-zinc-400">보정 꺼짐</span>}
+                </dd>
               </div>
             </dl>
 
@@ -232,10 +256,12 @@ export function BossCompare({ today }: { today: string }) {
 
               <div className="flex items-baseline gap-1.5 pt-1">
                 <span className="text-xs font-medium text-zinc-500">랜덤</span>
-                <span className="text-[11px] text-zinc-400">확률 드롭 · {r.random.length}종</span>
+                <span className="text-[11px] text-zinc-400">
+                  확률 드롭 · {r.random.length}종{useChance ? "" : " · 단가 표시 (합계 제외)"}
+                </span>
               </div>
               {/* 랜덤의 수량은 "떴을 때" 개수라 기대값과 같이 놓으면 오해를 부른다 */}
-              <Lines lines={ordered(r.random)} empty="랜덤 보상 없음" />
+              <Lines lines={ordered(r.random)} empty="랜덤 보상 없음" showUnit={!useChance} />
             </div>
 
             {r.hasUnpriced && (

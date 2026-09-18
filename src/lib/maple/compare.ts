@@ -96,6 +96,8 @@ export interface RewardLine {
   value: number;
   /** 값을 안 매겨서 0 으로 친 줄인지 */
   unpriced: boolean;
+  /** 입력한 개당 단가. 확률 보정을 껐을 때 이 값을 보여 준다. */
+  unitPrice?: number;
   /** 기대값 계산에 쓴 확률(%). 랜덤에만 붙는다. */
   chance?: number;
   /** 그 확률의 출처. manual = 손으로 넣음, stats = 커뮤니티 통계 */
@@ -153,6 +155,14 @@ export function compareRow(
   values: ItemValues,
   /** 내 아이템 획득 증가(%). 알려진 드롭률을 이 값으로 보정한다. */
   dropRatePercent = 0,
+  /**
+   * 확률 보정을 쓸지.
+   *
+   * 끄면 랜덤 보상을 기대값으로 환산하지 않는다. 확률 자체가 추정이라 그 불확실성을
+   * 합계에 섞고 싶지 않을 때가 있다. 그때는 "무엇이 얼마짜리로 나오는가" 만 보고
+   * 판단이 사람 몫으로 남는다. 합계에는 결정과 확정 보상만 들어간다.
+   */
+  useChance = true,
 ): CompareRow {
   const n = Math.max(1, party);
   const price = crystalPrice(boss, diff, priceDate);
@@ -172,12 +182,17 @@ export function compareRow(
     const meso = v.meso ?? 0;
     // 손으로 넣은 확률이 있으면 그것이 이긴다. 없으면 알려진 통계를 쓴다.
     const known = dropRateOf(boss, diff, r.name);
-    const chance = v.chance ?? (known ? effectiveChance(known, dropRatePercent) : 0);
-    const expected = meso > 0 && chance > 0 ? Math.floor((meso * chance) / 100) : 0;
-    const l = line(r, 1, r.range ?? String(r.count ?? 1), expected, meso <= 0 || chance <= 0);
-    l.chance = chance > 0 ? chance : undefined;
-    l.chanceFrom = v.chance != null ? "manual" : known ? "stats" : undefined;
-    l.kills = v.chance == null && known ? known.kills : undefined;
+    const chance = useChance ? v.chance ?? (known ? effectiveChance(known, dropRatePercent) : 0) : 0;
+    const expected = useChance && meso > 0 && chance > 0 ? Math.floor((meso * chance) / 100) : 0;
+    // 보정을 끄면 확률은 판단에 안 들어가므로, 값이 없는 것은 단가 미입력뿐이다.
+    const unpriced = useChance ? meso <= 0 || chance <= 0 : meso <= 0;
+    const l = line(r, 1, r.range ?? String(r.count ?? 1), expected, unpriced);
+    l.unitPrice = meso > 0 ? meso : undefined;
+    if (useChance) {
+      l.chance = chance > 0 ? chance : undefined;
+      l.chanceFrom = v.chance != null ? "manual" : known ? "stats" : undefined;
+      l.kills = v.chance == null && known ? known.kills : undefined;
+    }
     random.push(l);
   }
 

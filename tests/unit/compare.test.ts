@@ -136,6 +136,46 @@ describe("알려진 드롭률", () => {
   });
 });
 
+describe("확률 보정 끄기", () => {
+  const values = { "루즈 컨트롤 머신 마크": { meso: 1_000_000_000 } };
+
+  it("끄면 랜덤은 합계에 안 들어간다", () => {
+    const on = compareRow("스우", "hard", 1, DATE, values, 0, true);
+    const off = compareRow("스우", "hard", 1, DATE, values, 0, false);
+    expect(on.randomValue).toBeGreaterThan(0);
+    expect(off.randomValue).toBe(0);
+    expect(off.total).toBe((off.crystal ?? 0) + off.fixedValue);
+  });
+
+  it("끄면 단가는 그대로 들고 있어 화면에 띄울 수 있다", () => {
+    const off = compareRow("스우", "hard", 1, DATE, values, 0, false);
+    const l = off.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    expect(l.unitPrice).toBe(1_000_000_000);
+    expect(l.value).toBe(0);
+    expect(l.unpriced).toBe(false); // 단가는 넣었으니 "값 없음" 이 아니다
+  });
+
+  it("끄면 확률 표시를 아예 붙이지 않는다", () => {
+    const off = compareRow("스우", "hard", 1, DATE, values, 0, false);
+    const l = off.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    expect(l.chance).toBeUndefined();
+    expect(l.chanceFrom).toBeUndefined();
+  });
+
+  it("끈 상태에서 단가가 없으면 값 없음으로 남는다", () => {
+    const off = compareRow("스우", "hard", 1, DATE, {}, 0, false);
+    const l = off.random.find((x) => x.name === "루즈 컨트롤 머신 마크")!;
+    expect(l.unpriced).toBe(true);
+  });
+
+  it("확정 보상과 결정은 보정 여부와 무관하다", () => {
+    const on = compareRow("스우", "hard", 1, DATE, values, 0, true);
+    const off = compareRow("스우", "hard", 1, DATE, values, 0, false);
+    expect(off.crystal).toBe(on.crystal);
+    expect(off.fixedValue).toBe(on.fixedValue);
+  });
+});
+
 describe("값 못 매긴 보상 차이 정리", () => {
   it("양쪽이 똑같이 주는 것은 상쇄 목록으로 간다", () => {
     // 같은 보스·난이도끼리 견주면 모든 보상이 상쇄된다
