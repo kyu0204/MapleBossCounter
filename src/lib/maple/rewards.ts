@@ -135,8 +135,16 @@ export interface RewardAmount {
   shared: boolean;
 }
 
-/** 소수점은 버린다 — 나눠 떨어지지 않으면 못 받는다 */
-const share = (n: number, party: number) => Math.floor(n / Math.max(1, party));
+/**
+ * 인원수로 나눈 몫. 소수점 둘째 자리까지 남긴다.
+ *
+ * 예전에는 버렸다 ("나눠 떨어지지 않으면 못 받는다"). 그런데 버리면 비교가 뭉개진다 —
+ * 큐브 1개를 2인격으로 가면 0 이 되어 아예 안 주는 보스와 구분이 안 된다.
+ * 실제로는 여러 주에 걸쳐 돌므로 0.5 가 맞는 기대값이다.
+ *
+ * 한 판만 놓고 보면 0.5개를 받을 수는 없다. 그 점은 화면에서 소수로 드러난다.
+ */
+const share = (n: number, party: number) => Math.round((n / Math.max(1, party)) * 100) / 100;
 
 /** 인원수를 반영한 실제 수량 */
 export function rewardAmount(r: Pick<DisplayReward, "name" | "count" | "range">, party: number): RewardAmount {

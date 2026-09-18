@@ -56,9 +56,9 @@ describe("한 보스의 값어치", () => {
     const duo = compareRow("루시드", "hard", 2, DATE, {});
     const s = solo.fixed.find((l) => l.name === "메멘토 실버 큐브")!;
     const d = duo.fixed.find((l) => l.name === "메멘토 실버 큐브")!;
-    // 1개짜리는 2인격이면 0개 (나눠 떨어지지 않으면 못 받는다)
+    // 1개짜리를 2인격이면 0.5. 버리면 아예 안 주는 보스와 구분이 안 된다.
     expect(s.amount).toBe(1);
-    expect(d.amount).toBe(0);
+    expect(d.amount).toBe(0.5);
   });
 
   it("랜덤은 단가 × 확률이 기대값이다", () => {
@@ -240,7 +240,7 @@ describe("값 못 매긴 보상 차이 정리", () => {
     const s = summarize(compareRow("루시드", "hard", 1, DATE, {}), compareRow("루시드", "hard", 2, DATE, {}));
     const cube = s.gaps.find((g) => g.name === "메멘토 실버 큐브");
     expect(cube?.a).toBe(1);
-    expect(cube?.b).toBe(0);
+    expect(cube?.b).toBe(0.5);
     expect(cube?.kind).toBe("fixed");
   });
 

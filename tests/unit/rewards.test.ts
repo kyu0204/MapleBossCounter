@@ -328,13 +328,15 @@ describe("파티 분배", () => {
     }
   });
 
-  it("나눗셈은 소수점을 버린다", () => {
+  it("나눗셈은 소수점 둘째 자리까지 남긴다", () => {
+    // 버리면 큐브 1개를 2인격으로 갈 때 0 이 되어, 아예 안 주는 보스와 구분이 안 된다
     const cube = { name: "메멘토 브론즈 에디셔널 큐브", count: 8 };
     expect(rewardAmount(cube, 1).text).toBe("8");
     expect(rewardAmount(cube, 2).text).toBe("4");
-    expect(rewardAmount(cube, 3).text).toBe("2"); // 8/3 = 2.67 → 2
-    expect(rewardAmount(cube, 5).text).toBe("1");
-    expect(rewardAmount(cube, 6).value).toBe(1);
+    expect(rewardAmount(cube, 3).text).toBe("2.67"); // 8/3
+    expect(rewardAmount(cube, 5).text).toBe("1.6");
+    expect(rewardAmount(cube, 6).value).toBe(1.33);
+    expect(rewardAmount({ name: "메멘토 실버 큐브", count: 1 }, 2).value).toBe(0.5);
   });
 
   it("나누지 않는 항목은 인원과 무관하다", () => {
@@ -347,12 +349,11 @@ describe("파티 분배", () => {
   it("범위는 양끝을 각각 나눈다", () => {
     const frag = { name: "파멸의 조각", count: 10, range: "5~10" };
     expect(rewardAmount(frag, 1).text).toBe("5~10");
-    expect(rewardAmount(frag, 2).text).toBe("2~5");
+    expect(rewardAmount(frag, 2).text).toBe("2.5~5");
     expect(rewardAmount(frag, 2).value).toBe(5);
-    // 6명이면 최소 5개로는 한 개도 못 받을 수 있다
-    expect(rewardAmount(frag, 6).text).toBe("0~1");
+    expect(rewardAmount(frag, 6).text).toBe("0.83~1.67");
     // 양끝이 같아지면 하나로 합쳐 적는다
-    expect(rewardAmount({ name: "파멸의 조각", count: 7, range: "6~7" }, 4).text).toBe("1");
+    expect(rewardAmount({ name: "파멸의 조각", count: 8, range: "8~8" }, 4).text).toBe("2");
   });
 
   it("합산은 보스마다 나눈 뒤 더한다 (먼저 더하고 나누면 많아진다)", () => {
@@ -373,18 +374,17 @@ describe("파티 분배", () => {
       ],
       AFTER,
     );
-    // floor(8/3) + floor(8/3) = 2 + 2 = 4. 먼저 더했다면 floor(16/3) = 5 가 됐을 것이다
-    expect(trio.find((r) => r.name === "메멘토 브론즈 에디셔널 큐브")!.total).toBe(4);
+    // 2.67 + 2.67 = 5.34. 보스마다 나눈 뒤 더하므로 반올림 오차만 남는다
+    expect(trio.find((r) => r.name === "메멘토 브론즈 에디셔널 큐브")!.total).toBeCloseTo(5.34, 2);
     // 솔 에르다의 기운은 나누지 않으므로 인원과 무관하게 같다
     const erdaSolo = solo.find((r) => r.name === "솔 에르다의 기운")!.total;
     expect(trio.find((r) => r.name === "솔 에르다의 기운")!.total).toBe(erdaSolo);
   });
 
-  it("나눠서 0이 되면 합산에서 뺀다", () => {
-    // 벨룸 카오스 브론즈 에디셔널 1개를 2명이 나누면 0
+  it("나눠도 0 이 되지 않고 소수로 남는다", () => {
+    // 벨룸 카오스 브론즈 에디셔널 1개를 2명이 나누면 0.5 다. 버리면 안 주는 보스와 구분이 안 된다.
     const r = aggregateFixedRewards([{ boss: "벨룸", diff: "chaos", party: 2 }], AFTER);
-    expect(r.some((x) => x.name.includes("큐브"))).toBe(false);
-    expect(aggregateFixedRewards([{ boss: "벨룸", diff: "chaos", party: 1 }], AFTER).some((x) => x.name.includes("큐브"))).toBe(true);
+    expect(r.find((x) => x.name.includes("브론즈"))!.total).toBe(0.5);
   });
 
   it("간 것 + 남은 것 = 전체 (상단 요약과 우측 남은 수익란이 어긋나지 않는다)", () => {

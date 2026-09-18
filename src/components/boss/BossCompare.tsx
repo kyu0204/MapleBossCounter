@@ -74,6 +74,12 @@ const SIDE_TONE = [
 const ordered = (lines: RewardLine[]) =>
   [...lines].sort((a, b) => Number(a.unpriced) - Number(b.unpriced) || b.value - a.value || a.name.localeCompare(b.name, "ko"));
 
+/**
+ * 개수 표기. 인원으로 나누면 소수가 나온다 (큐브 1개를 2인격이면 0.5).
+ * 딱 떨어지면 정수로, 아니면 둘째 자리까지. 2.50 이 아니라 2.5 로 적는다.
+ */
+const fmtCount = (n: number) => `${Number(n.toFixed(2))}개`;
+
 /** 아이콘 칸. 아이콘이 없으면 짧은 글자 라벨로 대신한다. */
 function Icon({ icon, w, h, short, name }: { icon?: string; w?: number; h?: number; short?: string; name: string }) {
   return (
@@ -117,7 +123,9 @@ function Lines({ lines, empty, showUnit, counts }: { lines: RewardLine[]; empty:
               // 확정은 개수로 견준다. 조각은 본품 환산도 같이 (5조각 = 2.5개)
               <b>
                 {l.amountText}
-                {l.baseName && l.baseName !== l.name ? <span className="font-normal text-[10px] text-zinc-400"> ≈{l.baseAmount}</span> : null}
+                {l.baseName && l.baseName !== l.name && l.baseAmount != null ? (
+                  <span className="font-normal text-[10px] text-zinc-400"> ≈{Number(l.baseAmount.toFixed(2))}</span>
+                ) : null}
               </b>
             ) : l.unpriced ? (
               <span className="text-[11px] text-zinc-400">값 없음</span>
@@ -221,7 +229,12 @@ export function BossCompare({ today }: { today: string }) {
         <div className="space-y-3 min-w-0">
       {rows.map((r, i) => (
         <section key={i} className={`card space-y-3 border-l-4 ${SIDE_TONE[i].bar}`}>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {/*
+            보스 아이콘 오른쪽에 인원과 합계를 세로로 둔다. 둘은 한 덩어리로 읽히게
+            가까이 붙이고, 아이콘 높이 가운데에 맞춘다.
+            오른쪽 정렬이라 인원을 바꿔도 숫자 끝이 고정돼 값만 바뀐다.
+          */}
+          <div className="flex items-stretch justify-between gap-3">
             {/* 3인 보스로 바꿨는데 6인이 남아 있으면 안 되므로 고를 때도 자른다 */}
             <BossPickerModal
               boss={sides[i].boss}
@@ -229,19 +242,21 @@ export function BossCompare({ today }: { today: string }) {
               today={today}
               onPick={(boss, diff: Difficulty) => setSide(i as 0 | 1)({ boss, diff, party: clampParty(boss, diff, sides[i].party) })}
             />
-            <PartySizePicker
-              value={sides[i].party}
-              max={maxPartyFor(sides[i].boss, sides[i].diff)}
-              onChange={(n) => setSide(i as 0 | 1)({ ...sides[i], party: n })}
-              label={`${bossName(sides[i].boss)} 인원`}
-              className="text-sm"
-            />
 
-            <span className="ml-auto flex items-baseline gap-2">
-              <span className="text-xs text-zinc-500">합계</span>
-              <b className={`text-xl tabular-nums ${winner === i ? SIDE_TONE[i].text : ""}`}>{fmtPower(r.total)}</b>
-              {winner === i && <span className={`badge ${SIDE_TONE[i].badge}`}>+{fmtPower(Math.abs(gap))}</span>}
-            </span>
+            <div className="flex flex-col items-end justify-center gap-5 shrink-0">
+              <PartySizePicker
+                value={sides[i].party}
+                max={maxPartyFor(sides[i].boss, sides[i].diff)}
+                onChange={(n) => setSide(i as 0 | 1)({ ...sides[i], party: n })}
+                label={`${bossName(sides[i].boss)} 인원`}
+                className="text-sm"
+              />
+              {/* 배지는 숫자 왼쪽에. 오른쪽에 두면 생겼다 사라질 때 합계가 밀린다. */}
+              <span className="flex items-baseline gap-2">
+                {winner === i && <span className={`badge ${SIDE_TONE[i].badge}`}>+{fmtPower(Math.abs(gap))}</span>}
+                <b className={`text-xl tabular-nums leading-none ${winner === i ? SIDE_TONE[i].text : ""}`}>{fmtPower(r.total)}</b>
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-x-6 gap-y-1 border-y border-zinc-100 dark:border-zinc-800 py-2 text-sm">
@@ -303,26 +318,48 @@ export function BossCompare({ today }: { today: string }) {
 
         {summary.gaps.length > 0 && (
           <div className="space-y-1.5 border-t border-zinc-100 dark:border-zinc-800 pt-2">
-            <div className="text-xs font-medium text-zinc-500">값을 못 매긴 보상 차이</div>
-            <p className="text-[11px] text-zinc-400">
-              위 메소 차액에 안 들어간 몫입니다. 색이 어느 보스 몫인지 가리킵니다.
-            </p>
-            <ul className="space-y-1">
-              {summary.gaps.map((g) => {
-                const side = g.delta > 0 ? 0 : 1;
+            <div className="text-xs font-medium text-zinc-500">메소 밖의 이득</div>
+            <p className="text-[11px] text-zinc-400">위 차액에 안 들어간 몫입니다. 어느 쪽이 더 받는지를 편별로 모았습니다.</p>
+
+            {/* 편을 좌우로 갈라 놓는다. 줄마다 색을 읽어 가며 어느 쪽인지 세는 것보다,
+                애초에 자리가 갈려 있으면 "왼쪽이 이만큼, 오른쪽이 이만큼" 이 한눈에 잡힌다. */}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              {([0, 1] as const).map((side) => {
+                const mine = summary.gaps.filter((g) => (g.delta > 0 ? 0 : 1) === side);
+                const fixed = mine.filter((g) => g.kind === "fixed");
+                const random = mine.filter((g) => g.kind === "random");
                 return (
-                  <li key={g.name} className="flex items-center gap-2" title={`${bossName(sides[side].boss)} — ${g.name}`}>
-                    <span className={`inline-block w-1.5 h-4 rounded-sm shrink-0 ${SIDE_TONE[side].dot}`} aria-hidden />
-                    <Icon icon={g.icon} w={g.w} h={g.h} short={g.short} name={g.name} />
-                    <span className="min-w-0 flex-1 truncate text-xs">{g.name}</span>
-                    <span className="sr-only">{bossName(sides[side].boss)}</span>
-                    <b className={`text-xs tabular-nums shrink-0 w-12 text-right ${SIDE_TONE[side].text}`}>
-                      {g.kind === "fixed" ? `+${Math.abs(g.delta)}개` : "단독"}
-                    </b>
-                  </li>
+                  <div key={side} className={`space-y-1.5 border-l-2 pl-2 ${SIDE_TONE[side].bar}`}>
+                    <div className={`text-[11px] font-medium truncate ${SIDE_TONE[side].text}`} title={bossName(sides[side].boss)}>
+                      {bossName(sides[side].boss)}
+                    </div>
+                    {mine.length === 0 && <div className="text-[11px] text-zinc-400">더 받는 것 없음</div>}
+
+                    {([
+                      ["확정", fixed],
+                      ["랜덤", random],
+                    ] as const).map(([label, list]) =>
+                      list.length === 0 ? null : (
+                        <div key={label} className="space-y-0.5">
+                          <div className="text-[10px] text-zinc-400">{label}</div>
+                          <ul className="space-y-0.5">
+                            {list.map((g) => (
+                              <li key={g.name} className="flex items-center gap-1" title={g.name}>
+                                <Icon icon={g.icon} w={g.w} h={g.h} short={g.short} name={g.name} />
+                                <span className="sr-only">{g.name}</span>
+                                <b className={`text-[11px] tabular-nums ${SIDE_TONE[side].text}`}>
+                                  {g.kind === "fixed" ? `+${fmtCount(Math.abs(g.delta))}` : "단독"}
+                                </b>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ),
+                    )}
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           </div>
         )}
 
