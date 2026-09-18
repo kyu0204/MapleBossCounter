@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { allBoxContentNames } from "@/lib/maple/boxes";
 import { allPrices, extraPrices, noMarketItems, PRICE_META, type PriceRow } from "@/lib/maple/itemPrices";
+import { iconOf } from "@/lib/maple/itemIcons";
+import { ICON_BOX } from "@/lib/maple/rewards";
 import { fmtPower } from "@/lib/maple/format";
 
 export const metadata: Metadata = {
@@ -17,6 +19,22 @@ function kstStamp(iso: string | null): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(iso));
+}
+
+/**
+ * 아이콘 칸. 원본 크기가 28x28 부터 39x38 까지 제각각이라 줄이지 않고
+ * 같은 칸 안에 가운데 정렬해서 줄만 맞춘다. 아이콘이 없으면 칸만 비워 둔다.
+ */
+function ItemIconCell({ name }: { name: string }) {
+  const icon = iconOf(name);
+  return (
+    <span className="inline-flex items-center justify-center shrink-0" style={{ width: ICON_BOX.w, height: ICON_BOX.h }}>
+      {icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={icon.src} alt="" width={icon.w} height={icon.h} style={{ width: icon.w, height: icon.h }} className="object-contain" loading="lazy" decoding="async" />
+      ) : null}
+    </span>
+  );
 }
 
 function Table({ rows }: { rows: [string, PriceRow][] }) {
@@ -36,7 +54,12 @@ function Table({ rows }: { rows: [string, PriceRow][] }) {
         <tbody>
           {rows.map(([name, row]) => (
             <tr key={name} className="border-b border-zinc-100 dark:border-zinc-900">
-              <td className="py-1.5 pr-2">{name}</td>
+              <td className="py-1.5 pr-2">
+                <span className="flex items-center gap-2">
+                  <ItemIconCell name={name} />
+                  {name}
+                </span>
+              </td>
               <td className="py-1.5 text-right font-medium tabular-nums whitespace-nowrap">{fmtPower(row.meso)}</td>
               <td className="py-1.5 text-right text-xs text-zinc-400 tabular-nums whitespace-nowrap">{row.meso.toLocaleString("ko-KR")}</td>
               <td className="py-1.5 text-right text-xs text-zinc-400 whitespace-nowrap">{row.quotedOn ?? "메인 시세표"}</td>
@@ -93,7 +116,8 @@ export default function PricesPage() {
           <p className="text-xs text-zinc-500">거래 기록이 없어 값을 못 매긴 것입니다 (거래 불가이거나 아무도 안 내놓은 것). 괄호는 마지막으로 확인한 날입니다.</p>
           <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
             {none.map(([name, at]) => (
-              <li key={name}>
+              <li key={name} className="flex items-center gap-1">
+                <ItemIconCell name={name} />
                 {name} <span className="text-zinc-400">({at})</span>
               </li>
             ))}
