@@ -95,6 +95,17 @@ export function boxValueOf(item: string): number | null {
   return info.max;
 }
 
+/** 에테르넬 부위 순서. 위 넷과 아래 셋이 각각 다른 상자에서 나온다. */
+export const ETERNEL_PARTS = ["모자", "상의", "하의", "어깨장식", "장갑", "신발", "망토"] as const;
+
+/** 에테르넬 방어구면 직업군과 부위, 아니면 null. */
+export function eternelPartOf(item: string): { group: string; part: string } | null {
+  for (const [group, parts] of Object.entries(data.eternelArmor)) {
+    for (const [part, name] of Object.entries(parts)) if (name === item) return { group, part };
+  }
+  return null;
+}
+
 /** 시세를 받아 둬야 할 구성품 이름 전부. 수집 스크립트와 시세 탭이 쓴다. */
 export function allBoxContentNames(): string[] {
   const out = new Set<string>();

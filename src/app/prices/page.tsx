@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { allBoxContentNames } from "@/lib/maple/boxes";
+import { ETERNEL_PARTS, eternelPartOf } from "@/lib/maple/boxes";
 import { allPrices, extraPrices, noMarketItems, PRICE_META, type PriceRow } from "@/lib/maple/itemPrices";
+import { groupByPriceGroup } from "@/lib/maple/priceGroups";
 import { iconOf } from "@/lib/maple/itemIcons";
 import { ICON_BOX } from "@/lib/maple/rewards";
 import { fmtPower } from "@/lib/maple/format";
@@ -71,12 +72,29 @@ function Table({ rows }: { rows: [string, PriceRow][] }) {
   );
 }
 
-export default function PricesPage() {
-  const boxContents = new Set(allBoxContentNames());
+/**
+ * 에테르넬 35종을 부위로 나눈다.
+ *
+ * 값 순으로 늘어놓으면 장갑·신발·망토(15억대)가 위에 몰리고 나머지가 아래에 깔려,
+ * 같은 부위끼리 직업군 값을 견주기가 어렵다. 부위로 끊으면 다섯 줄씩 맞대 볼 수 있다.
+ */
+function eternelByPart(rows: [string, PriceRow][]): [string, [string, PriceRow][]][] {
+  const out: [string, [string, PriceRow][]][] = [];
+  for (const part of ETERNEL_PARTS) {
+    const list = rows.filter(([n]) => eternelPartOf(n)?.part === part);
+    if (list.length) out.push([part, list]);
+  }
+  return out;
+}
+
+export default async function PricesPage({ searchParams }: { searchParams: Promise<{ 정렬?: string }> }) {
+  // 정렬은 주소에 담는다. 서버에서 그리는 화면이라 클릭 한 번에 다시 받는 편이 단순하고,
+  // 링크를 그대로 남길 수도 있다.
+  const byPart = (await searchParams).정렬 === "부위";
+
   const rows = allPrices().sort((a, b) => b[1].meso - a[1].meso);
-  // 보스가 직접 주는 것과, 상자를 까야 나오는 것을 나눈다. 성격이 달라 같이 두면 헷갈린다.
-  const reward = rows.filter(([n]) => !boxContents.has(n));
-  const contents = rows.filter(([n]) => boxContents.has(n));
+  // 세트끼리 붙여 놓는다. 값 순으로만 늘어놓으면 칠흑과 에테르넬이 뒤섞여 무엇을 보는지 놓친다.
+  const groups = groupByPriceGroup<[string, PriceRow]>(rows, ([name]) => name);
   const extra = extraPrices().sort((a, b) => b[1].meso - a[1].meso);
   const none = noMarketItems().sort((a, b) => a[0].localeCompare(b[0], "ko"));
 
@@ -96,19 +114,36 @@ export default function PricesPage() {
         </p>
       </div>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold">보스 보상 {reward.length}종</h2>
-        <Table rows={reward} />
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold">상자 구성품 {contents.length}종</h2>
-        <p className="text-xs text-zinc-500">
-          상자 자체는 거래가 안 돼 시세가 없습니다. 골라 꺼내는 상자(에테르넬 방어구 상자)는 구성품 중 가장 비싼 값을 상자 값으로 쓰고, 무엇이 나올지 못 고르는 상자(칠흑 장신구 상자·보스 반지 상자)는 값을 세우지 않고 구성만
-          보여 줍니다.
-        </p>
-        <Table rows={contents} />
-      </section>
+      {groups.map(([g, list]) => (
+        <section key={g.key} className="space-y-2">
+          <h2 className="text-sm font-semibold flex items-baseline gap-2">
+            <span>
+              {g.label} <span className="font-normal text-zinc-400">{list.length}종</span>
+            </span>
+            {g.key === "에테르넬" && (
+              <span className="font-normal text-xs text-zinc-400">
+                <Link href="/prices" className={byPart ? "underline" : "text-zinc-700 dark:text-zinc-200"} scroll={false}>
+                  값순
+                </Link>
+                {" · "}
+                <Link href="/prices?정렬=부위" className={byPart ? "text-zinc-700 dark:text-zinc-200" : "underline"} scroll={false}>
+                  부위순
+                </Link>
+              </span>
+            )}
+          </h2>
+          {g.key === "에테르넬" && byPart ? (
+            eternelByPart(list).map(([part, sub]) => (
+              <div key={part} className="space-y-1">
+                <h3 className="text-xs font-medium text-zinc-500">{part}</h3>
+                <Table rows={sub} />
+              </div>
+            ))
+          ) : (
+            <Table rows={list} />
+          )}
+        </section>
+      ))}
 
       {none.length > 0 && (
         <section className="space-y-2">
