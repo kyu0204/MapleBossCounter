@@ -22,6 +22,7 @@ export async function Nav() {
               ? ([
                   ["/me", "내 캐릭터"],
                   ["/parties", "파티"],
+                  ["/calendar", "캘린더"],
                 ] as const)
               : []),
           ].map(([href, label]) => (

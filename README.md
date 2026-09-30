@@ -29,7 +29,7 @@ npm test                 # vitest (가격/티어/전투력/플래너/리미터 �
 npm run typecheck
 npm run lint
 npm run db:generate      # 스키마 변경 후 마이그레이션 SQL 생성 (drizzle/)
-npm run job -- <name>    # 잡 수동 실행: weekly_snapshot_realtime | weekly_snapshot_backfill | daily_snapshot | weekly_power_refresh | cache_sweep
+npm run job -- <name>    # 잡 수동 실행: weekly_snapshot_realtime | weekly_snapshot_backfill | daily_snapshot | weekly_power_refresh | party_cleanup | item_expiry_refresh | notice_refresh | cache_sweep
 npx tsx scripts/seed-dev.ts tester 270   # dev 유저에 서버 키 등록 + 캐릭터/스냅샷/예시 파티 시드
 npx tsx scripts/smoke.ts 알전임          # 별도 DB(data/smoke.db) 로 파이프라인 검증
 npx tsx scripts/check-bossplan.ts 알전임 # "갈 보스" 저장→재읽기→플래너 반영 검증 (app.db 복사본, 실데이터 비변경)
@@ -48,6 +48,7 @@ node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 
 | `/me` | 로그인 | 캐릭터 대시보드 (기본 Lv.260+ 표시, `?all=1` 로 전체) |
 | `/me/characters/[ocid]` | 로그인 | **이번 주 갈 보스 설정**, 보스 클리어·수익, 전투력 이력 |
 | `/parties` | 로그인 | 고정 파티 CRUD. 인원수가 플래너 실수령에 반영 |
+| `/calendar?account=&ym=` | 로그인 | **계정별 캘린더**: 그날 잡은 보스(스냅샷 차분), 고정 파티 요일·시각, 기간제 아이템 만료일, 넥슨 이벤트 시작·종료·썬데이 메이플, 주간(목)·월간(1일) 리셋. 옆 패널에 이번 주 남은 것·30일 내 만료·진행 중 이벤트 |
 | `/planner` | 로그인 | 주간 결정 배분 플래너 |
 | `/settings/nexon-key` | 로그인 | 넥슨 API 키 등록 |
 
@@ -77,6 +78,20 @@ node scripts/fetch-namu-boss-icons.mjs            # public/bosses 로 아이콘 
 - 규칙: 주간 결정만 · 한 보스당 난이도 1개 · 인원 1~6. 검증은 `validateBossSelection()` 한 곳에서.
 - 파티 등록(`/parties`)에서 유래한 픽은 🔒 로 표시되고 여기서 못 지운다 (파티를 고쳐야 함).
 - `스케줄러 등록 불러오기` 는 인게임 스케줄러에 등록해 둔 주간 보스로 선택을 채운다.
+
+### 캘린더
+
+계정(넥슨 `account_id`) 단위로 한 달을 본다. 계정이 여러 개면 탭으로 나뉜다. 순수 로직은 `src/lib/maple/calendar.ts`, 조립은 `src/services/calendar.ts`.
+
+| 항목 | 출처 | 갱신 |
+|---|---|---|
+| 잡은 보스 | `scheduler_snapshots` 차분 — D 에 completed 인데 같은 주(월간은 같은 달)의 직전 스냅샷에 없으면 D 에 잡은 것. 주의 첫 스냅샷은 completed 전부를 그날로 | 스냅샷 잡 + 화면 진입 시 1시간 넘은 캐릭터만 realtime |
+| 고정 파티 | `parties.day_of_week/hour/minute`. 반복 파티는 매주, "이번 주만" 은 만든 주(목~수)에만 | — |
+| 기간제 아이템 만료 | `item_expiries` ← 캐시·펫·안드로이드·장비(`date_expire`, `date_option_expire`). "expired" 문자열은 버린다 | 목 06:00 잡(`item_expiry_refresh`) + 화면 진입 시 12시간 넘은 캐릭터 최대 6개. 캐릭터당 API 4건 |
+| 이벤트·썬데이 | `notices` ← `/notice-event`(서버 키). 제목에 "썬데이" 면 기간 안 일요일마다 표시 | 매일 09:00 잡(`notice_refresh`) + 화면 진입 시 6시간 넘었으면 |
+| 이번 주 남은 것 | 최신 realtime 스냅샷의 등록했는데 안 잡은 주간 보스, 안 끝난 주간·일간 콘텐츠 | 스케줄러와 같음 |
+
+캘린더에 들어오면 자동으로 **이번 주 빠진 날짜(목~어제)의 dated 스케줄러를 백필**한다 (`refreshCalendar`, 없는 날만, 한 번에 최대 36건). 넥슨이 어제~13일 전 `date` 조회를 허용하므로 일간 잡 없이도 "언제 잡았는지" 가 하루 단위로 맞는다. 일간 스냅샷 잡(`daily_snapshot`)은 그래도 opt-in — 화면을 오래 안 열어 13일을 넘기면 그 사이 날짜는 영영 못 받으니, 그게 싫으면 켠다.
 
 ### 보스 아이콘
 

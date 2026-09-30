@@ -16,6 +16,8 @@ on:
     - cron: "5 15 * * 3" # 목 00:05 KST — "이번 주만" 파티 정리 (리셋 직후)
     - cron: "0 19 * * 3" # 목 04:00 KST — 지난 수요일 권위본 백필
     - cron: "0 20 * * 3" # 목 05:00 KST — 전투력 갱신
+    - cron: "0 21 * * 3" # 목 06:00 KST — 기간제 아이템 만료일 (캘린더)
+    - cron: "0 0 * * *" # 매일 09:00 KST — 이벤트 공지 (캘린더)
     - cron: "0 */6 * * *" # 6시간마다 — 만료 캐시 청소
   workflow_dispatch:
     inputs:
@@ -29,6 +31,8 @@ on:
           - daily_snapshot
           - weekly_power_refresh
           - party_cleanup
+          - item_expiry_refresh
+          - notice_refresh
           - cache_sweep
 
 # 잡끼리 겹치지 않게. 겹치면 job_runs 락에 막혀 어차피 한쪽이 논다.
@@ -61,6 +65,8 @@ jobs:
             "5 15 * * 3")  JOB=party_cleanup ;;
             "0 19 * * 3")  JOB=weekly_snapshot_backfill ;;
             "0 20 * * 3")  JOB=weekly_power_refresh ;;
+            "0 21 * * 3")  JOB=item_expiry_refresh ;;
+            "0 0 * * *")   JOB=notice_refresh ;;
             "0 */6 * * *") JOB=cache_sweep ;;
             *)             JOB="${MANUAL:?스케줄도 수동 입력도 없다}" ;;
           esac

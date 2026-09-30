@@ -7,11 +7,13 @@ import { cacheSweep } from "@/lib/nexon/cache";
 import { fetchAndSaveDated, fetchAndSaveRealtime, snapshotOn } from "@/services/snapshotService";
 import { refreshCharacter } from "@/services/characterRefresh";
 import { purgeExpiredOneOffParties } from "@/services/partyCleanup";
+import { refreshItemExpiries } from "@/services/itemExpiry";
+import { refreshEventNotices } from "@/services/notices";
 import { kstDateStr, lastWednesdayKst } from "@/lib/maple/kst";
 import { CHARACTER_MIN_LEVEL } from "@/lib/dashboard";
 import { userMessageFor } from "@/lib/nexon/errors";
 
-export const JOB_NAMES = ["weekly_snapshot_realtime", "weekly_snapshot_backfill", "daily_snapshot", "weekly_power_refresh", "party_cleanup", "cache_sweep"] as const;
+export const JOB_NAMES = ["weekly_snapshot_realtime", "weekly_snapshot_backfill", "daily_snapshot", "weekly_power_refresh", "party_cleanup", "item_expiry_refresh", "notice_refresh", "cache_sweep"] as const;
 export type JobName = (typeof JOB_NAMES)[number];
 
 const LOCK_MS = 10 * 60e3;
@@ -136,6 +138,22 @@ const JOBS: Record<JobName, () => Promise<JobStats>> = {
       const r = await refreshCharacter(ch, cred, true);
       return r.power == null ? "skipped" : "ok";
     });
+    return s;
+  },
+  /** 기간제 아이템 만료일. 캐릭터당 API 4건이라 주 1회, 12시간 안에 받은 것은 건너뛴다. */
+  async item_expiry_refresh() {
+    const s = emptyStats();
+    await forEachLinkedCharacter(s, async (cred, ch) => {
+      const r = await refreshItemExpiries(ch, cred, false);
+      return r.skipped ? "skipped" : "ok";
+    });
+    return s;
+  },
+  /** 이벤트 공지. 서버 키 1건. */
+  async notice_refresh() {
+    const s = emptyStats();
+    s.notices = await refreshEventNotices(null, true);
+    s.ok = 1;
     return s;
   },
   async cache_sweep() {

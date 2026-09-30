@@ -6,15 +6,22 @@ import type { EquipmentResponse } from "@/lib/maple/power";
 import type { RawScheduler } from "@/lib/maple/scheduler";
 import { sumForces, type Forces, type SymbolRow } from "@/lib/maple/force";
 
+import type { AndroidResponse, CashItemResponse, PetResponse } from "@/lib/maple/expiry";
+import type { RawEventNoticeResponse } from "@/lib/maple/notices";
+
 export const TTL = {
   id: 24 * 3600e3,
   basic: 3600e3,
   stat: 3600e3,
   equip: 3600e3,
   symbol: 3600e3,
+  /** 기간제 아이템은 하루에 몇 번 안 바뀐다 */
+  cashItem: 12 * 3600e3,
   list: 10 * 60e3,
   schedulerRealtime: 5 * 60e3,
   schedulerMissing: 24 * 3600e3,
+  /** 공지는 하루 몇 건. 6시간이면 충분하고, 캘린더를 여는 모든 사용자가 같은 캐시를 본다 */
+  notice: 6 * 3600e3,
 } as const;
 
 export interface BasicResponse {
@@ -92,6 +99,23 @@ export async function getCombatPower(cred: NexonCredential, ocid: string, force 
   const row = (stat.final_stat ?? []).find((s) => s.stat_name === "전투력");
   return row ? Number(row.stat_value) : null;
 }
+
+// ---------- 기간제 아이템 (공개 엔드포인트, ocid 만 있으면 됨) ----------
+
+export const getCashItems = (cred: NexonCredential, ocid: string, force = false) =>
+  nx<CashItemResponse>(cred, "/maplestory/v1/character/cashitem-equipment", { ocid }, { ttlMs: TTL.cashItem, cacheScope: "public", force });
+
+export const getPetEquipment = (cred: NexonCredential, ocid: string, force = false) =>
+  nx<PetResponse>(cred, "/maplestory/v1/character/pet-equipment", { ocid }, { ttlMs: TTL.cashItem, cacheScope: "public", force });
+
+export const getAndroidEquipment = (cred: NexonCredential, ocid: string, force = false) =>
+  nx<AndroidResponse>(cred, "/maplestory/v1/character/android-equipment", { ocid }, { ttlMs: TTL.cashItem, cacheScope: "public", force });
+
+// ---------- 공지 (공개, 캐릭터 무관) ----------
+
+/** 이벤트 공지 목록. 최근 것 위주로 수십 건이 온다. */
+export const getEventNotices = (cred: NexonCredential, force = false) =>
+  nx<RawEventNoticeResponse>(cred, "/maplestory/v1/notice-event", {}, { ttlMs: TTL.notice, cacheScope: "public", force });
 
 /** 계정 한정: 키 소유 계정의 캐릭터 목록 */
 export const getMyCharacterList = (cred: NexonCredential, force = false) =>

@@ -104,6 +104,8 @@ export const characters = pgTable(
     forceFetchedAt: text("force_fetched_at"),
     supersededBy: integer("superseded_by"),
     basicFetchedAt: text("basic_fetched_at"),
+    /** 기간제 아이템(캐시·펫·장비) 만료일을 마지막으로 받아 온 시각. 캘린더 갱신 쿨다운 판정. */
+    expiryFetchedAt: text("expiry_fetched_at"),
     createdAt: text("created_at").notNull().$defaultFn(nowIso),
     updatedAt: text("updated_at").notNull().$defaultFn(nowIso),
   },
@@ -285,6 +287,48 @@ export const applications = pgTable(
   (t) => [uniqueIndex("applications_unique").on(t.postId, t.characterId), index("applications_post_idx").on(t.postId, t.status), index("applications_user_idx").on(t.applicantUserId)],
 );
 
+// ---------- 캘린더: 기간제 아이템 만료 / 넥슨 이벤트 공지 ----------
+
+/**
+ * 캐릭터가 들고 있는 기간제 아이템의 만료일. 갱신할 때 그 캐릭터 행을 전부 지우고 다시 넣는다.
+ * 원본은 캐시 장비·펫·안드로이드·일반 장비(date_expire) 응답이고 필요한 칸만 남긴다.
+ */
+export const itemExpiries = pgTable(
+  "item_expiries",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    characterId: integer("character_id").notNull().references(() => characters.id, { onDelete: "cascade" }),
+    source: text("source").$type<"cash" | "pet" | "android" | "equip" | "title">().notNull(),
+    slot: text("slot"),
+    name: text("name").notNull(),
+    icon: text("icon"),
+    /** 만료 시각 ISO(UTC). 넥슨은 "+09:00" 로 주므로 저장 전에 UTC 로 바꾼다. */
+    expireAt: text("expire_at").notNull(),
+    fetchedAt: text("fetched_at").notNull().$defaultFn(nowIso),
+  },
+  (t) => [index("item_expiries_char_idx").on(t.characterId, t.expireAt), index("item_expiries_expire_idx").on(t.expireAt)],
+);
+
+/** 넥슨 공지 중 이벤트(/notice-event). 종료된 것도 남겨 두어 지난달 캘린더에도 보인다. */
+export const notices = pgTable(
+  "notices",
+  {
+    noticeId: integer("notice_id").primaryKey(),
+    kind: text("kind").$type<"event" | "notice" | "update" | "cashshop">().notNull().default("event"),
+    title: text("title").notNull(),
+    url: text("url").notNull(),
+    /** 공지 등록 시각 ISO(UTC) */
+    postedAt: text("posted_at"),
+    /** 이벤트 시작·종료 ISO(UTC). 없으면 null */
+    eventStart: text("event_start"),
+    eventEnd: text("event_end"),
+    /** "썬데이 메이플" 류. 제목으로 판정해 저장 시 표시해 둔다. */
+    isSunday: boolean("is_sunday").notNull().default(false),
+    fetchedAt: text("fetched_at").notNull().$defaultFn(nowIso),
+  },
+  (t) => [index("notices_event_range_idx").on(t.eventStart, t.eventEnd), index("notices_kind_idx").on(t.kind)],
+);
+
 export type Character = typeof characters.$inferSelect;
 export type NewCharacter = typeof characters.$inferInsert;
 export type NexonKey = typeof nexonKeys.$inferSelect;
@@ -293,3 +337,5 @@ export type PartyMember = typeof partyMembers.$inferSelect;
 export type SchedulerSnapshot = typeof schedulerSnapshots.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Application = typeof applications.$inferSelect;
+export type ItemExpiry = typeof itemExpiries.$inferSelect;
+export type Notice = typeof notices.$inferSelect;

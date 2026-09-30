@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bossClears, schedulerSnapshots, type SchedulerSnapshot } from "@/lib/db/schema";
 import { getScheduler } from "@/lib/nexon/endpoints";
@@ -69,6 +69,21 @@ export async function latestSnapshotsFor(characterIds: number[]): Promise<Map<nu
     .where(inArray(schedulerSnapshots.characterId, characterIds))
     .orderBy(desc(schedulerSnapshots.snapshotDate), desc(schedulerSnapshots.fetchedAt));
   for (const r of rows) if (!out.has(r.characterId)) out.set(r.characterId, r);
+  return out;
+}
+
+/**
+ * 여러 캐릭터의 [from, to] 구간 dated 스냅샷 존재 여부. "characterId|date" 집합.
+ * 캘린더가 이번 주 빠진 날을 백필할 때 이미 받은 날을 건너뛰는 데 쓴다.
+ */
+export async function datedSnapshotKeys(characterIds: number[], from: string, to: string): Promise<Set<string>> {
+  const out = new Set<string>();
+  if (!characterIds.length) return out;
+  const rows = await db
+    .select({ characterId: schedulerSnapshots.characterId, date: schedulerSnapshots.snapshotDate })
+    .from(schedulerSnapshots)
+    .where(and(inArray(schedulerSnapshots.characterId, characterIds), eq(schedulerSnapshots.kind, "dated"), gte(schedulerSnapshots.snapshotDate, from), lte(schedulerSnapshots.snapshotDate, to)));
+  for (const r of rows) out.add(`${r.characterId}|${r.date}`);
   return out;
 }
 
