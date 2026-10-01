@@ -279,6 +279,7 @@ export function BossCompare({ today }: { today: string }) {
               boss={sides[i].boss}
               diff={sides[i].diff}
               today={today}
+              includeMonthly
               onPick={(boss, diff: Difficulty) => setSide(i as 0 | 1)({ boss, diff, party: clampParty(boss, diff, sides[i].party) })}
             />
 

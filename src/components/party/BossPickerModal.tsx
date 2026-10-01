@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { crystalPrice, isWeeklyCrystal, PRICE_TABLE } from "@/lib/maple/prices";
+import { crystalCycle, crystalPrice, isWeeklyCrystal, PRICE_TABLE } from "@/lib/maple/prices";
 import { tierOf } from "@/lib/maple/tiers";
 import { bossName, DIFF_LABEL } from "@/lib/maple/bossMeta";
 import type { Difficulty } from "@/lib/maple/bossKey";
@@ -9,7 +9,7 @@ import { fmtPower } from "@/lib/maple/format";
 import { BossIcon } from "@/components/boss/BossIcon";
 import { DifficultyBadge, DifficultyButton } from "@/components/boss/DifficultyBadge";
 
-type BossRow = { boss: string; diffs: { diff: Difficulty; price: number; rank: number }[]; topRank: number };
+type BossRow = { boss: string; diffs: { diff: Difficulty; price: number; rank: number }[]; topRank: number; monthly: boolean };
 
 /**
  * 보스 아이콘 하나만 놓고, 누르면 모달에서 고른다.
@@ -22,11 +22,17 @@ export function BossPickerModal({
   diff,
   today,
   onPick,
+  includeMonthly = false,
 }: {
   boss: string;
   diff: string;
   today: string;
   onPick: (boss: string, diff: Difficulty) => void;
+  /**
+   * 월간 보스(검은 마법사)도 목록에 넣는다. 파티·갈 보스는 주간 단위라 기본은 뺀다.
+   * 보상 비교처럼 "한 번 잡을 때 값어치" 를 보는 곳은 켠다.
+   */
+  includeMonthly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -51,19 +57,24 @@ export function BossPickerModal({
     const out: BossRow[] = [];
     for (const [b, diffs] of Object.entries(PRICE_TABLE.prices)) {
       const list: BossRow["diffs"] = [];
+      let monthly = false;
       for (const d of Object.keys(diffs) as Difficulty[]) {
-        if (!isWeeklyCrystal(b, d)) continue;
+        const cycle = crystalCycle(b, d);
+        if (cycle === "daily") continue;
+        if (cycle === "monthly" && !includeMonthly) continue;
+        if (cycle === "weekly" && !isWeeklyCrystal(b, d)) continue;
         const price = crystalPrice(b, d, today);
         const t = tierOf(b, d);
         if (price == null || !t) continue;
+        if (cycle === "monthly") monthly = true;
         list.push({ diff: d, price, rank: t.rank });
       }
       if (!list.length) continue;
       list.sort((a, b2) => a.rank - b2.rank);
-      out.push({ boss: b, diffs: list, topRank: Math.max(...list.map((x) => x.rank)) });
+      out.push({ boss: b, diffs: list, topRank: Math.max(...list.map((x) => x.rank)), monthly });
     }
     return out.sort((a, b) => a.topRank - b.topRank || a.boss.localeCompare(b.boss, "ko"));
-  }, [today]);
+  }, [today, includeMonthly]);
 
   const price = boss && diff ? crystalPrice(boss, diff, today) : null;
   const picked = !!boss && !!diff;
@@ -131,6 +142,7 @@ export function BossPickerModal({
                       <BossIcon boss={row.boss} diff={(selected ? (diff as Difficulty) : null) ?? row.diffs[row.diffs.length - 1].diff} size={56} showDiff={false} />
                       <span className="text-sm font-medium truncate flex-1 min-w-0" title={row.boss}>
                         {bossName(row.boss)}
+                        {row.monthly && <span className="ml-1 text-[10px] font-normal text-violet-600 dark:text-violet-400">월간</span>}
                       </span>
                       <span className="flex gap-1">
                         {row.diffs.map(({ diff: d, price: p }) => (
