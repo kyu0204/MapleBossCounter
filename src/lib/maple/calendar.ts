@@ -92,6 +92,15 @@ export interface CalTodo {
   party?: number;
 }
 
+/** 월간 보스(검은 마법사) 상태. 등록한 캐릭터만 들어 있다 */
+export interface CalMonthly {
+  characterId: number;
+  boss: string;
+  diff: string;
+  /** 이번 달 완료 여부 */
+  completed: boolean;
+}
+
 export interface CalendarModel {
   /** 이번 주 시작(목요일) */
   weekStart: string;
@@ -103,6 +112,8 @@ export interface CalendarModel {
   characters: CalChar[];
   /** 이번 주 남은 것 (오늘 기준, 최신 realtime 스냅샷) */
   todos: CalTodo[];
+  /** 캐릭터별 월간 보스 상태 (등록한 캐릭터만) */
+  monthly: CalMonthly[];
   /** 진행 중·예정 이벤트 (오늘 기준) */
   activeEvents: { noticeId: number; title: string; url: string; start: string | null; end: string | null; isSunday: boolean }[];
   /** 앞으로 30일 안 만료 */
@@ -228,6 +239,7 @@ export interface BuildInput {
   expiries: ExpiryLite[];
   events: EventLite[];
   todos: CalTodo[];
+  monthly?: CalMonthly[];
   /** 결정 분배 인원. 없으면 전부 1인 */
   partyOf?: (characterId: number, boss: string, diff: string) => number;
 }
@@ -300,5 +312,5 @@ export function buildCalendar(input: BuildInput): CalendarModel {
     .map((e) => ({ noticeId: e.noticeId, title: e.title, url: e.url, start: e.eventStart ? kstDateOf(e.eventStart) : null, end: e.eventEnd ? kstDateOf(e.eventEnd) : null, isSunday: e.isSunday }))
     .sort((a, b) => ((a.end ?? "9") < (b.end ?? "9") ? -1 : 1));
 
-  return { weekStart: from, weekEnd: to, today: input.today, days, characters: input.characters, todos: input.todos, activeEvents, upcomingExpiries };
+  return { weekStart: from, weekEnd: to, today: input.today, days, characters: input.characters, todos: input.todos, monthly: input.monthly ?? [], activeEvents, upcomingExpiries };
 }

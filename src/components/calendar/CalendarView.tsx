@@ -37,6 +37,7 @@ function filterModel(model: CalendarModel, visible: Set<number>): CalendarModel 
     })),
     // 계정 공유 숙제(몬스터파크)는 캐릭터를 꺼도 남는다
     todos: model.todos.filter((t) => t.shared || keep(t.characterId)),
+    monthly: model.monthly.filter((m) => keep(m.characterId)),
     upcomingExpiries: model.upcomingExpiries.filter((e) => keep(e.characterId)),
   };
 }
@@ -123,7 +124,7 @@ export function CalendarView({ model: raw }: { model: CalendarModel }) {
           {/* 좁은 화면에서는 칸을 줄이지 않고 가로 스크롤 */}
           <div className="grid grid-cols-7 gap-px bg-zinc-200 dark:bg-zinc-800 rounded-lg overflow-hidden min-w-[56rem]">
             {days.map((d) => (
-              <DayCell key={d.date} day={d} today={model.today} todos={model.todos} selected={d.date === selected} onSelect={() => setSelected(d.date)} charMap={charMap} />
+              <DayCell key={d.date} day={d} today={model.today} todos={model.todos} monthly={model.monthly} selected={d.date === selected} onSelect={() => setSelected(d.date)} charMap={charMap} />
             ))}
           </div>
           <Legend />
@@ -165,7 +166,7 @@ function BossMark({ boss, diff, size = MARK, muted = false }: { boss: string; di
  * 격자는 3열 고정(아이콘 크기 열 폭)이라 2~3줄로 접히고, 캐릭터가 달라도 열이 맞는다.
  * 잡은 것은 색, 남은 것은 회색. 하나라도 잡았으면 초록 실선, 전부 남았으면 회색 점선.
  */
-function CharBossRow({ characterId, done, left = [], charMap, max = 9 }: { characterId: number; done: { boss: string; diff: string }[]; left?: { boss: string; diff: string }[]; charMap: CharMap; max?: number }) {
+function CharBossRow({ characterId, done, left = [], monthly, charMap, max = 9 }: { characterId: number; done: { boss: string; diff: string }[]; left?: { boss: string; diff: string }[]; monthly?: CalendarModel["monthly"][number]; charMap: CharMap; max?: number }) {
   const c = charMap.get(characterId);
   const all = [...done.map((b) => ({ ...b, muted: false })), ...left.map((b) => ({ ...b, muted: true }))];
   const hasDone = done.length > 0;
@@ -178,6 +179,12 @@ function CharBossRow({ characterId, done, left = [], charMap, max = 9 }: { chara
       <span className="flex items-center gap-1.5 min-w-0">
         <CharacterAvatar src={c?.imageUrl} alt={c?.name ?? ""} size={26} crop="face" className={`rounded-md border-2 ${hasDone ? "border-emerald-500" : "border-zinc-300 dark:border-zinc-600"}`} />
         <span className="text-[11px] font-medium truncate">{c?.name}</span>
+        {/* 월간 보스(검마) 작은 배지: 이번 달 완료면 색, 아니면 흑백. 난이도는 안 붙인다. 미등록이면 없음 */}
+        {monthly && (
+          <span className="inline-flex shrink-0" title={`${bossFullLabel(monthly.boss, monthly.diff)} · 이번 달 ${monthly.completed ? "완료" : "미완료"}`}>
+            <BossIcon boss={monthly.boss} diff={monthly.diff} size={20} showDiff={false} className={monthly.completed ? "ring-1 ring-emerald-500" : "grayscale opacity-60"} />
+          </span>
+        )}
         <span className="ml-auto text-[10px] text-zinc-500 tabular-nums shrink-0">{done.length}{left.length ? `/${done.length + left.length}` : ""}</span>
       </span>
       <span className="grid gap-1" style={{ gridTemplateColumns: `repeat(${MARK_COLS}, ${MARK}px)` }}>
@@ -200,7 +207,7 @@ function groupByChar<T extends { characterId: number }>(list: T[]): Map<number, 
   return m;
 }
 
-function DayCell({ day: d, today, todos, selected, onSelect, charMap }: { day: CalDay; today: string; todos: CalendarModel["todos"]; selected: boolean; onSelect: () => void; charMap: CharMap }) {
+function DayCell({ day: d, today, todos, monthly, selected, onSelect, charMap }: { day: CalDay; today: string; todos: CalendarModel["todos"]; monthly: CalendarModel["monthly"]; selected: boolean; onSelect: () => void; charMap: CharMap }) {
   const dow = dowOf(d.date);
   const num = Number(d.date.slice(8, 10));
   const phase = phaseOf(d, today);
@@ -232,7 +239,7 @@ function DayCell({ day: d, today, todos, selected, onSelect, charMap }: { day: C
 
       {/* 기록: 캐릭터 상자(얼굴 + 보스 격자). 오늘은 잡은 것(색) + 남은 것(회색)이 같은 상자에 */}
       {rows.slice(0, 4).map((id) => (
-        <CharBossRow key={id} characterId={id} done={clearsByChar.get(id) ?? []} left={remainBoss.get(id) ?? []} charMap={charMap} />
+        <CharBossRow key={id} characterId={id} done={clearsByChar.get(id) ?? []} left={remainBoss.get(id) ?? []} monthly={monthly.find((m) => m.characterId === id)} charMap={charMap} />
       ))}
       {rows.length > 4 && <span className="text-[10px] text-zinc-500">+{rows.length - 4}캐릭</span>}
       {remainContents > 0 && <span className="text-[10px] text-sky-700 dark:text-sky-300">몬파·일퀘 {remainContents}개 남음</span>}

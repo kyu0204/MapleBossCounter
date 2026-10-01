@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { characters, parties, partyMembers, schedulerSnapshots, type Character } from "@/lib/db/schema";
-import { buildCalendar, weekRange, type CalTodo, type CalendarModel, type PartyLite, type SnapshotLite } from "@/lib/maple/calendar";
+import { buildCalendar, weekRange, type CalMonthly, type CalTodo, type CalendarModel, type PartyLite, type SnapshotLite } from "@/lib/maple/calendar";
 import { parseSnapshot, type RawScheduler } from "@/lib/maple/scheduler";
 import { addDays, kstDateStr, thisWeekStartKst } from "@/lib/maple/kst";
 import { isPartyExpired } from "@/lib/maple/partySchedule";
@@ -117,6 +117,24 @@ async function collectTodos(chars: Character[], partyOf: (characterId: number, b
   return out;
 }
 
+/**
+ * 캐릭터별 월간 보스 상태. 이번 달 안의 최신 스냅샷에서 등록된 월간 행을 본다.
+ * 한 캐릭터에 여러 난이도가 등록돼 있으면 완료된 것, 없으면 첫 것.
+ */
+async function collectMonthly(chars: Character[]): Promise<CalMonthly[]> {
+  const snaps = await latestSnapshotsFor(chars.map((c) => c.id));
+  const ym = kstDateStr().slice(0, 7);
+  const out: CalMonthly[] = [];
+  for (const c of chars) {
+    const s = snaps.get(c.id);
+    if (!s || s.snapshotDate.slice(0, 7) !== ym) continue;
+    const rows = parseSnapshot(s.raw as RawScheduler).bosses.filter((b) => b.cycle === "bossMonthly" && b.registered);
+    const pick = rows.find((b) => b.completed) ?? rows[0];
+    if (pick) out.push({ characterId: c.id, boss: pick.boss, diff: pick.diff, completed: pick.completed });
+  }
+  return out;
+}
+
 /** 계정 하나의 이번 주(목~수) 캘린더 모델 */
 export async function buildAccountCalendar(userId: string, group: AccountGroup): Promise<CalendarModel> {
   const chars = group.characters;
@@ -128,7 +146,7 @@ export async function buildAccountCalendar(userId: string, group: AccountGroup):
   const toIso = new Date(Date.parse(`${to}T15:00:00Z`)).toISOString();
   const partyOf = await partySizeResolver(userId, chars);
 
-  const [snapRows, partyRows, expiries, events, todos] = await Promise.all([
+  const [snapRows, partyRows, expiries, events, todos, monthly] = await Promise.all([
     ids.length
       ? db
           .select({ characterId: schedulerSnapshots.characterId, snapshotDate: schedulerSnapshots.snapshotDate, kind: schedulerSnapshots.kind, raw: schedulerSnapshots.raw })
@@ -145,6 +163,7 @@ export async function buildAccountCalendar(userId: string, group: AccountGroup):
     listExpiries(ids, fromIso, toIso),
     listEventsBetween(fromIso, toIso),
     collectTodos(chars, partyOf),
+    collectMonthly(chars),
   ]);
 
   const snapshots: SnapshotLite[] = snapRows.map((r) => ({ characterId: r.characterId, date: r.snapshotDate, kind: r.kind, bosses: parseSnapshot(r.raw as RawScheduler).bosses }));
@@ -185,6 +204,7 @@ export async function buildAccountCalendar(userId: string, group: AccountGroup):
     expiries: expiries.map((e) => ({ characterId: e.characterId, source: e.source, name: e.name, icon: e.icon, expireAt: e.expireAt })),
     events: events.map((e) => ({ noticeId: e.noticeId, title: e.title, url: e.url, eventStart: e.eventStart, eventEnd: e.eventEnd, isSunday: e.isSunday })),
     todos,
+    monthly,
     partyOf,
   });
 }
